@@ -1,0 +1,30 @@
+workerPoolSpecs:
+  - machineSpec:
+      machineType: n1-standard-8
+      acceleratorType: NVIDIA_TESLA_T4
+      acceleratorCount: 1
+    replicaCount: 1
+    diskSpec:
+      bootDiskType: pd-ssd
+      bootDiskSizeGb: 200
+    containerSpec:
+      imageUri: us-docker.pkg.dev/vertex-ai/training/pytorch-gpu.2-2.py310:latest
+      command:
+        - bash
+        - -c
+      args:
+        - >-
+          mkdir -p /tmp/pythonjsonlogger &&
+          touch /tmp/pythonjsonlogger/__init__.py &&
+          export PYTHONPATH=/tmp:$PYTHONPATH &&
+          pip install --no-cache-dir python-json-logger google-cloud-storage soundfile transformers==4.38.0 datasets pandas accelerate scipy &&
+          rm -rf /tmp/pythonjsonlogger &&
+          gcloud storage cp gs://maulana-urdu-forge-project-ffb3710a/train_mms_gcp_v25.py /tmp/train.py &&
+          export PYTHONNOUSERSITE=1 &&
+          python3 /tmp/train.py
+          --ur_csv=gs://maulana-urdu-forge-project-ffb3710a/ur_aligned.csv
+          --wav_dir=gs://maulana-urdu-forge-project-ffb3710a/wavs
+          --output_dir=gs://maulana-urdu-forge-project-ffb3710a/ur_mms_v25_1
+          --epochs=200
+          --batch_size=4
+          --lr=2e-5

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faith-Tech — Quranic ASR & Learning</title>
+    <meta name="description" content="AI-powered Tajweed validation and Quranic learning platform with dual-model ASR pipeline.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #050a18;
+            --bg-card: rgba(15, 23, 42, 0.75);
+            --bg-card-hover: rgba(20, 30, 55, 0.85);
+            --border: rgba(56, 189, 248, 0.12);
+            --border-active: rgba(56, 189, 248, 0.35);
+            --text: #f0f4f8;
+            --text-dim: #7b8ca8;
+            --text-muted: #4a5568;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.15);
+            --gold: #f59e0b;
+            --gold-glow: rgba(245, 158, 11, 0.15);
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.12);
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.12);
+            --error: #ef4444;
+            --error-bg: rgba(239, 68, 68, 0.12);
+            --radius: 1rem;
+            --radius-lg: 1.5rem;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse at 20% 0%, rgba(56,189,248,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(245,158,11,0.04) 0%, transparent 60%);
+            overflow-x: hidden;
+        }
+        .app { max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+        /* ─── Header ─── */
+        .header { text-align: center; margin-bottom: 2rem; }
+        .header-brand {
+            display: inline-flex; align-items: center; gap: 0.6rem;
+            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.15em;
+            color: var(--accent); margin-bottom: 0.5rem; font-weight: 600;
+        }
+        .header-brand .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+        h1 {
+            font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 800;
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #f59e0b 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            line-height: 1.2; margin-bottom: 0.3rem;
+        }
+        .header-sub { color: var(--text-dim); font-size: 0.95rem; font-weight: 300; }
+
+        /* ─── Controls Bar ─── */
+        .controls {
+            display: flex; gap: 0.75rem; flex-wrap: wrap;
+            margin-bottom: 1.5rem; align-items: center;
+        }
+        .controls input, .controls select {
+            background: rgba(15,23,42,0.8); border: 1px solid var(--border);
+            color: var(--text); padding: 0.65rem 1rem; border-radius: var(--radius);
+            font-family: inherit; font-size: 0.9rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        .controls input:focus, .controls select:focus { border-color: var(--accent); }
+        .controls input { flex: 1; min-width: 140px; }
+
+        /* ─── Buttons ─── */
+        .btn {
+            padding: 0.65rem 1.4rem; border-radius: var(--radius); border: none;
+            font-weight: 600; font-size: 0.9rem; cursor: pointer;
+            transition: all 0.25s ease; display: inline-flex;
+            align-items: center; gap: 0.4rem; font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #1e6b8a, #2d89a0);
+            color: #fff; box-shadow: 0 4px 15px rgba(56,189,248,0.15);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(56,189,248,0.25); }
+        .btn-outline {
+            background: transparent; border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+        .btn-outline:hover { background: var(--accent-glow); }
+        .btn-gold { background: linear-gradient(135deg, #b45309, #d97706); color: #fff; }
+        .btn-danger { background: linear-gradient(135deg, #991b1b, #dc2626); color: #fff; }
+
+        /* ─── Cards ─── */
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.75rem;
+            backdrop-filter: blur(16px); margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transition: border-color 0.3s;
+        }
+        .card:hover { border-color: var(--border-active); }
+        .card-label {
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em;
+            color: var(--accent); font-weight: 600; margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .card-label .indicator {
+            width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        /* ─── Ayah Display ─── */
+        .ayah-display { text-align: center; padding: 1.5rem 0; }
+        .arabic-text {
+            font-family: 'Amiri', serif; font-size: clamp(1.8rem, 6vw, 3rem);
+            line-height: 2; direction: rtl; color: #fff;
+            text-shadow: 0 0 40px rgba(56,189,248,0.08);
+            margin-bottom: 1rem;
+        }
+        .translation-text {
+            font-size: 1rem; color: var(--text-dim); line-height: 1.7;
+            font-style: italic; max-width: 700px; margin: 0 auto;
+        }
+        #audioPlayer { width: 100%; margin-top: 1rem; border-radius: 8px; height: 36px; }
+
+        /* ─── Sections Grid ─── */
+        .sections { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 768px) { .sections { grid-template-columns: 1fr; } }
+
+        /* ─── Tajweed Report ─── */
+        .tajweed-hero { text-align: center; }
+        .score-gauge {
+            width: 140px; height: 140px; margin: 1rem auto;
+            position: relative; display: flex; align-items: center;
+            justify-content: center;
+        }
+        .score-gauge svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+        .score-gauge .score-text {
+            font-size: 2.2rem; font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--gold));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .score-gauge .score-label { font-size: 0.7rem; color: var(--text-dim); }
+
+        .word-grid {
+            display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center;
+            margin: 1.25rem 0; direction: rtl;
+        }
+        .word-chip {
+            padding: 0.5rem 0.8rem; border-radius: 0.6rem; font-family: 'Amiri', serif;
+            font-size: 1.3rem; cursor: pointer; transition: all 0.2s;
+            border: 1px solid transparent; position: relative;
+        }
+        .word-chip.correct { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+        .word-chip.minor_error { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
+        .word-chip.major_error { background: var(--error-bg); border-color: var(--error); color: var(--error); }
+        .word-chip.pending { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+        .word-chip:hover { transform: scale(1.08); }
+        .word-chip .word-score {
+            position: absolute; top: -8px; right: -4px; font-family: 'Inter', sans-serif;
+            font-size: 0.6rem; font-weight: 700; padding: 1px 5px; border-radius: 8px;
+        }
+        .word-chip.correct .word-score { background: var(--success); color: #fff; }
+        .word-chip.minor_error .word-score { background: var(--warning); color: #000; }
+        .word-chip.major_error .word-score { background: var(--error); color: #fff; }
+
+        .phonetic-compare {
+            background: rgba(0,0,0,0.2); border-radius: var(--radius);
+            padding: 1rem; margin-top: 1rem; display: none;
+        }
+        .phonetic-row {
+            display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.5rem;
+            padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.85rem; align-items: center;
+        }
+        .phonetic-row .expected { color: var(--success); text-align: right; }
+        .phonetic-row .arrow { color: var(--text-muted); }
+        .phonetic-row .actual { color: var(--accent); }
+
+        /* ─── Recorder ─── */
+        .recorder { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+        .rec-btn {
+            width: 72px; height: 72px; border-radius: 50%; border: 3px solid var(--accent);
+            background: rgba(56,189,248,0.08); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; transition: all 0.3s;
+        }
+        .rec-btn:hover { background: rgba(56,189,248,0.15); transform: scale(1.05); }
+        .rec-btn.recording {
+            border-color: var(--error); background: rgba(239,68,68,0.12);
+            animation: recPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes recPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+            50% { box-shadow: 0 0 0 18px rgba(239,68,68,0); }
+        }
+        .rec-status { font-size: 0.8rem; color: var(--text-dim); }
+
+        /* ─── AI Teacher ─── */
+        .ai-content {
+            background: rgba(0,0,0,0.2); padding: 1.25rem; border-radius: var(--radius);
+            min-height: 80px; white-space: pre-wrap; line-height: 1.65; font-size: 0.95rem;
+        }
+        .follow-ups { margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; }
+        .q-chip {
+            background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.15);
+            padding: 0.45rem 0.9rem; border-radius: 2rem; font-size: 0.85rem;
+            cursor: pointer; transition: 0.2s; color: var(--text-dim);
+        }
+        .q-chip:hover { background: rgba(56,189,248,0.15); color: var(--text); }
+        .ask-area { margin-top: 1rem; display: flex; gap: 0.5rem; }
+        .ask-area input { flex: 1; }
+
+        /* ─── Error Summary ─── */
+        .error-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin-top: 0.8rem; }
+        .err-chip {
+            padding: 0.3rem 0.8rem; border-radius: 2rem; font-size: 0.75rem;
+            font-weight: 600; display: flex; align-items: center; gap: 0.3rem;
+        }
+        .err-chip.correct { background: var(--success-bg); color: var(--success); }
+        .err-chip.minor { background: var(--warning-bg); color: var(--warning); }
+        .err-chip.major { background: var(--error-bg); color: var(--error); }
+
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(5,10,24,0.85); display: none; align-items: center;
+            justify-content: center; z-index: 100; flex-direction: column; gap: 1rem;
+        }
+        .loading-overlay.active { display: flex; }
+        .spinner {
+            width: 48px; height: 48px; border: 3px solid var(--border);
+            border-top-color: var(--accent); border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    </style>
+</head>
+<body>
+<div class="app">
+    <header class="header">
+        <div class="header-brand"><span class="dot"></span> Faith-Tech AI</div>
+        <h1>Quranic Learning</h1>
+        <p class="header-sub">Tajweed Validation · Tarjumah · AI Teacher</p>
+    </header>
+
+    <!-- Controls -->
+    <div class="controls">
+        <input type="text" id="ayahId" placeholder="Surah:Ayah (e.g. 1:1)" value="1:1">
+        <select id="langCode">
+            <option value="en">English</option>
+            <option value="hi">Hindi</option>
+            <option value="ur">Urdu</option>
+        </select>
+        <button class="btn btn-primary" id="loadBtn" onclick="fetchAyah()">Load Ayah</button>
+    </div>
+
+    <!-- Ayah Display -->
+    <div class="card fade-in" id="ayahCard">
+        <div class="card-label"><span class="indicator"></span> Current Ayah</div>
+        <div class="ayah-display" id="ayahContent">
+            <div class="arabic-text" id="arabicText">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+            <div class="translation-text" id="translationText">In the name of Allah, the Entirely Merciful, the Especially Merciful.</div>
+        </div>
+        <audio id="audioPlayer" controls style="display:none"></audio>
+    </div>
+
+    <div class="sections">
+        <!-- Tajweed Section -->
+        <div class="card" id="tajweedCard">
+            <div class="card-label"><span class="indicator" style="background:var(--gold);box-shadow:0 0 8px var(--gold)"></span> Tajweed Check</div>
+            <div class="tajweed-hero">
+                <div class="recorder">
+                    <div class="rec-btn" id="recBtn" onclick="toggleRecording()">🎤</div>
+                    <div class="rec-status" id="recStatus">Tap to record your recitation</div>
+                </div>
+
+                <div id="scoreSection" style="display:none" class="fade-in">
+                    <div class="score-gauge" id="scoreGauge">
+                        <svg width="140" height="140" viewBox="0 0 140 140">
+                            <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>
+                            <circle cx="70" cy="70" r="60" fill="none" stroke="url(#scoreGrad)" stroke-width="8"
+                                stroke-dasharray="377" stroke-dashoffset="377" stroke-linecap="round" id="scoreArc"/>
+                            <defs><linearGradient id="scoreGrad"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient></defs>
+                        </svg>
+                        <div style="text-align:center">
+                            <div class="score-text" id="scoreValue">0</div>
+                            <div class="score-label">TAJWEED</div>
+                        </div>
+                    </div>
+                    <div class="error-chips" id="errorChips"></div>
+                    <div class="word-grid" id="wordGrid"></div>
+                    <button class="btn btn-outline" style="margin-top:0.8rem;font-size:0.8rem" onclick="togglePhonetics()">Show Phonetics</button>
+                    <div class="phonetic-compare" id="phoneticCompare"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Teacher -->
+        <div class="card" id="aiCard">
+            <div class="card-label"><span class="indicator" style="background:var(--success);box-shadow:0 0 8px var(--success)"></span> Maulana's Guidance</div>
+            <button class="btn btn-outline" style="margin-bottom:1rem;font-size:0.85rem" onclick="getExplanation()">Request Explanation</button>
+            <div class="ai-content" id="explanationText">Click to receive guidance...</div>
+            <div class="follow-ups" id="followUps"></div>
+            <div class="ask-area">
+                <input type="text" id="userQuestion" placeholder="Ask about this ayah..." style="background:rgba(15,23,42,0.8);border:1px solid var(--border);color:var(--text);padding:0.6rem 0.9rem;border-radius:var(--radius);font-family:inherit;font-size:0.85rem;outline:none">
+                <button class="btn btn-primary" style="font-size:0.85rem" onclick="askImam()">Ask</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div style="color:var(--text-dim);font-size:0.9rem" id="loadingMsg">Analyzing recitation...</div>
+</div>
+
+<script>
+const API = 'http://localhost:5001/api/quran';
+let mediaRecorder, audioChunks = [], isRecording = false;
+
+// ─── Ayah Loading ──────────────────────────────────────────────
+async function fetchAyah() {
+    const id = document.getElementById('ayahId').value;
+    const lang = document.getElementById('langCode').value;
+    try {
+        const res = await fetch(`${API}/ayah?ayah_id=${id}&language_code=${lang}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+            document.getElementById('arabicText').textContent = data.data.arabic_text;
+            document.getElementById('translationText').textContent = data.data.translation_text;
+            const player = document.getElementById('audioPlayer');
+            if (data.data.audio_url) { player.src = data.data.audio_url; player.style.display = 'block'; }
+            else { player.style.display = 'none'; }
+            document.getElementById('explanationText').textContent = 'Click to receive guidance...';
+            document.getElementById('followUps').innerHTML = '';
+            document.getElementById('scoreSection').style.display = 'none';
+        } else { alert('Error: ' + data.message); }
+    } catch (e) { alert('Cannot reach server. Is it running?'); }
+}
+
+// ─── Recording ─────────────────────────────────────────────────
+async function toggleRecording() {
+    if (isRecording) { stopRecording(); } else { startRecording(); }
+}
+
+async function startRecording() {
+    audioChunks = [];
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.start();
+        isRecording = true;
+        document.getElementById('recBtn').classList.add('recording');
+        document.getElementById('recBtn').textContent = '⏹';
+        document.getElementById('recStatus').textContent = 'Recording... Tap to stop';
+    } catch (e) { alert('Microphone access denied'); }
+}
+
+function stopRecording() {
+    mediaRecorder.stop();
+    isRecording = false;
+    document.getElementById('recBtn').classList.remove('recording');
+    document.getElementById('recBtn').textContent = '🎤';
+    document.getElementById('recStatus').textContent = 'Analyzing...';
+
+    mediaRecorder.onstop = async () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('audio_file', blob);
+        formData.append('ayah_id', document.getElementById('ayahId').value);
+        formData.append('language_code', document.getElementById('langCode').value);
+
+        showLoading('Analyzing your recitation with AI...');
+        try {
+            const res = await fetch(`${API}/tajweed-check`, { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.status === 'success') { renderTajweedReport(data.data); }
+            else { document.getElementById('recStatus').textContent = 'Error: ' + data.message; }
+        } catch (e) { document.getElementById('recStatus').textContent = 'AI Bridge not available'; }
+        hideLoading();
+    };
+}
+
+// ─── Tajweed Report Rendering ──────────────────────────────────
+function renderTajweedReport(data) {
+    document.getElementById('scoreSection').style.display = 'block';
+    document.getElementById('recStatus').textContent = `Score: ${data.tajweed_score}/100 · ${data.correct_words}/${data.total_words} correct`;
+
+    // Animate score gauge
+    const score = data.tajweed_score || 0;
+    const arc = document.getElementById('scoreArc');
+    const circumference = 377;
+    const offset = circumference - (score / 100) * circumference;
+    setTimeout(() => { arc.style.transition = 'stroke-dashoffset 1.2s ease-out'; arc.setAttribute('stroke-dashoffset', offset); }, 100);
+    document.getElementById('scoreValue').textContent = Math.round(score);
+
+    // Error chips
+    const chips = document.getElementById('errorChips');
+    const es = data.error_summary || {};
+    chips.innerHTML = `
+        <div class="err-chip correct">✓ ${es.correct || 0} correct</div>
+        <div class="err-chip minor">⚠ ${es.minor_error || 0} minor</div>
+        <div class="err-chip major">✗ ${es.major_error || 0} major</div>
+    `;
+
+    // Word grid
+    const grid = document.getElementById('wordGrid');
+    grid.innerHTML = '';
+    (data.word_results || []).forEach(w => {
+        const chip = document.createElement('div');
+        chip.className = `word-chip ${w.status || 'pending'}`;
+        chip.innerHTML = `${w.word_ar}<span class="word-score">${Math.round((w.similarity||0)*100)}%</span>`;
+        chip.title = `Expected: ${w.expected_phonetic}\nActual: ${w.actual_phonetic}\nMeaning: ${w.word_en}`;
+        grid.appendChild(chip);
+    });
+
+    // Build phonetic comparison
+    const pc = document.getElementById('phoneticCompare');
+    pc.innerHTML = '<div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:0.5rem;font-weight:600">PHONETIC COMPARISON</div>';
+    (data.word_results || []).forEach(w => {
+        const row = document.createElement('div');
+        row.className = 'phonetic-row';
+        row.innerHTML = `<span class="expected">${w.expected_phonetic||'—'}</span><span class="arrow">→</span><span class="actual">${w.actual_phonetic||'—'}</span>`;
+        pc.appendChild(row);
+    });
+}
+
+function togglePhonetics() {
+    const el = document.getElementById('phoneticCompare');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// ─── AI Teacher ────────────────────────────────────────────────
+async function getExplanation() {
+    const id = document.getElementById('ayahId').value;
+    const lang = document.getElementById('langCode').value;
+    document.getElementById('explanationText').textContent = 'Requesting guidance...';
+    try {
+        const res = await fetch(`${API}/explain`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ayah_id: id, language_code: lang })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            document.getElementById('explanationText').textContent = data.data.explanation;
+            const fu = document.getElementById('followUps');
+            fu.innerHTML = '';
+            (data.data.follow_up_questions || []).forEach(q => {
+                const c = document.createElement('div');
+                c.className = 'q-chip'; c.textContent = q;
+                c.onclick = () => { document.getElementById('userQuestion').value = q; askImam(); };
+                fu.appendChild(c);
+            });
+        } else { document.getElementById('explanationText').textContent = 'Error: ' + data.message; }
+    } catch (e) { document.getElementById('explanationText').textContent = 'AI service unavailable'; }
+}
+
+async function askImam() {
+    const q = document.getElementById('userQuestion').value;
+    if (!q) return;
+    document.getElementById('explanationText').textContent = 'Thinking...';
+    try {
+        const res = await fetch(`${API}/ask`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ayah_id: document.getElementById('ayahId').value, language_code: document.getElementById('langCode').value, user_question: q })
+        });
+        const data = await res.json();
+        if (data.status === 'success') { document.getElementById('explanationText').textContent = data.data.answer; }
+    } catch (e) { document.getElementById('explanationText').textContent = 'Error connecting to AI'; }
+}
+
+// ─── Loading ───────────────────────────────────────────────────
+function showLoading(msg) { document.getElementById('loadingMsg').textContent = msg; document.getElementById('loadingOverlay').classList.add('active'); }
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+</script>
+</body>
+</html>

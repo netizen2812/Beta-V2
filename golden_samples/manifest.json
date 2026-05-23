@@ -1,0 +1,77 @@
+{
+  "generated_at": "2026-05-09T09:07:09.269612",
+  "samples": [
+    {
+      "ayah": "Al-Fatihah 1",
+      "lang": "ar",
+      "voice": "ar-XA-Wavenet-B",
+      "path": "golden_samples\\1-1\\ar.mp3",
+      "success": true,
+      "focus": "Flow & Bismillah opening"
+    },
+    {
+      "ayah": "Al-Fatihah 1",
+      "lang": "ur",
+      "voice": "ur-IN-Wavenet-B",
+      "path": "golden_samples\\1-1\\ur.mp3",
+      "success": true,
+      "focus": "Flow & Bismillah opening"
+    },
+    {
+      "ayah": "Al-Fatihah 1",
+      "lang": "en",
+      "voice": "en-GB-Neural2-B",
+      "path": "golden_samples\\1-1\\en.mp3",
+      "success": true,
+      "focus": "Flow & Bismillah opening"
+    },
+    {
+      "ayah": "Al-Ikhlas 1",
+      "lang": "ar",
+      "voice": "ar-XA-Wavenet-B",
+      "path": "golden_samples\\112-1\\ar.mp3",
+      "success": true,
+      "focus": "Qaf & Ha Makhraj precision"
+    },
+    {
+      "ayah": "Al-Ikhlas 1",
+      "lang": "ur",
+      "voice": "ur-IN-Wavenet-B",
+      "path": "golden_samples\\112-1\\ur.mp3",
+      "success": true,
+      "focus": "Qaf & Ha Makhraj precision"
+    },
+    {
+      "ayah": "Al-Ikhlas 1",
+      "lang": "en",
+      "voice": "en-GB-Neural2-B",
+      "path": "golden_samples\\112-1\\en.mp3",
+      "success": true,
+      "focus": "Qaf & Ha Makhraj precision"
+    },
+    {
+      "ayah": "Al-Kawthar 1",
+      "lang": "ar",
+      "voice": "ar-XA-Wavenet-B",
+      "path": "golden_samples\\108-1\\ar.mp3",
+      "success": true,
+      "focus": "Madd & vowel stretching (2-6 counts)"
+    },
+    {
+      "ayah": "Al-Kawthar 1",
+      "lang": "ur",
+      "voice": "ur-IN-Wavenet-B",
+      "path": "golden_samples\\108-1\\ur.mp3",
+      "success": true,
+      "focus": "Madd & vowel stretching (2-6 counts)"
+    },
+    {
+      "ayah": "Al-Kawthar 1",
+      "lang": "en",
+      "voice": "en-GB-Neural2-B",
+      "path": "golden_samples\\108-1\\en.mp3",
+      "success": true,
+      "focus": "Madd & vowel stretching (2-6 counts)"
+    }
+  ]
+}

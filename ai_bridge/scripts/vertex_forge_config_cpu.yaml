@@ -1,0 +1,8 @@
+workerPoolSpecs:
+  machineSpec:
+    machineType: n1-standard-32
+  replicaCount: 1
+  containerSpec:
+    imageUri: us-docker.pkg.dev/vertex-ai/training/pytorch-cpu.2-3.py310:latest
+    command: ["sh", "-c", "pip install transformers pandas gcsfs torchaudio && gsutil cp gs://maulana-urdu-forge-project-ffb3710a/train_mms_gcp.py . && python train_mms_gcp.py"]
+    args: ["--ur_csv", "gs://maulana-urdu-forge-project-ffb3710a/ur_aligned.csv", "--wav_dir", "gs://maulana-urdu-forge-project-ffb3710a/wavs/"]

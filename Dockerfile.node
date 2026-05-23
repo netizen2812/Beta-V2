@@ -1,0 +1,19 @@
+FROM node:20-slim
+
+# Create app directory
+WORKDIR /usr/src/app
+
+# Install app dependencies
+COPY package*.json ./
+RUN npm install --omit=dev
+
+# Bundle app source
+COPY src/ ./src
+COPY public/ ./public
+
+EXPOSE 5001
+
+ENV PORT=5001
+ENV NODE_ENV=production
+
+CMD [ "npm", "start" ]

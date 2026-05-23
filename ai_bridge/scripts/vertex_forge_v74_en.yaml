@@ -1,0 +1,69 @@
+workerPoolSpecs:
+  machineSpec:
+    machineType: n1-highmem-8
+    acceleratorType: NVIDIA_TESLA_T4
+    acceleratorCount: 1
+  replicaCount: 1
+  containerSpec:
+    imageUri: us-docker.pkg.dev/vertex-ai/training/pytorch-gpu.2-2.py310:latest
+    command:
+    - bash
+    - -c
+    - |
+      set -e
+      unset PJRT_DEVICE
+      export PJRT_DEVICE=cpu
+      export USE_XLA=0
+      export ACCELERATE_USE_XLA=0
+      export XLA_USE_BF16=0
+      export TF_CPP_MIN_LOG_LEVEL=3
+      export PIP_ROOT_USER_ACTION=ignore
+
+      echo "=== PHASE 1: Pin numpy + pandas BEFORE TTS (prevents version conflicts) ==="
+      pip install --no-cache-dir -q "numpy==1.22.0" "pandas>=1.4,<2.0"
+
+      echo "=== PHASE 2: Core ML stack ==="
+      pip install --no-cache-dir -q \
+          "torchaudio==2.2.0" --index-url https://download.pytorch.org/whl/cu121
+      pip install --no-cache-dir -q \
+          "transformers==4.38.0" "accelerate==0.27.2"
+
+      echo "=== PHASE 3: TTS runtime deps (explicit, before TTS itself) ==="
+      pip install --no-cache-dir -q \
+          "librosa>=0.10.0" \
+          "soundfile>=0.12.0" \
+          "pysbd>=0.3.4" \
+          "nltk" \
+          "flask>=2.0.1" \
+          "anyascii" \
+          "einops>=0.6.0" \
+          "encodec>=0.1.1" \
+          "unidecode>=1.3.2" \
+          "num2words" \
+          "coqpit>=0.0.16" \
+          "bangla" "bnnumerizer" "bnunicodenormalizer" \
+          "trainer>=0.0.32" \
+          "python-json-logger" \
+          "pypinyin" \
+          "jieba" \
+          "hangul-romanize" \
+          "jamo" \
+          "g2pkk>=0.1.1" \
+          "umap-learn>=0.5.1" \
+          "spacy>=3"
+
+      echo "=== PHASE 4: Install gruut pinned version (TTS needs ==2.2.3) ==="
+      pip install --no-cache-dir -q "gruut==2.2.3" "gruut[de,es,fr]==2.2.3"
+
+      echo "=== PHASE 5: Install TTS (deps already satisfied, should be fast) ==="
+      pip install --no-cache-dir -q --no-deps "TTS==0.22.0"
+
+      echo "=== PHASE 6: Download and run ==="
+      gcloud storage cp gs://maulana-urdu-forge-project-ffb3710a/train_xtts_gcp.py /tmp/train.py
+      python3 /tmp/train.py \
+          --lang=en \
+          --zip_path=gs://maulana-urdu-forge-project-ffb3710a/en_gcp_forge_v2.zip \
+          --output_dir=gs://maulana-urdu-forge-project-ffb3710a/en_xtts_v74 \
+          --steps=15000 \
+          --batch_size=2 \
+          --lr=5e-7

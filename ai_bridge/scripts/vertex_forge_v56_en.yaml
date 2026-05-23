@@ -1,0 +1,24 @@
+workerPoolSpecs:
+  machineSpec:
+    machineType: n1-standard-8
+    acceleratorType: NVIDIA_TESLA_T4
+    acceleratorCount: 1
+  replicaCount: 1
+  containerSpec:
+    imageUri: us-docker.pkg.dev/vertex-ai/training/pytorch-gpu.2-2.py310:latest
+    command:
+    - bash
+    - -c
+    - |
+      export PYTHONNOUSERSITE=1
+      pip install --no-cache-dir torchaudio==2.2.0 --index-url https://download.pytorch.org/whl/cu121
+      pip install --no-cache-dir transformers==4.38.0 accelerate==0.27.2
+      pip install --no-cache-dir TTS python-json-logger
+      gcloud storage cp gs://maulana-urdu-forge-project-ffb3710a/train_xtts_gcp.py /tmp/train.py
+      python3 /tmp/train.py \
+          --lang=en \
+          --zip_path=gs://maulana-urdu-forge-project-ffb3710a/en_gcp_forge.zip \
+          --output_dir=gs://maulana-urdu-forge-project-ffb3710a/en_xtts_v56 \
+          --steps=5000 \
+          --batch_size=2 \
+          --lr=5e-6

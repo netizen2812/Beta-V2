@@ -1,0 +1,140 @@
+"""
+Faith-Tech AI Bridge — FastAPI Application
+Dual-model Quranic ASR & Tajweed validation server.
+
+Models loaded at startup:
+  - tarteel-ai/whisper-base-ar-quran  (ASR transcription)
+  - TBOGamer22/wav2vec2-quran-phonetics (Phonetic analysis)
+
+Run: uvicorn main:app --reload --port 8000
+"""
+
+import os
+import time
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from models.whisper_engine import WhisperEngine
+from models.phonetic_engine import PhoneticEngine
+from services.phonetic_db import PhoneticDB
+from services.tafsir_rag import TafsirRAG
+from services.smart_rag import smart_rag
+from services.temporal_engine import TemporalEngine
+from services.spectral_analyzer import SpectralAnalyzer
+from routes.inference import router as inference_router
+from routes.mushaf   import router as mushaf_router, inject_engines as mushaf_inject
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
+
+# ─── Global Model Instances ───────────────────────────────────────────────────
+whisper_engine: WhisperEngine | None = None
+phonetic_engine: PhoneticEngine | None = None
+phonetic_db: PhoneticDB | None = None
+tafsir_rag: TafsirRAG | None = None
+temporal_engine: TemporalEngine | None = None
+spectral_analyzer: SpectralAnalyzer | None = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Load all models and data on startup, clean up on shutdown."""
+    global whisper_engine, phonetic_engine, phonetic_db, tafsir_rag, temporal_engine, spectral_analyzer
+
+    logger.info("🚀 Faith-Tech AI Bridge starting up...")
+    start = time.time()
+
+    # 1. Load Whisper ASR
+    logger.info("📥 Loading Whisper ASR model (tarteel-ai/whisper-base-ar-quran)...")
+    whisper_engine = WhisperEngine()
+    whisper_engine.load()
+    logger.info("✅ Whisper loaded.")
+
+    # 2. Load Wav2Vec2 Phonetic
+    logger.info("📥 Loading Wav2Vec2 Phonetic model (TBOGamer22/wav2vec2-quran-phonetics)...")
+    phonetic_engine = PhoneticEngine()
+    phonetic_engine.load()
+    logger.info("✅ Wav2Vec2 Phonetic loaded.")
+
+    # 3. Load Phonetic Reference DB
+    logger.info("📥 Loading Buraaq phonetic reference database...")
+    phonetic_db = PhoneticDB()
+    phonetic_db.load()
+    logger.info(f"✅ Phonetic DB loaded: {phonetic_db.total_words} words across {phonetic_db.total_ayahs} ayahs.")
+
+    # 4. Initialize Tafsir RAG and SmartRAG
+    logger.info("📥 Initializing ChromaDB Tafsir vector store...")
+    tafsir_rag = TafsirRAG()
+    tafsir_rag.load()
+    logger.info(f"✅ Tafsir RAG loaded: {tafsir_rag.collection_size} entries indexed.")
+
+    logger.info("📥 Initializing ChromaDB SmartRAG vector store...")
+    smart_rag.load()
+    logger.info("✅ SmartRAG loaded.")
+
+    # 5. Initialize Tajweed Precision Engines
+    logger.info("📥 Initializing Tajweed Precision Engines...")
+    temporal_engine = TemporalEngine()
+    spectral_analyzer = SpectralAnalyzer()
+    logger.info("✅ Precision Engines ready.")
+
+    elapsed = time.time() - start
+    logger.info(f"🚀 All systems ready in {elapsed:.1f}s")
+
+    # Store in app state for route access
+    app.state.whisper = whisper_engine
+    app.state.phonetic = phonetic_engine
+    app.state.phonetic_db = phonetic_db
+    app.state.tafsir_rag = tafsir_rag
+    app.state.temporal_engine = temporal_engine
+    app.state.spectral_analyzer = spectral_analyzer
+
+    # Inject engines into mushaf WS router
+    mushaf_inject(
+        phonetic  = phonetic_engine,
+        phonetic_db = phonetic_db,
+        spectral  = spectral_analyzer,
+    )
+
+    yield
+
+    # Cleanup
+    logger.info("🛑 Shutting down AI Bridge...")
+    del whisper_engine, phonetic_engine, phonetic_db, tafsir_rag, temporal_engine, spectral_analyzer
+
+
+# ─── App ──────────────────────────────────────────────────────────────────────
+app = FastAPI(
+    title="Faith-Tech AI Bridge",
+    description="Quranic ASR & Tajweed validation using Whisper + Wav2Vec2",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"], # Tightened for credential safety (P2.10)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(inference_router, prefix="/api")
+app.include_router(mushaf_router,   prefix="/api")
+
+
+@app.get("/api/health")
+async def health():
+    return {
+        "status": "ok",
+        "models": {
+            "whisper": app.state.whisper is not None and app.state.whisper.is_loaded,
+            "phonetic": app.state.phonetic is not None and app.state.phonetic.is_loaded,
+        },
+        "phonetic_db": app.state.phonetic_db is not None and app.state.phonetic_db.is_loaded,
+        "tafsir_rag": app.state.tafsir_rag is not None and app.state.tafsir_rag.is_loaded,
+        "device": str(app.state.whisper.device) if app.state.whisper else "unknown",
+    }

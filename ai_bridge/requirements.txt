@@ -1,0 +1,33 @@
+# Faith-Tech AI Bridge — Python Dependencies
+# FastAPI server
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+python-multipart==0.0.20
+
+# ML Inference
+torch==2.7.0
+torchaudio==2.7.0
+transformers==4.51.3
+
+# Audio processing
+librosa==0.10.2.post1
+soundfile==0.13.1
+numpy==2.2.5
+pandas==2.2.3
+
+# HuggingFace Datasets (Buraaq phonetic data)
+datasets==3.6.0
+
+# Phonetic comparison
+python-Levenshtein==0.27.1
+
+# Vector DB for Tafsir RAG
+chromadb==0.6.3
+
+# Coqui TTS
+TTS==0.22.0
+
+# Utilities
+pydantic==2.11.3
+aiofiles==24.1.0
+httpx==0.28.1

@@ -1,0 +1,49 @@
+workerPoolSpecs:
+  machineSpec:
+    machineType: n1-highmem-8       # 52 GB RAM — TTS + gruut + spacy OOM on standard-8
+    acceleratorType: NVIDIA_TESLA_T4
+    acceleratorCount: 1
+  replicaCount: 1
+  containerSpec:
+    imageUri: us-docker.pkg.dev/vertex-ai/training/pytorch-gpu.2-2.py310:latest
+    command:
+    - bash
+    - -c
+    - |
+      set -e
+      unset PJRT_DEVICE
+      export USE_XLA=0
+
+      echo "=== PHASE 1: Core deps (pinned) ==="
+      pip install --no-cache-dir --quiet \
+          torchaudio==2.2.0 --index-url https://download.pytorch.org/whl/cu121
+      pip install --no-cache-dir --quiet \
+          transformers==4.38.0 accelerate==0.27.2
+
+      echo "=== PHASE 2: TTS (no-deps first, then minimal extras) ==="
+      # Install TTS core without pulling the whole gruut/spacy ecosystem
+      pip install --no-cache-dir --quiet --no-deps TTS==0.22.0
+      # Install only what GPTTrainer actually needs at runtime
+      pip install --no-cache-dir --quiet \
+          coqpit>=0.0.16 \
+          einops>=0.6.0 \
+          encodec>=0.1.1 \
+          gruut[en,ar]>=2.2.3 \
+          inflect>=5.6.0 \
+          num2words \
+          unidecode>=1.3.2 \
+          anyascii \
+          python-json-logger
+
+      echo "=== PHASE 3: Download and run training script ==="
+      gcloud storage cp gs://maulana-urdu-forge-project-ffb3710a/train_xtts_gcp.py /tmp/train.py
+      python3 /tmp/train.py \
+          --lang=en \
+          --zip_path=gs://maulana-urdu-forge-project-ffb3710a/en_gcp_forge_v2.zip \
+          --output_dir=gs://maulana-urdu-forge-project-ffb3710a/en_xtts_v66 \
+          --steps=15000 \
+          --batch_size=4 \
+          --lr=5e-7
+      # Fixes vs v64:
+      #   Machine: n1-standard-8 (30GB) -> n1-highmem-8 (52GB)
+      #   TTS install: full -> --no-deps + minimal extras (avoids OOM during gruut/spacy install)

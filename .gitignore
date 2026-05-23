@@ -1,0 +1,62 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.next/
+out/
+build/
+.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+ENV/
+env/
+ai_bridge/venv/
+ai_bridge/.venv/
+ai_bridge/__pycache__/
+ai_bridge/temp_checkpoint_v29/
+ai_bridge/training_output/
+
+# Heavy Data & Cache files
+ai_bridge/data/assets/premade_audios/
+ai_bridge/data/cache_wavs/
+ai_bridge/data/chroma_db/
+ai_bridge/data/temp_parquet/
+ai_bridge/data/test_datasets/
+ai_bridge/data/test_outputs/
+ai_bridge/data/tts_dataset/
+ai_bridge/data/tts_dataset_aligned/
+ai_bridge/data/urdu_forge/
+ai_bridge/data/verification_*/
+ai_bridge/data/phonetic_cache.json
+ai_bridge/data/tafsir_cache.json
+ai_bridge/data/wisdom_templates_localized.json.bak*
+ai_bridge/data/audio_cache.db
+
+# Heavy Models weights
+ai_bridge/models/*/
+
+# Heavy Files
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+quran_dataset.json
+*.wav
+*.mp3
+*.log
+
+# Environment and IDEs
+.env
+.env.*
+.vscode/
+.idea/
+.DS_Store
+.gemini/
+scratch/

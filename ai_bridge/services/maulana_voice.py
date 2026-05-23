@@ -1,0 +1,454 @@
+"""
+maulana_voice.py — Multilingual RAG-Grounded & Madhab-Aware Maulana Voice Advisor
+
+Pipeline:
+    1. Retrieve scholarly Fiqh contexts from ChromaDB collection 'madhab_rules' based on selected Madhab.
+    2. Retrieve Quranic context (translation/tafsir) from collection 'quran_tafsir' based on Ayah ID.
+    3. Select deterministic pre-made greeting, pedagogical correction, and closure assets from 'wisdom_templates.json'.
+    4. Estimate pre-made word counts and calculate maximum allowed words for dynamic LLM advice (at most 20% of total).
+    5. Call Gemini 2.0 Flash to translate templates and compose highly customized, concise Fiqh warnings in the target language.
+    6. Mathematically truncate the dynamic segment if it violates the 20% limit.
+    7. Synthesize using zero-OPEX local TTS engines (XTTSv2/MMS-VITS) with madhab-aware caching.
+"""
+
+import os
+import json
+import logging
+import datetime
+import hashlib
+from pathlib import Path
+from typing import AsyncGenerator, Optional
+from dotenv import load_dotenv
+
+from google import genai
+from google.genai import types as genai_types
+
+load_dotenv()
+
+logger = logging.getLogger("MaulanaVoice")
+
+# ─── Configuration ────────────────────────────────────────────────────────────
+
+GEMINI_API_KEY      = os.getenv("GEMINI_API_KEY")
+ELEVENLABS_API_KEY  = os.getenv("ELEVENLABS_API_KEY")
+ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "pNInz6obpgDQGcFmaJgB")
+
+# Gemini Client Singleton (P3.15)
+gemini_client = None
+if GEMINI_API_KEY:
+    gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+
+LANGUAGE_DIRECTIVES = {
+    "urdu":    "Urdu (Urdu script). Keep it warm, Islamic, gentle, and brief.",
+    "english": "English. Keep it warm, Islamic, gentle, and brief.",
+    "arabic":  "Arabic (Arabic script with proper harakaat). Keep it warm, Islamic, gentle, and brief.",
+}
+
+# ─── Step 1: Deterministic Template Selection ───────────────────────────────
+
+def _get_stable_template_idx(category_key: str, seed: str, max_variations: int = 3) -> tuple[str, int]:
+    """Retrieves the template text and its index deterministically using a seed, limited to max_variations."""
+    from services.smart_rag import smart_rag
+    
+    full_key = f"en.{category_key}"
+    templates = smart_rag.wisdom_templates.get(full_key, [])
+    if not templates:
+        templates = smart_rag.wisdom_templates.get(category_key, [])
+        
+    if not templates:
+        logger.warning(f"⚠️ Wisdom template key '{category_key}' not found.")
+        return "", 0
+        
+    h = int(hashlib.md5(seed.encode('utf-8')).hexdigest(), 16)
+    limit = min(len(templates), max_variations)
+    idx = h % limit if limit > 0 else 0
+    return templates[idx], idx
+
+def _get_premade_audio_path(lang: str, category_key: str, idx: int, text: str) -> Path:
+    from services.smart_rag import DATA_DIR
+    manifest_key = f"{lang}.{category_key}"
+    hash_key = hashlib.md5(f"{manifest_key}_{idx}_{text}".encode("utf-8")).hexdigest()
+    file_name = f"{category_key.replace('.', '_')}_{idx}_{hash_key}.wav"
+    return DATA_DIR / "assets" / "premade_audios" / lang / file_name
+
+def stitch_audio_files(input_paths: list[Path], output_path: Path, target_sr: int = 24000, silence_duration: float = 0.12) -> bool:
+    import soundfile as sf
+    import numpy as np
+    import librosa
+    
+    try:
+        combined_arrays = []
+        silence_samples = int(silence_duration * target_sr)
+        silence = np.zeros(silence_samples, dtype=np.float32)
+        
+        for i, path in enumerate(input_paths):
+            if not path or not path.exists():
+                logger.warning(f"Stitching: Audio file not found/empty: {path}")
+                continue
+            
+            # Load and resample
+            data, sr = sf.read(str(path))
+            if len(data.shape) > 1:
+                data = np.mean(data, axis=1) # Convert to mono
+            
+            if sr != target_sr:
+                data = librosa.resample(data, orig_sr=sr, target_sr=target_sr)
+            
+            # 1. Programmatic active-speech trimming to strip pre-padded silence down to core speech
+            abs_data = np.abs(data)
+            # Highly sensitive threshold (-50dB) to avoid cutting soft consonants
+            threshold = 0.003
+            indices = np.where(abs_data > threshold)[0]
+            if len(indices) > 0:
+                start_idx = indices[0]
+                end_idx = indices[-1]
+                # Keep a 50ms start margin and 200ms end margin for breathing room and natural soft transitions
+                margin_start = int(target_sr * 0.050)
+                margin_end = int(target_sr * 0.200)
+                start_idx = max(0, start_idx - margin_start)
+                end_idx = min(len(data), end_idx + margin_end)
+                data = data[start_idx:end_idx]
+                
+            # 2. Apply a smooth 20ms fade-in and 50ms fade-out to prevent clicks/pops and ensure natural continuation
+            fade_in_samples = int(target_sr * 0.020)
+            fade_out_samples = int(target_sr * 0.050)
+            if len(data) > (fade_in_samples + fade_out_samples):
+                # Fade in
+                fade_in = np.linspace(0.0, 1.0, fade_in_samples, dtype=np.float32)
+                data[:fade_in_samples] *= fade_in
+                # Fade out
+                fade_out = np.linspace(1.0, 0.0, fade_out_samples, dtype=np.float32)
+                data[-fade_out_samples:] *= fade_out
+                
+            combined_arrays.append(data)
+            
+            # Add silence between segments (but not after the last segment)
+            if i < len(input_paths) - 1:
+                combined_arrays.append(silence)
+                
+        if not combined_arrays:
+            return False
+            
+        combined_data = np.concatenate(combined_arrays)
+        
+        # Peak normalize to -1dBFS
+        peak = np.abs(combined_data).max()
+        if peak > 0:
+            combined_data = combined_data / peak * 0.9
+            
+        sf.write(str(output_path), combined_data, target_sr)
+        return True
+    except Exception as e:
+        logger.error(f"Error stitching audio files: {e}")
+        return False
+
+async def _stream_audio_file(file_path: Path) -> AsyncGenerator[bytes, None]:
+    import aiofiles
+    async with aiofiles.open(file_path, "rb") as f:
+        chunk = await f.read(4096)
+        while chunk:
+            yield chunk
+            chunk = await f.read(4096)
+
+# ─── Step 3: Orchestrator — Public API ────────────────────────────────────────
+
+async def get_maulana_advice(
+    error_details: dict,
+    language: str = "english",
+    madhab: str = "shafi",
+    ayah_id: Optional[str] = None
+) -> dict:
+    """
+    Unified RAG-grounded, Madhab-aware advice generator.
+    Enforces at most 20% dynamic live TTS ratio constraint.
+    """
+    import tempfile
+    import asyncio
+    from services.smart_rag import smart_rag
+    from services.audio_cache import audio_cache_manager
+    from services.local_tts import tts_engine
+    
+    rule = error_details.get("rule", "")
+    word = error_details.get("word", "")
+    lang_code = (
+        "ur" if "urdu"    in language.lower() else
+        "ar" if "arabic"  in language.lower() else
+        "en"
+    )
+
+    # 1. Fast Path: Check Cache first to prevent redundant LLM/TTS calls
+    cached_data = audio_cache_manager.get_cached_insight(rule, word, lang_code, madhab)
+    if cached_data:
+        logger.info(f"[MaulanaVoice] Returning cached advice for {rule} on {word} ({madhab})")
+        audio_stream = _stream_audio_file(Path(cached_data["audio_path"]))
+        return {
+            "text": cached_data["text"],
+            "audio_stream": audio_stream,
+            "fallback": False,
+            "fallback_reason": None,
+        }
+
+    # 2. Select templates deterministically using the word + rule as a seed
+    seed = f"{rule}_{word}"
+    
+    # 2a. Greeting (Time-based but deterministic)
+    current_hour = datetime.datetime.now().hour
+    if current_hour < 12:
+        greeting_key = "reception.greetings.time_based.morning"
+    elif current_hour < 17:
+        greeting_key = "reception.greetings.time_based.afternoon"
+    elif current_hour < 21:
+        greeting_key = "reception.greetings.time_based.evening"
+    else:
+        greeting_key = "reception.greetings.time_based.night"
+        
+    greeting_en, greeting_idx = _get_stable_template_idx(greeting_key, seed)
+    if not greeting_en:
+        greeting_key = "reception.greetings.context_based.welcome_back_short"
+        greeting_en, greeting_idx = _get_stable_template_idx(greeting_key, seed)
+
+    # 2b. Pedagogical Correction
+    pedagogical_key = error_details.get("error_details", {}).get("pedagogical_key") if isinstance(error_details.get("error_details"), dict) else error_details.get("pedagogical_key")
+    if not pedagogical_key:
+        # Fallback mapping
+        rule_lower = rule.lower()
+        if "throat" in rule_lower or "halqi" in rule_lower:
+            pedagogical_key = "pedagogy.correction.makharij.throat_halqi"
+        elif "madd" in rule_lower:
+            pedagogical_key = "pedagogy.correction.sifaat.madd_length"
+        elif "ghunnah" in rule_lower:
+            pedagogical_key = "pedagogy.correction.sifaat.ghunnah_nasality"
+        elif "qalqalah" in rule_lower:
+            pedagogical_key = "pedagogy.correction.sifaat.qalqalah_echo"
+        elif "lip" in rule_lower or "shafawi" in rule_lower:
+            pedagogical_key = "pedagogy.correction.makharij.lip_shafawi"
+        elif "teeth" in rule_lower or "dars" in rule_lower:
+            pedagogical_key = "pedagogy.correction.makharij.teeth_dars"
+        elif "vowel" in rule_lower or "harakah" in rule_lower or "swap" in rule_lower:
+            pedagogical_key = "pedagogy.correction.vowel.vowel_change"
+        elif any(kw in rule_lower for kw in ["heavy", "light", "tafkheem", "tarqeeq"]):
+            pedagogical_key = "pedagogy.correction.sifaat.heavy_light"
+        elif any(kw in rule_lower for kw in ["noon", "tanween", "ikhfa", "idgham", "izhar", "iqlab"]):
+            pedagogical_key = "pedagogy.correction.sifaat.noon_sakinah"
+        elif any(kw in rule_lower for kw in ["waqf", "stop", "ibtida"]):
+            pedagogical_key = "pedagogy.correction.sifaat.waqf_stopping"
+        else:
+            pedagogical_key = "pedagogy.correction.makharij.tongue_lisani"
+            
+    correction_en, correction_idx = _get_stable_template_idx(pedagogical_key, seed)
+    if not correction_en:
+        correction_en = "Please focus on the pronunciation and the rules of Tajweed for this word."
+        correction_idx = 0
+
+    # 2c. Closure
+    closure_key = "reception.closures.standard.until_next_time"
+    closure_en, closure_idx = _get_stable_template_idx(closure_key, seed)
+    if not closure_en:
+        closure_en = "May Allah keep you safe. Assalamu alaikum."
+        closure_idx = 0
+
+    # 3. Retrieve Context from RAG vector database
+    # 3a. Tafsir / Quranic Context
+    quran_context = "No specific ayah context."
+    if ayah_id:
+        tafsir_results = smart_rag.query_tafsir("", ayah_id=ayah_id, n_results=1)
+        if tafsir_results:
+            quran_context = tafsir_results[0]["text"]
+    elif word:
+        tafsir_results = smart_rag.query_tafsir(f"meaning of {word}", n_results=1)
+        if tafsir_results:
+            quran_context = tafsir_results[0]["text"]
+
+    # 3b. Madhab-Aware Theological Context
+    madhab_results = smart_rag.query_madhab(madhab, f"recitation error {rule} {word}", n_results=1)
+    madhab_context = "No specific madhab ruling found."
+    if madhab_results:
+        madhab_context = madhab_results[0]["text"]
+
+    # 4. Resolve translated texts from cache
+    tg = smart_rag.get_localized_template(lang_code, greeting_key, greeting_idx)
+    tc = smart_rag.get_localized_template(lang_code, pedagogical_key, correction_idx)
+    tcl = smart_rag.get_localized_template(lang_code, closure_key, closure_idx)
+
+    # Fallbacks if translation missing
+    if not tg: tg = greeting_en
+    if not tc: tc = correction_en
+    if not tcl: tcl = closure_en
+
+    # Enforce at most 20% dynamic ratio constraint mathematically
+    total_premade_words = len(tg.split()) + len(tc.split()) + len(tcl.split())
+    # Dynamic <= 0.25 * Premade guarantees Dynamic / (Premade + Dynamic) <= 20%
+    max_dynamic_words = int(total_premade_words * 0.25)
+    if max_dynamic_words < 3:
+        max_dynamic_words = 3 # Ensure a basic sentence is allowed
+
+    # 5. Invoke Gemini 2.0 Flash for structured localized dynamic advice segment
+    da = ""
+    if not gemini_client:
+        # Fallback without LLM
+        logger.warning("[MaulanaVoice] Gemini Client not initialized. Returning un-translated English fallback.")
+        if language.lower() == "english":
+            da = f"In the {madhab} school, this error requires correction."
+        elif "urdu" in language.lower():
+            da = f"{madhab.upper()} مذہب کے مطابق، اس غلطی کی اصلاح ضروری ہے۔"
+        elif "arabic" in language.lower():
+            da = f"وفقًا لمذهب {madhab.upper()}، يجب تصحيح هذا الخطأ."
+        else:
+            da = f"According to the {madhab.upper()} school, this error must be corrected."
+    else:
+        lang_directive = LANGUAGE_DIRECTIVES.get(language.lower(), LANGUAGE_DIRECTIVES["english"])
+        prompt = (
+            f"You are a warm, gentle, and highly scholarly Quran teacher (Maulana) providing custom correction advice to a student.\n\n"
+            f"Retrieved Fiqh & Quranic RAG Context for this attempt:\n"
+            f"  - Student's Selected School (Madhab): {madhab.upper()}\n"
+            f"  - Madhab Fiqh Rulings: {madhab_context}\n"
+            f"  - Quranic Meaning / Tafsir of this Ayah: {quran_context}\n\n"
+            f"Your task is to generate a custom, warm scholarly advisory sentence in {language.upper()} (using its native script: Urdu script for Urdu, Arabic script for Arabic) that briefly warns the student about the theological/Fiqh implications of their specific Tajweed mistake '{rule}' on the word '{word}' according to the {madhab.upper()} school, and/or references the Quranic meaning.\n\n"
+            f"It MUST be extremely concise, and MUST NOT exceed {max_dynamic_words} words under any circumstances.\n"
+            f"Return ONLY a JSON object with a single field 'dynamic_advice'."
+        )
+
+        try:
+            logger.info(f"[MaulanaVoice] Querying Gemini for madhab-aware ({madhab}) dynamic advice...")
+            response = gemini_client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config=genai_types.GenerateContentConfig(
+                    temperature=0.7,
+                    max_output_tokens=200,
+                    response_mime_type="application/json",
+                )
+            )
+            
+            data = json.loads(response.text)
+            da = data.get("dynamic_advice", "").strip()
+
+            # Enforce mathematical 20% limit on dynamic word count
+            dynamic_words = da.split()
+            dynamic_count = len(dynamic_words)
+            
+            if dynamic_count > max_dynamic_words:
+                logger.info(f"[MaulanaVoice] Dynamic advice word count ({dynamic_count}) exceeds allowed ({max_dynamic_words}). Truncating.")
+                da = " ".join(dynamic_words[:max_dynamic_words])
+                if not da.endswith((".", "!", "?")):
+                    da += "."
+
+        except Exception as e:
+            logger.error(f"[MaulanaVoice] Gemini generation/parsing failed: {e}")
+            if language.lower() == "english":
+                da = f"In the {madhab} school, this error requires correction."
+            elif "urdu" in language.lower():
+                da = f"{madhab.upper()} مذہب کے مطابق، اس غلطی کی اصلاح ضروری ہے۔"
+            elif "arabic" in language.lower():
+                da = f"وفقًا لمذهب {madhab.upper()}، يجب تصحيح هذا الخطأ."
+            else:
+                da = f"According to the {madhab.upper()} school, this error must be corrected."
+
+    advice_text = f"{tg} {tc} {da} {tcl}".strip()
+    logger.info(f"[MaulanaVoice] Blended text: {advice_text}")
+    logger.info(f"[MaulanaVoice] Word count metrics -> Premade: {total_premade_words}, Dynamic: {len(da.split())}, Ratio: {len(da.split()) / (total_premade_words + len(da.split())):.2%}")
+
+    # 6. Audio Generation Pipeline (Pre-synthesized templates + live dynamic segment stitching)
+    temp_files_to_clean = []
+    try:
+        # Pre-load engine models
+        if not tts_engine.is_loaded:
+            tts_engine.load_models(lang_code)
+
+        # Get/Synthesize Greeting
+        greeting_wav = _get_premade_audio_path(lang_code, greeting_key, greeting_idx, tg)
+        if not greeting_wav.exists():
+            logger.info(f"Premade greeting audio not found at {greeting_wav}. Synthesizing live...")
+            greeting_wav.parent.mkdir(parents=True, exist_ok=True)
+            tts_engine.synthesize(tg, lang_code, greeting_wav)
+
+        # Get/Synthesize Correction
+        correction_wav = _get_premade_audio_path(lang_code, pedagogical_key, correction_idx, tc)
+        if not correction_wav.exists():
+            logger.info(f"Premade correction audio not found at {correction_wav}. Synthesizing live...")
+            correction_wav.parent.mkdir(parents=True, exist_ok=True)
+            tts_engine.synthesize(tc, lang_code, correction_wav)
+
+        # Get/Synthesize Closure
+        closure_wav = _get_premade_audio_path(lang_code, closure_key, closure_idx, tcl)
+        if not closure_wav.exists():
+            logger.info(f"Premade closure audio not found at {closure_wav}. Synthesizing live...")
+            closure_wav.parent.mkdir(parents=True, exist_ok=True)
+            tts_engine.synthesize(tcl, lang_code, closure_wav)
+
+        # Synthesize Dynamic advice live to a temp file
+        dynamic_wav = None
+        if da:
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                dynamic_wav = Path(tmp.name)
+            temp_files_to_clean.append(dynamic_wav)
+            
+            logger.info(f"[MaulanaVoice] Synthesizing live dynamic advice ({lang_code}): '{da}'")
+            success = tts_engine.synthesize(da, lang_code, dynamic_wav)
+            if not success or not dynamic_wav.exists():
+                logger.error("Live dynamic audio synthesis failed.")
+                dynamic_wav = None
+
+        # Stitch all segments
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            stitched_temp = Path(tmp.name)
+        temp_files_to_clean.append(stitched_temp)
+
+        audio_parts = [greeting_wav, correction_wav]
+        if dynamic_wav:
+            audio_parts.append(dynamic_wav)
+        audio_parts.append(closure_wav)
+
+        logger.info(f"[MaulanaVoice] Stitching {len(audio_parts)} audio files...")
+        stitch_success = stitch_audio_files(audio_parts, stitched_temp, silence_duration=0.12)
+
+        if stitch_success and stitched_temp.exists() and stitched_temp.stat().st_size > 1024:
+            # Cache the stitched WAV
+            final_path = audio_cache_manager.save_to_cache(rule, word, lang_code, advice_text, stitched_temp, madhab)
+            audio_stream = _stream_audio_file(final_path)
+            return {
+                "text": advice_text,
+                "audio_stream": audio_stream,
+                "fallback": False,
+                "fallback_reason": None,
+            }
+        else:
+            raise RuntimeError("Stitching failed or produced empty audio.")
+
+    except Exception as e:
+        logger.error(f"[MaulanaVoice] Optimized pipeline failed: {e}. Falling back to full live synthesis...")
+        # Emergency fallback: synthesize the entire combined text live as one piece
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            fallback_temp = Path(tmp.name)
+        temp_files_to_clean.append(fallback_temp)
+
+        try:
+            success = tts_engine.synthesize(advice_text, lang_code, fallback_temp)
+            if success and fallback_temp.exists():
+                final_path = audio_cache_manager.save_to_cache(rule, word, lang_code, advice_text, fallback_temp, madhab)
+                audio_stream = _stream_audio_file(final_path)
+                return {
+                    "text": advice_text,
+                    "audio_stream": audio_stream,
+                    "fallback": False,
+                    "fallback_reason": None,
+                }
+            else:
+                raise RuntimeError("Fallback synthesis failed.")
+        except Exception as err:
+            logger.error(f"[MaulanaVoice] Emergency fallback failed: {err}")
+            return {
+                "text": advice_text,
+                "audio_stream": None,
+                "fallback": True,
+                "fallback_reason": f"Audio synthesis pipeline failed: {str(err)}",
+            }
+    finally:
+        # Clean up temporary files
+        for tmp_file in temp_files_to_clean:
+            if tmp_file and tmp_file.exists():
+                try:
+                    os.remove(tmp_file)
+                except Exception:
+                    pass
+

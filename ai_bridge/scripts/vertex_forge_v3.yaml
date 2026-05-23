@@ -1,0 +1,21 @@
+workerPoolSpecs:
+  - machineSpec:
+      machineType: n1-standard-8
+      acceleratorType: NVIDIA_TESLA_T4
+      acceleratorCount: 1
+    replicaCount: 1
+    containerSpec:
+      imageUri: us-docker.pkg.dev/vertex-ai/training/pytorch-gpu.2-2.py310:latest
+      command:
+        - bash
+        - -c
+      args:
+        - >-
+          gcloud storage cp gs://maulana-urdu-forge-project-ffb3710a/train_mms_gcp_v3.py /tmp/train_mms_gcp.py &&
+          python3 /tmp/train_mms_gcp.py
+          --ur_csv=gs://maulana-urdu-forge-project-ffb3710a/ur_aligned.csv
+          --wav_dir=gs://maulana-urdu-forge-project-ffb3710a/wavs
+          --output_dir=gs://maulana-urdu-forge-project-ffb3710a/ur_mms_v3
+          --epochs=200
+          --batch_size=4
+          --lr=2e-5

@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  ai-bridge:
+    build:
+      context: ./ai_bridge
+      dockerfile: Dockerfile.python
+    container_name: quran-ai-bridge
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    volumes:
+      # Optional: mount cache dir to persist cached audios across service restarts
+      - ai-bridge-data:/usr/src/app/data
+    networks:
+      - quran-net
+    restart: always
+
+  node-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: quran-node-backend
+    ports:
+      - "5001:5001"
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - AI_BRIDGE_URL=http://ai-bridge:8000
+      - PORT=5001
+    depends_on:
+      - ai-bridge
+    networks:
+      - quran-net
+    restart: always
+
+volumes:
+  ai-bridge-data:
+
+networks:
+  quran-net:
+    driver: bridge

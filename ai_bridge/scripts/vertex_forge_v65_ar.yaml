@@ -1,0 +1,35 @@
+workerPoolSpecs:
+  machineSpec:
+    machineType: n1-standard-8
+    acceleratorType: NVIDIA_TESLA_T4
+    acceleratorCount: 1
+  replicaCount: 1
+  containerSpec:
+    imageUri: us-docker.pkg.dev/vertex-ai/training/pytorch-gpu.2-2.py310:latest
+    command:
+    - bash
+    - -c
+    - |
+      # Explicitly disable XLA/TPU modules to avoid std::runtime_error
+      unset PJRT_DEVICE
+      export USE_XLA=0
+
+      # Hardened installation sequence
+      pip install --no-cache-dir torchaudio==2.2.0 --index-url https://download.pytorch.org/whl/cu121
+      pip install --no-cache-dir transformers==4.38.0 accelerate==0.27.2
+      pip install --no-cache-dir TTS python-json-logger
+
+      gcloud storage cp gs://maulana-urdu-forge-project-ffb3710a/train_xtts_gcp.py /tmp/train.py
+      python3 /tmp/train.py \
+          --lang=ar \
+          --zip_path=gs://maulana-urdu-forge-project-ffb3710a/ar_gcp_forge_v2.zip \
+          --output_dir=gs://maulana-urdu-forge-project-ffb3710a/ar_xtts_v65 \
+          --steps=15000 \
+          --batch_size=4 \
+          --lr=5e-7
+      # Key changes vs v63:
+      #   steps:      5000  → 15000  (3x more training)
+      #   batch_size: 2     → 4      (more stable gradient estimates)
+      #   lr:         5e-6  → 5e-7   (10x lower — prevents GPT decoder divergence)
+      # NOTE: Arabic harakaat normalization must be applied BEFORE this run.
+      #       Verify your ar_gcp_forge.zip with validate_gcp_dataset.py first.
