@@ -390,6 +390,34 @@ class LocalTTSEngine:
             log.warning(f"Failed to apply audio cushion to {file_path.name}: {e}")
             return False
 
+    def _apply_openvoice_ar(self, wav_path: Path) -> bool:
+        """
+        Apply OpenVoice v2 ToneColorConverter to an Arabic WAV file in-place.
+        Uses tau=0.07 for subtle register timbre shifting — same as test_ar_soothing.wav.
+        Returns True on success, False if OpenVoice is unavailable (soft fallback).
+        """
+        try:
+            self._load_openvoice()
+            import tempfile, soundfile as sf
+            src_se, _ = self._tone_color_converter.get_se(str(wav_path), self._ar_target_se, vad=False)
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+                tmp_out = Path(tmp.name)
+            self._tone_color_converter.convert(
+                audio_src_path=str(wav_path),
+                src_se=src_se,
+                tgt_se=self._ar_target_se,
+                output_path=str(tmp_out),
+                tau=0.07,
+            )
+            # Overwrite original with tone-converted audio
+            import shutil
+            shutil.move(str(tmp_out), str(wav_path))
+            log.info("✅ OpenVoice ToneColorConverter applied (tau=0.07) to Arabic audio.")
+            return True
+        except Exception as e:
+            log.warning(f"OpenVoice conversion failed (non-fatal): {e}. Using raw XTTS output.")
+            return False
+
     def synthesize(self, text: str, language: str, output_path: Path) -> bool:
         """
         Generate audio using the local engine.
@@ -554,6 +582,12 @@ class LocalTTSEngine:
 
             # Crop, fade, and pad for smooth start/end
             self.apply_audio_cushion(output_path)
+
+            # ── ARABIC: Apply OpenVoice v2 ToneColorConverter (tau=0.07) ─────
+            # Matches how test_ar_soothing.wav pre-made assets were generated.
+            # Soft fallback — raw XTTS output used if OpenVoice is unavailable.
+            if language == "ar":
+                self._apply_openvoice_ar(output_path)
 
             log.info(f"Synthesis complete: {output_path.name}")
             return True
