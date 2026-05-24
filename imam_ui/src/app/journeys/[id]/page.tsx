@@ -276,7 +276,7 @@ function JourneyComplete({ journey }: { journey: Journey }) {
           <path d="M5 12h14M12 5l7 7-7 7"/>
         </svg>
       </button>
-      <button onClick={() => router.push("/journeys")}
+      <button onClick={() => router.push("/?tab=journeys")}
         className="text-sm opacity-50 hover:opacity-100 transition-opacity" style={{ color: "#94a3b8" }}>
         ← Back to all journeys
       </button>
@@ -302,7 +302,7 @@ export default function JourneyPlayerPage() {
   if (!journey) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ color: "#94a3b8" }}>
-        Journey not found. <Link href="/journeys" style={{ color: "#D4AF37" }} className="ml-2">← Back</Link>
+        Journey not found. <Link href="/?tab=journeys" style={{ color: "#D4AF37" }} className="ml-2">← Back</Link>
       </div>
     );
   }
@@ -318,6 +318,18 @@ export default function JourneyPlayerPage() {
       setCompletedIds(newCompleted);
       if (currentIndex + 1 >= journey.stages.length) {
         setIsComplete(true);
+        if (typeof window !== 'undefined') {
+          try {
+            const stored = localStorage.getItem('completed_journeys');
+            const currentList = stored ? JSON.parse(stored) : [];
+            if (!currentList.includes(journey.id)) {
+              currentList.push(journey.id);
+              localStorage.setItem('completed_journeys', JSON.stringify(currentList));
+            }
+          } catch (e) {
+            console.error("Failed to save progress:", e);
+          }
+        }
       } else {
         setCurrentIndex(currentIndex + 1);
       }
@@ -351,7 +363,7 @@ export default function JourneyPlayerPage() {
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-8 min-h-screen flex flex-col">
         {/* ── Top Bar ── */}
         <div className="flex items-center justify-between mb-8">
-          <Link href="/journeys"
+          <Link href="/?tab=journeys"
             className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl transition-all duration-200 hover:scale-105"
             style={{ background: "rgba(255,255,255,0.08)", color: "#94a3b8" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
