@@ -161,7 +161,7 @@ function JourneyScrollSection() {
   };
 
   return (
-    <section className="w-full pb-3 overflow-hidden bg-white/70 border border-emerald-50/50 rounded-[2.5rem] p-5 shadow-sm">
+    <section className="w-full pb-3 overflow-hidden bg-white/70 border border-emerald-50/50 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-5 shadow-sm">
       {/* Section Header */}
       <div className="flex items-end justify-between px-2 mb-4">
         <div>
@@ -478,6 +478,17 @@ export default function FullscreenAiPage() {
   const [activeMode, setActiveMode] = useState<Mode>('recitation');
   const [globalLanguage, setGlobalLanguage] = useState<Language>('en');
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   // Voice Option Checkboxes
   const [playVoiceFeedback, setPlayVoiceFeedback] = useState(true);
@@ -1088,7 +1099,15 @@ export default function FullscreenAiPage() {
   return (
     <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] pb-32 overflow-x-hidden flex flex-col relative">
       {/* Dynamic CSS Pattern Background (FaithTech moving background) */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.025] moving-pattern z-0" />
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] moving-pattern z-0" />
+
+      {/* Background ambient lighting from FaithTech */}
+      <div
+        className="fixed inset-0 pointer-events-none transition-opacity duration-1000 z-0"
+        style={{
+          background: `radial-gradient(circle at 50% ${Math.max(0, 50 - scrolled * 0.05)}%, rgba(16, 185, 129, 0.08) 0%, transparent 70%)`
+        }}
+      />
 
       {/* ── ATMOSPHERIC BACKGROUND BLOB GLOWS ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden h-full w-full z-0" aria-hidden="true">
@@ -1155,7 +1174,7 @@ export default function FullscreenAiPage() {
               {activeMode === 'recitation' && (
                 <div className="flex-1 flex flex-col w-full space-y-6">
                   {/* Surah/Ayah Selector Header Row */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border border-emerald-50 rounded-[2rem] shadow-sm relative z-40">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:p-5 bg-white border border-emerald-50 rounded-2xl sm:rounded-[2rem] shadow-sm relative z-40">
                     <div className="flex items-center gap-4">
                       <AyahSelector selectedAyah={selectedAyah} onSelect={setSelectedAyah} />
                       <div className="hidden sm:block text-left">
