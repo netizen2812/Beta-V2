@@ -1,0 +1,21 @@
+# Root Dockerignore for Node backend
+.git/
+.gemini/
+node_modules/
+ai_bridge/
+*.zip
+quran_dataset.json
+*.wav
+*.mp3
+*.log
+venv/
+.venv/
+scratch/
+golden_samples/
+modular_samples/
+qul_repo/
+temp_dataset/
+testing dataset/
+full_validation_report.json
+repackage_log.txt
+pre_gen.log
