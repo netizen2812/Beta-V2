@@ -1,0 +1,44 @@
+# Ignore heavy model weights from docker build context
+models/base_xtts/
+models/en_xtts_v74/
+models/ur_mms_v32_final/
+models/en_xtts_v70/
+models/ur_mms_local/
+models/ar_xtts_v75/
+models/ar_xtts_v76/
+
+# Ignore local virtual environment and data caches
+venv/
+.venv/
+data/assets/premade_audios/
+data/cache_wavs/
+data/chroma_db/
+data/temp_parquet/
+data/test_datasets/
+data/test_outputs/
+data/tts_dataset/
+data/tts_dataset_aligned/
+data/urdu_forge/
+data/phonetic_cache.json
+data/tafsir_cache.json
+data/audio_cache.db
+
+# Ignore logs
+*.log
+logs.txt
+gcp_logs.txt
+full_gcp_logs.txt
+bridge.log
+logs_v3.txt
+logs_v76.txt
+v19_logs.txt
+v19_full_logs.json
+training_full_error.log
+training_full_error_utf8.log
+
+# Ignore temp files
+temp_ar.mp3
+temp_en.mp3
+test_epoch_1.wav
+test_epoch_19.wav
+temp_checkpoint_v29/

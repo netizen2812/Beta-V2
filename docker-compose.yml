@@ -16,6 +16,7 @@ services:
     volumes:
       # Optional: mount cache dir to persist cached audios across service restarts
       - ai-bridge-data:/usr/src/app/data
+      - ./ai_bridge/models:/usr/src/app/models
     networks:
       - quran-net
     restart: always
