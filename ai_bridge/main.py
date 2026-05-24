@@ -26,6 +26,7 @@ from services.temporal_engine import TemporalEngine
 from services.spectral_analyzer import SpectralAnalyzer
 from routes.inference import router as inference_router
 from routes.mushaf   import router as mushaf_router, inject_engines as mushaf_inject
+from routes.journeys import router as journeys_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -124,6 +125,7 @@ app.add_middleware(
 
 app.include_router(inference_router, prefix="/api")
 app.include_router(mushaf_router,   prefix="/api")
+app.include_router(journeys_router)
 
 
 @app.get("/api/health")

@@ -1,0 +1,531 @@
+[
+  {
+    "id": "sanctuary-of-calm",
+    "title": "The Sanctuary of Calm",
+    "title_arabic": "ملاذ السكينة",
+    "tagline": "Find peace within the storms of life through Sabr and Quranic healing.",
+    "theme": "anxiety_peace",
+    "category": "Peace",
+    "icon": "🌅",
+    "difficulty": "Beginner",
+    "duration_min": 12,
+    "palette": {
+      "from": "#2D1B5E",
+      "via": "#1a2a4a",
+      "to": "#06111F",
+      "accent": "#a78bfa",
+      "glow": "rgba(167,139,250,0.3)"
+    },
+    "stages": [
+      {
+        "id": "calm-s1",
+        "index": 0,
+        "type": "listen",
+        "title": "Maulana on Sabr",
+        "description": "Listen as our Maulana opens your heart to the wisdom of patience — the anchor of every believer.",
+        "asset_key": "bridge_emotional_stress_general_stress",
+        "duration_sec": 90,
+        "surah": null,
+        "locked": false
+      },
+      {
+        "id": "calm-s2",
+        "index": 1,
+        "type": "recite",
+        "title": "Recite Surah Ash-Sharh",
+        "description": "The Surah of Relief. Recite slowly, letting each verse settle in your chest. After hardship comes ease.",
+        "asset_key": null,
+        "duration_sec": 120,
+        "surah": { "number": 94, "name": "Ash-Sharh", "arabic": "الشرح", "verses": 8 },
+        "locked": true
+      },
+      {
+        "id": "calm-s3",
+        "index": 2,
+        "type": "reflect",
+        "title": "Your Personal Reflection",
+        "description": "A Maulana-voiced closing reflection invites you toward the Ask Imam dialogue for deeper, personalized guidance.",
+        "asset_key": "bridge_emotional_personal_grief_loneliness",
+        "duration_sec": 60,
+        "surah": null,
+        "locked": true,
+        "leads_to_imam": true
+      }
+    ]
+  },
+  {
+    "id": "foundation-of-prayer",
+    "title": "The Foundation of Prayer",
+    "title_arabic": "أساس الصلاة",
+    "tagline": "Master the short Surahs with precision — every letter, every breath, perfected.",
+    "theme": "prayer_mastery",
+    "category": "Prayer",
+    "icon": "🕌",
+    "difficulty": "Intermediate",
+    "duration_min": 15,
+    "palette": {
+      "from": "#064E3B",
+      "via": "#065F46",
+      "to": "#06111F",
+      "accent": "#D4AF37",
+      "glow": "rgba(212,175,55,0.3)"
+    },
+    "stages": [
+      {
+        "id": "prayer-s1",
+        "index": 0,
+        "type": "listen",
+        "title": "Makharij of Al-Fatiha",
+        "description": "Listen to the precise articulation points of Surah Al-Fatiha — isolating the difficult ق vs ك distinction.",
+        "asset_key": "maulana_feedback_tajweed_precision",
+        "duration_sec": 100,
+        "surah": { "number": 1, "name": "Al-Fatiha", "arabic": "الفاتحة", "verses": 7 },
+        "locked": false
+      },
+      {
+        "id": "prayer-s2",
+        "index": 1,
+        "type": "listen",
+        "title": "Word-by-Word Tarjummah",
+        "description": "Immersive literal translation playback — each word of Al-Fatiha spoken by Maulana's voice with meaning.",
+        "asset_key": "translation_tarjummah_fatiha",
+        "duration_sec": 120,
+        "surah": { "number": 1, "name": "Al-Fatiha", "arabic": "الفاتحة", "verses": 7 },
+        "locked": true
+      },
+      {
+        "id": "prayer-s3",
+        "index": 2,
+        "type": "milestone",
+        "title": "7-Day Consistency Milestone",
+        "description": "Lock in your first milestone. Return daily to build the most powerful habit of your life.",
+        "asset_key": "reception_greetings_context_based_welcome_back_short",
+        "duration_sec": 30,
+        "surah": null,
+        "locked": true,
+        "leads_to_imam": true
+      }
+    ]
+  },
+  {
+    "id": "morning-light",
+    "title": "The Morning Light",
+    "title_arabic": "نور الصباح",
+    "tagline": "Seize the barakah of Fajr — a proactive dawn routine for the focused believer.",
+    "theme": "morning_focus",
+    "category": "Growth",
+    "icon": "☀️",
+    "difficulty": "Beginner",
+    "duration_min": 10,
+    "palette": {
+      "from": "#92400E",
+      "via": "#78350F",
+      "to": "#06111F",
+      "accent": "#FCD34D",
+      "glow": "rgba(252,211,77,0.3)"
+    },
+    "stages": [
+      {
+        "id": "morning-s1",
+        "index": 0,
+        "type": "listen",
+        "title": "Morning Greeting",
+        "description": "A time-sensitive Maulana greeting, warm and energising — tailored to the sacred hour of dawn.",
+        "asset_key": "reception_greetings_time_based_morning",
+        "duration_sec": 45,
+        "surah": null,
+        "locked": false
+      },
+      {
+        "id": "morning-s2",
+        "index": 1,
+        "type": "recite",
+        "title": "Surah Al-Alaq — First 5 Verses",
+        "description": "The first revelation. Recite with flow analysis — feel the weight of the first divine command: Iqra.",
+        "asset_key": null,
+        "duration_sec": 90,
+        "surah": { "number": 96, "name": "Al-Alaq", "arabic": "العلق", "verses": 5 },
+        "locked": true,
+        "leads_to_imam": true
+      }
+    ]
+  },
+  {
+    "id": "night-vigil",
+    "title": "The Night Vigil",
+    "title_arabic": "قيام الليل",
+    "tagline": "Enter the sacred stillness of Tahajjud — surrender to the One who never sleeps.",
+    "theme": "night_prayer",
+    "category": "Spirituality",
+    "icon": "🌙",
+    "difficulty": "Advanced",
+    "duration_min": 18,
+    "palette": {
+      "from": "#1E1B4B",
+      "via": "#312E81",
+      "to": "#06111F",
+      "accent": "#C7D2FE",
+      "glow": "rgba(199,210,254,0.25)"
+    },
+    "stages": [
+      {
+        "id": "vigil-s1",
+        "index": 0,
+        "type": "listen",
+        "title": "The Virtue of Night Prayer",
+        "description": "Maulana speaks on Surah Al-Muzammil and the spiritual rewards of rising in the night's last third.",
+        "asset_key": "bridge_emotional_personal_grief_loneliness",
+        "duration_sec": 110,
+        "surah": { "number": 73, "name": "Al-Muzzammil", "arabic": "المزمل", "verses": 20 },
+        "locked": false
+      },
+      {
+        "id": "vigil-s2",
+        "index": 1,
+        "type": "recite",
+        "title": "Recite Surah Al-Ikhlas × 3",
+        "description": "Three repetitions, each worth a third of the Quran. Measured, deliberate, heartfelt.",
+        "asset_key": null,
+        "duration_sec": 60,
+        "surah": { "number": 112, "name": "Al-Ikhlas", "arabic": "الإخلاص", "verses": 4 },
+        "locked": true
+      },
+      {
+        "id": "vigil-s3",
+        "index": 2,
+        "type": "reflect",
+        "title": "Dua of the Night",
+        "description": "Maulana closes with the Du'a of the night vigil — then invites you to share your personal supplication with Ask Imam.",
+        "asset_key": "bridge_emotional_personal_family_issues",
+        "duration_sec": 75,
+        "surah": null,
+        "locked": true,
+        "leads_to_imam": true
+      }
+    ]
+  },
+  {
+    "id": "grateful-heart",
+    "title": "The Grateful Heart",
+    "title_arabic": "قلب الشاكر",
+    "tagline": "Transform your perspective — Shukr is not just gratitude, it is abundance itself.",
+    "theme": "gratitude",
+    "category": "Peace",
+    "icon": "💛",
+    "difficulty": "Beginner",
+    "duration_min": 11,
+    "palette": {
+      "from": "#7C2D12",
+      "via": "#9A3412",
+      "to": "#06111F",
+      "accent": "#FCA5A5",
+      "glow": "rgba(252,165,165,0.25)"
+    },
+    "stages": [
+      {
+        "id": "grateful-s1",
+        "index": 0,
+        "type": "listen",
+        "title": "The Ayah of Gratitude",
+        "description": "Maulana recites and explains Ibrahim 14:7 — 'If you are grateful, I will surely increase you.'",
+        "asset_key": "bridge_emotional_stress_general_stress",
+        "duration_sec": 85,
+        "surah": { "number": 14, "name": "Ibrahim", "arabic": "إبراهيم", "verses": 7 },
+        "locked": false
+      },
+      {
+        "id": "grateful-s2",
+        "index": 1,
+        "type": "recite",
+        "title": "Surah Ar-Rahman — Opening",
+        "description": "Recite the opening verses of the Surah of Divine Mercy. With each 'Fabiayyi ala'i' — feel the gift.",
+        "asset_key": null,
+        "duration_sec": 90,
+        "surah": { "number": 55, "name": "Ar-Rahman", "arabic": "الرحمن", "verses": 13 },
+        "locked": true
+      },
+      {
+        "id": "grateful-s3",
+        "index": 2,
+        "type": "reflect",
+        "title": "Counting Your Blessings",
+        "description": "A guided Maulana reflection on gratitude journaling in the Islamic tradition. Ask Imam to continue.",
+        "asset_key": "reception_greetings_context_based_post_hardship",
+        "duration_sec": 60,
+        "surah": null,
+        "locked": true,
+        "leads_to_imam": true
+      }
+    ]
+  },
+  {
+    "id": "seal-of-surahs",
+    "title": "The Seal of Surahs",
+    "title_arabic": "خواتيم السور",
+    "tagline": "Master the last 10 Surahs — the treasury every Muslim carries in their chest.",
+    "theme": "quran_mastery",
+    "category": "Learning",
+    "icon": "📖",
+    "difficulty": "Intermediate",
+    "duration_min": 20,
+    "palette": {
+      "from": "#134E4A",
+      "via": "#0F766E",
+      "to": "#06111F",
+      "accent": "#99F6E4",
+      "glow": "rgba(153,246,228,0.25)"
+    },
+    "stages": [
+      {
+        "id": "seal-s1",
+        "index": 0,
+        "type": "listen",
+        "title": "Why the Last 10 Matter",
+        "description": "Maulana explains the status of the Mufassal Surahs in Salah and daily life — your essential Quranic toolkit.",
+        "asset_key": "maulana_feedback_tajweed_precision",
+        "duration_sec": 95,
+        "surah": null,
+        "locked": false
+      },
+      {
+        "id": "seal-s2",
+        "index": 1,
+        "type": "recite",
+        "title": "Surah Al-Kawthar",
+        "description": "The shortest Surah. Three verses that contain the ocean. Recite with full tajweed precision.",
+        "asset_key": null,
+        "duration_sec": 45,
+        "surah": { "number": 108, "name": "Al-Kawthar", "arabic": "الكوثر", "verses": 3 },
+        "locked": true
+      },
+      {
+        "id": "seal-s3",
+        "index": 2,
+        "type": "recite",
+        "title": "Surah Al-Falaq & An-Nas",
+        "description": "The twin protectors. Recite both Al-Muawwidhatain back to back as the Prophet ﷺ did each night.",
+        "asset_key": null,
+        "duration_sec": 90,
+        "surah": { "number": 113, "name": "Al-Falaq", "arabic": "الفلق", "verses": 5 },
+        "locked": true,
+        "leads_to_imam": true
+      }
+    ]
+  },
+  {
+    "id": "stories-of-prophets",
+    "title": "Stories of the Prophets",
+    "title_arabic": "قصص الأنبياء",
+    "tagline": "Walk with Ibrahim, Musa, and Isa — their stories are your map through every trial.",
+    "theme": "prophetic_narrative",
+    "category": "Learning",
+    "icon": "⭐",
+    "difficulty": "Intermediate",
+    "duration_min": 16,
+    "palette": {
+      "from": "#7C2D12",
+      "via": "#92400E",
+      "to": "#06111F",
+      "accent": "#FDE68A",
+      "glow": "rgba(253,230,138,0.25)"
+    },
+    "stages": [
+      {
+        "id": "prophets-s1",
+        "index": 0,
+        "type": "listen",
+        "title": "Ibrahim & the Fire",
+        "description": "Maulana narrates Ibrahim's trial — the fire that became cool. A story of absolute tawakkul.",
+        "asset_key": "bridge_emotional_personal_grief_loneliness",
+        "duration_sec": 130,
+        "surah": { "number": 21, "name": "Al-Anbiya", "arabic": "الأنبياء", "verses": 69 },
+        "locked": false
+      },
+      {
+        "id": "prophets-s2",
+        "index": 1,
+        "type": "recite",
+        "title": "Ayat of Ibrahim's Prayer",
+        "description": "Recite Ibrahim's du'a from Surah Ibrahim — the prayer of a man who lost everything and gave everything.",
+        "asset_key": null,
+        "duration_sec": 75,
+        "surah": { "number": 14, "name": "Ibrahim", "arabic": "إبراهيم", "verses": 41 },
+        "locked": true
+      },
+      {
+        "id": "prophets-s3",
+        "index": 2,
+        "type": "reflect",
+        "title": "Your Prophetic Lesson",
+        "description": "What trial are you facing? Maulana connects Ibrahim's story to your life. Continue with Ask Imam.",
+        "asset_key": "bridge_emotional_personal_family_issues",
+        "duration_sec": 70,
+        "surah": null,
+        "locked": true,
+        "leads_to_imam": true
+      }
+    ]
+  },
+  {
+    "id": "gate-of-tawbah",
+    "title": "The Gate of Tawbah",
+    "title_arabic": "باب التوبة",
+    "tagline": "Every door is open to the one who returns — your sincere repentance is never too late.",
+    "theme": "repentance_renewal",
+    "category": "Spirituality",
+    "icon": "🌹",
+    "difficulty": "Beginner",
+    "duration_min": 13,
+    "palette": {
+      "from": "#881337",
+      "via": "#9F1239",
+      "to": "#06111F",
+      "accent": "#FBCFE8",
+      "glow": "rgba(251,207,232,0.25)"
+    },
+    "stages": [
+      {
+        "id": "tawbah-s1",
+        "index": 0,
+        "type": "listen",
+        "title": "Allah's Door Is Always Open",
+        "description": "Maulana recites the Ayah of Hope — Az-Zumar 39:53 — and speaks on the infinite mercy of Tawbah.",
+        "asset_key": "reception_greetings_context_based_post_hardship",
+        "duration_sec": 100,
+        "surah": { "number": 39, "name": "Az-Zumar", "arabic": "الزمر", "verses": 53 },
+        "locked": false
+      },
+      {
+        "id": "tawbah-s2",
+        "index": 1,
+        "type": "recite",
+        "title": "Sayyid Al-Istighfar",
+        "description": "The Master of Repentance. Recite this supplication three times with presence and sincerity.",
+        "asset_key": null,
+        "duration_sec": 60,
+        "surah": null,
+        "locked": true
+      },
+      {
+        "id": "tawbah-s3",
+        "index": 2,
+        "type": "reflect",
+        "title": "A New Beginning",
+        "description": "The Maulana closes your Tawbah journey with warmth. Ask Imam to continue your personal renewal.",
+        "asset_key": "reception_greetings_context_based_welcome_back_long",
+        "duration_sec": 55,
+        "surah": null,
+        "locked": true,
+        "leads_to_imam": true
+      }
+    ]
+  },
+  {
+    "id": "knowledge-seeker",
+    "title": "The Knowledge Seeker",
+    "title_arabic": "طالب العلم",
+    "tagline": "Seeking knowledge is an act of worship — each lesson a step closer to Allah.",
+    "theme": "islamic_knowledge",
+    "category": "Learning",
+    "icon": "🔭",
+    "difficulty": "Advanced",
+    "duration_min": 17,
+    "palette": {
+      "from": "#1E3A5F",
+      "via": "#1E40AF",
+      "to": "#06111F",
+      "accent": "#BAE6FD",
+      "glow": "rgba(186,230,253,0.25)"
+    },
+    "stages": [
+      {
+        "id": "knowledge-s1",
+        "index": 0,
+        "type": "listen",
+        "title": "Iqra — The Command to Read",
+        "description": "Maulana meditates on the first revelation and the Islamic tradition of 'Ilm — a civilisation built on knowledge.",
+        "asset_key": "bridge_emotional_stress_academic_stress",
+        "duration_sec": 115,
+        "surah": { "number": 96, "name": "Al-Alaq", "arabic": "العلق", "verses": 5 },
+        "locked": false
+      },
+      {
+        "id": "knowledge-s2",
+        "index": 1,
+        "type": "recite",
+        "title": "Surah Al-Alaq — Full",
+        "description": "Recite all 19 verses of the Surah of the Clinging Clot — the very genesis of the Quran.",
+        "asset_key": null,
+        "duration_sec": 110,
+        "surah": { "number": 96, "name": "Al-Alaq", "arabic": "العلق", "verses": 19 },
+        "locked": true
+      },
+      {
+        "id": "knowledge-s3",
+        "index": 2,
+        "type": "milestone",
+        "title": "Scholar's First Milestone",
+        "description": "You've begun the path of the seeker. Continue your Islamic studies with personalized Ask Imam guidance.",
+        "asset_key": "reception_greetings_context_based_welcome_back_short",
+        "duration_sec": 40,
+        "surah": null,
+        "locked": true,
+        "leads_to_imam": true
+      }
+    ]
+  },
+  {
+    "id": "family-covenant",
+    "title": "The Family Covenant",
+    "title_arabic": "ميثاق الأسرة",
+    "tagline": "The family is a mercy from Allah — nurture it with patience, love, and Quranic wisdom.",
+    "theme": "family_relationships",
+    "category": "Growth",
+    "icon": "🏡",
+    "difficulty": "Beginner",
+    "duration_min": 12,
+    "palette": {
+      "from": "#78350F",
+      "via": "#92400E",
+      "to": "#06111F",
+      "accent": "#FED7AA",
+      "glow": "rgba(254,215,170,0.25)"
+    },
+    "stages": [
+      {
+        "id": "family-s1",
+        "index": 0,
+        "type": "listen",
+        "title": "Marriage, Mercy & Tranquility",
+        "description": "Maulana explains Ar-Rum 30:21 — the Quranic vision of a home filled with mawaddah and rahmah.",
+        "asset_key": "bridge_emotional_personal_family_issues",
+        "duration_sec": 105,
+        "surah": { "number": 30, "name": "Ar-Rum", "arabic": "الروم", "verses": 21 },
+        "locked": false
+      },
+      {
+        "id": "family-s2",
+        "index": 1,
+        "type": "recite",
+        "title": "The Family Du'a",
+        "description": "Recite the Quranic du'a of the righteous: 'Our Lord, grant us from among our wives and offspring comfort to our eyes.'",
+        "asset_key": null,
+        "duration_sec": 50,
+        "surah": { "number": 25, "name": "Al-Furqan", "arabic": "الفرقان", "verses": 74 },
+        "locked": true
+      },
+      {
+        "id": "family-s3",
+        "index": 2,
+        "type": "reflect",
+        "title": "Strengthening Your Bond",
+        "description": "A warm closing reflection. Share your family intentions with Ask Imam for tailored Quranic guidance.",
+        "asset_key": "reception_greetings_context_based_post_hardship",
+        "duration_sec": 60,
+        "surah": null,
+        "locked": true,
+        "leads_to_imam": true
+      }
+    ]
+  }
+]
