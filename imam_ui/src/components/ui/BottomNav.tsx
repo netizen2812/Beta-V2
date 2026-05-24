@@ -1,31 +1,16 @@
 "use client";
-import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Sparkles, Moon, Compass } from "lucide-react";
+import { Sparkles, Moon } from "lucide-react";
 
 const tabs = [
-  { href: "/",                label: "AI Learning", icon: Sparkles },
-  { href: "/?tab=journeys",   label: "Journeys",    icon: Compass  },
-  { href: "/ibadah",          label: "Ibadah",      icon: Moon     },
+  { href: "/",          label: "AI Learning", icon: Sparkles },
+  { href: "/ibadah",    label: "Ibadah",      icon: Moon     },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState(pathname);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const searchParams = new URLSearchParams(window.location.search);
-      const tab = searchParams.get('tab');
-      if (pathname === "/" && tab === "journeys") {
-        setActiveTab("/?tab=journeys");
-      } else {
-        setActiveTab(pathname);
-      }
-    }
-  }, [pathname]);
 
   return (
     <nav
@@ -40,7 +25,7 @@ export default function BottomNav() {
     >
       <div className="max-w-2xl mx-auto flex items-center justify-around px-2 py-2">
         {tabs.map(({ href, label, icon: Icon }) => {
-          const active = activeTab === href || (label === "Journeys" && activeTab === "/journeys") || (label === "AI Learning" && activeTab === "/");
+          const active = (href === "/" && (pathname === "/" || pathname.startsWith("/journeys"))) || pathname === href;
           return (
             <Link key={href} href={href}>
               <motion.div

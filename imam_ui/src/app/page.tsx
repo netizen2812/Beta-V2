@@ -178,7 +178,8 @@ function JourneyScrollSection() {
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory' }}
         onScroll={e => {
           const el = e.currentTarget;
-          const cardWidth = 180 + 16; // width + gap
+          const firstCard = el.children[0] as HTMLElement;
+          const cardWidth = firstCard ? firstCard.offsetWidth + 16 : 180 + 16;
           const idx = Math.round(el.scrollLeft / cardWidth);
           setActiveIdx(Math.min(idx, JOURNEYS_DATA.length - 1));
         }}
@@ -191,9 +192,9 @@ function JourneyScrollSection() {
               key={j.id}
               onClick={() => handleCardClick(j.id)}
               style={{
-                minWidth: '180px',
-                width: '180px',
-                height: '240px',
+                minWidth: 'var(--card-w)',
+                width: 'var(--card-w)',
+                height: 'var(--card-h)',
                 borderRadius: '1.25rem',
                 background: `linear-gradient(175deg, ${j.from} 0%, ${j.via} 60%, #031e13 100%)`,
                 border: isActive ? `2px solid ${j.accent}` : '1px solid rgba(255,255,255,0.06)',
@@ -1086,6 +1087,9 @@ export default function FullscreenAiPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] pb-32 overflow-x-hidden flex flex-col relative">
+      {/* Dynamic CSS Pattern Background (FaithTech moving background) */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.025] moving-pattern z-0" />
+
       {/* ── ATMOSPHERIC BACKGROUND BLOB GLOWS ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden h-full w-full z-0" aria-hidden="true">
         <div className="absolute top-[-10%] left-[20%] w-[80vw] h-[80vw] rounded-full mix-blend-multiply filter blur-[100px] opacity-40"
@@ -1125,7 +1129,7 @@ export default function FullscreenAiPage() {
       </header>
 
       {/* ── SEAMLESS FULL SCREEN APP CONTENT ── */}
-      <main className="relative z-20 w-full px-8 md:px-20 lg:px-28 flex-1 flex flex-col min-h-[calc(100vh-160px)] pb-12">
+      <main className="relative z-20 w-full px-4 sm:px-10 md:px-16 lg:px-24 flex-1 flex flex-col min-h-[calc(100vh-160px)] pb-24">
         <div className="flex-1 flex flex-col justify-between w-full">
           
           {/* Top Mode Sliding Toggle - Elegantly Centered */}
@@ -1279,9 +1283,9 @@ export default function FullscreenAiPage() {
                   </div>
 
                   {/* Columns container for chat log & settings */}
-                  <div className="flex-1 flex flex-col md:flex-row gap-8 justify-between w-full">
+                  <div className="flex-1 flex flex-col md:flex-row gap-4 md:gap-8 justify-between w-full">
                   {/* Left Column: Chat log & input bar (2/3rds width on desktop) */}
-                  <div className="w-full md:w-2/3 flex flex-col justify-between h-[60vh] min-h-[380px]">
+                  <div className="w-full md:w-2/3 flex flex-col justify-between h-[45vh] md:h-[55vh] min-h-[320px]">
                     {/* Answers display area */}
                     <div className="flex-1 flex flex-col justify-start overflow-y-auto px-1 no-scrollbar my-2 max-h-[500px]">
                       {chatMessage ? (
@@ -1360,7 +1364,7 @@ export default function FullscreenAiPage() {
                   </div>
 
                   {/* Right Column: Settings & Presets (1/3rd width on desktop) */}
-                  <div className="w-full md:w-1/3 flex flex-col gap-5 md:border-l md:border-emerald-100/30 md:pl-10 shrink-0 justify-center">
+                  <div className="w-full md:w-1/3 flex flex-col gap-3 md:gap-5 md:border-l md:border-emerald-100/30 md:pl-8 shrink-0 justify-center">
                     {/* Madhab Selector */}
                     <div className="space-y-2">
                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Madhab School</span>
@@ -1542,6 +1546,49 @@ export default function FullscreenAiPage() {
         tafsirText={tafsirText}
         isStreaming={tafsirLoading}
       />
+
+      {/* Global CSS for moving background pattern and responsive card dimensions */}
+      <style>{`
+        :root {
+          --card-w: 140px;
+          --card-h: 190px;
+        }
+        @media (min-width: 640px) {
+          :root {
+            --card-w: 160px;
+            --card-h: 215px;
+          }
+        }
+        @media (min-width: 768px) {
+          :root {
+            --card-w: 180px;
+            --card-h: 240px;
+          }
+        }
+
+        @keyframes moving-bg {
+          from { background-position: 0 0; }
+          to { background-position: 500px 500px; }
+        }
+        .moving-pattern {
+          background-color: transparent;
+          background-image:
+            linear-gradient(67.5deg, #10b981 10%, transparent 10%),
+            linear-gradient(157.5deg, #10b981 10%, transparent 10%),
+            linear-gradient(67.5deg, transparent 90%, #10b981 90%),
+            linear-gradient(157.5deg, transparent 90%, #10b981 90%),
+            linear-gradient(22.5deg, #10b981 10%, transparent 10%),
+            linear-gradient(112.5deg, #10b981 10%, transparent 10%),
+            linear-gradient(22.5deg, transparent 90%, #10b981 90%),
+            linear-gradient(112.5deg, transparent 90%, #10b981 90%),
+            linear-gradient(22.5deg, transparent 33%, #0D4433 33%, #0D4433 36%, transparent 36%, transparent 64%, #0D4433 64%, #0D4433 67%, transparent 67%),
+            linear-gradient(-22.5deg, transparent 33%, #0D4433 33%, #0D4433 36%, transparent 36%, transparent 64%, #0D4433 64%, #0D4433 67%, transparent 67%),
+            linear-gradient(112.5deg, transparent 33%, #0D4433 33%, #0D4433 36%, transparent 36%, transparent 64%, #0D4433 64%, #0D4433 67%, transparent 67%),
+            linear-gradient(-112.5deg, transparent 33%, #0D4433 33%, #0D4433 36%, transparent 36%, transparent 64%, #0D4433 64%, #0D4433 67%, transparent 67%);
+          background-size: 250px 250px;
+          animation: moving-bg 60s linear infinite;
+        }
+      `}</style>
     </div>
   );
 }
