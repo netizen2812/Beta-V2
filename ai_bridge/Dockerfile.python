@@ -26,8 +26,9 @@ ENV COQUI_TOS_AGREED=1
 # Pre-download Whisper, Wav2Vec2, and the Buraaq dataset during docker build
 RUN python scripts/download_models.py
 
-# Pre-synthesize static Maulana audio templates to reduce live runtime latency
-RUN python scripts/generate_premade_audios.py
+# Pre-synthesize static Maulana audio templates at runtime rather than build-time to avoid blocking
+# RUN python scripts/generate_premade_audios.py
+
 
 EXPOSE 8000
 
