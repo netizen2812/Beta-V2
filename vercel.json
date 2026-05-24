@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "buildCommand": "cd imam_ui && npm install && npm run build",
+  "outputDirectory": "imam_ui/.next",
+  "installCommand": "cd imam_ui && npm install",
+  "framework": "nextjs",
+  "rootDirectory": "imam_ui"
+}
