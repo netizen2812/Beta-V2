@@ -177,8 +177,8 @@ class LocalTTSEngine:
         from openvoice_cli.api import ToneColorConverter
         from openvoice_cli.downloader import download_checkpoint
         
-        site_packages = AI_BRIDGE_DIR / "venv" / "Lib" / "site-packages"
-        ckpt_converter = site_packages / "openvoice_cli" / "checkpoints" / "converter"
+        # Store converter checkpoints in the local models folder (OS-independent and docker-friendly)
+        ckpt_converter = AI_BRIDGE_DIR / "models" / "openvoice" / "converter"
         if not ckpt_converter.exists():
             log.info("Downloading OpenVoice converter checkpoints...")
             ckpt_converter.mkdir(parents=True, exist_ok=True)
