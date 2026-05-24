@@ -22,27 +22,23 @@ def download_all_models():
     os.makedirs(en_dir, exist_ok=True)
     os.makedirs(ur_dir, exist_ok=True)
     
-    # 2. Download Base XTTS v2 model via TTS python library
+    # 2. Download Base XTTS v2 model via huggingface_hub
     print("\n[Base XTTS v2 Model]")
     vocab_dest = os.path.join(base_dir, "vocab.json")
     if not os.path.exists(vocab_dest):
-        print(" > Downloading base XTTS model from Coqui/HuggingFace...")
+        print(" > Downloading base XTTS model from HuggingFace Hub...")
         try:
-            from TTS.utils.downloaders import download_xtts
-            release_path = download_xtts("tts_models/multilingual/multi-dataset/xtts_v2")
-            print(f" > Base XTTS downloaded to {release_path}. Copying files to base_xtts...")
-            for f in ["model.pth", "config.json", "vocab.json", "speakers_xtts.pth"]:
-                src = os.path.join(release_path, f)
-                dest = os.path.join(base_dir, f)
-                if os.path.exists(src):
-                    shutil.copy(src, dest)
-                    print(f"   - Copied {f}")
+            from huggingface_hub import snapshot_download
+            snapshot_download(
+                repo_id="coqui/XTTS-v2",
+                local_dir=base_dir,
+                local_dir_use_symlinks=False,
+                allow_patterns=["model.pth", "config.json", "vocab.json", "speakers_xtts.pth"]
+            )
+            print(" > Base XTTS downloaded successfully.")
         except Exception as e:
-            print(f" > [ERROR] Failed to download base model via TTS library: {e}")
-            print(" > Attempting fallback copy from GCS...")
-            run_cmd(f"gcloud storage cp gs://maulana-urdu-forge-project-ffb3710a/en_xtts_v74/vocab.json {vocab_dest}")
-            run_cmd(f"gcloud storage cp gs://maulana-urdu-forge-project-ffb3710a/en_xtts_v74/speakers_xtts.pth {os.path.join(base_dir, 'speakers_xtts.pth')}")
-            # Get base files if needed
+            print(f" > [ERROR] Failed to download base model: {e}")
+
     else:
         print(" > Base XTTS v2 model already exists.")
         
