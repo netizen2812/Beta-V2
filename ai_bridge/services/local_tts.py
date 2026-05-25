@@ -198,9 +198,9 @@ class LocalTTSEngine:
         """
         import scipy.signal as sig
         
-        # 1. 3rd-order Butterworth Bandpass filter (150Hz to 6.5kHz)
+        # 1. 3rd-order Butterworth Bandpass filter (180Hz to 6.5kHz)
         nyq = sr / 2.0
-        low = 150.0 / nyq
+        low = 180.0 / nyq
         high = 6500.0 / nyq
         b, a = sig.butter(3, [low, high], btype='band')
         wav_filtered = sig.filtfilt(b, a, wav).astype(np.float32)
