@@ -66,8 +66,57 @@ export async function generateQuranExplanation(ayah_id, arabic_text, translation
   }
 }
 
-export async function askImamStandalone(user_question, language_code, ayah_id, ayahContext) {
-  // If we have an ayah_id, try to get RAG context for it too
+export async function askImamStandalone(user_question, language_code, ayah_id, ayahContext, madhab = "shafi") {
+  // 1. Classify user question for emotional/spiritual topics to use the 80/20 RAG split
+  const textLower = user_question.toLowerCase();
+  let topic = null;
+  let theme = null;
+
+  if (textLower.includes("exam") || textLower.includes("academic") || textLower.includes("study") || textLower.includes("school") || textLower.includes("test")) {
+    topic = "Academic Stress";
+    theme = "Exams";
+  } else if (textLower.includes("anxious") || textLower.includes("anxiety") || textLower.includes("worry") || textLower.includes("fear") || textLower.includes("worried")) {
+    topic = "Anxiety";
+    theme = "Worry";
+  } else if (textLower.includes("grief") || textLower.includes("lonely") || textLower.includes("loneliness") || textLower.includes("sad") || textLower.includes("death")) {
+    topic = "Grief";
+    theme = "Loneliness";
+  } else if (textLower.includes("family") || textLower.includes("parent") || textLower.includes("mother") || textLower.includes("father") || textLower.includes("sibling")) {
+    topic = "Family Issues";
+    theme = "Family";
+  } else if (textLower.includes("overwhelmed") || textLower.includes("heavy") || textLower.includes("burnout")) {
+    topic = "Overwhelmed";
+    theme = "Overwhelmed";
+  }
+
+  if (topic) {
+    try {
+      console.log(`[AskImam] Emotional topic detected: "${topic}". Querying AI Bridge maulana-voice for 80/20 stitched text...`);
+      const bridgeRes = await axios.post(`${AI_BRIDGE_URL}/api/maulana-voice`, {
+        rule: topic,
+        word: theme,
+        guidance: user_question,
+        language: language_code === "ur" ? "urdu" : language_code === "ar" ? "arabic" : "english",
+        madhab: madhab.toLowerCase(),
+        ayah_id: ayah_id || "1:1"
+      }, {
+        headers: {
+          "X-API-Key": process.env.INTERNAL_API_KEY || "",
+        },
+        timeout: 15000,
+      });
+
+      const answer = bridgeRes.headers["x-maulana-text"];
+      if (answer) {
+        console.log(`[AskImam] Successfully retrieved 80/20 stitched text from AI Bridge.`);
+        return { answer, raw_prompt: `Emotional RAG 80/20 Stitched: ${topic}` };
+      }
+    } catch (err) {
+      console.warn(`⚠️ Emotional RAG stitched query failed: ${err.message}. Falling back to OpenRouter...`);
+    }
+  }
+
+  // If not emotional or bridge call failed, fall back to OpenRouter
   let ragContext = "";
   if (ayah_id) {
     try {

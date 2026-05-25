@@ -48,13 +48,15 @@ class AudioCache:
         except Exception as e:
             logger.error(f"Eviction error: {e}")
             
-    def _generate_hash(self, rule: str, word: str, language: str, madhab: str = "shafi") -> str:
+    def _generate_hash(self, rule: str, word: str, language: str, madhab: str = "shafi", guidance: str = "") -> str:
         key_str = f"{rule.lower()}_{word.lower()}_{language.lower()}_{madhab.lower()}"
+        if guidance:
+            key_str += f"_{guidance.strip().lower()}"
         return hashlib.md5(key_str.encode('utf-8')).hexdigest()
 
-    def get_cached_insight(self, rule: str, word: str, language: str, madhab: str = "shafi"):
+    def get_cached_insight(self, rule: str, word: str, language: str, madhab: str = "shafi", guidance: str = ""):
         """Returns (audio_path, text_content) if exists, else None."""
-        hash_key = self._generate_hash(rule, word, language, madhab)
+        hash_key = self._generate_hash(rule, word, language, madhab, guidance)
         try:
             cursor = self.conn.cursor()
             cursor.execute('SELECT audio_path, text_content FROM audio_cache WHERE hash_key = ?', (hash_key,))
@@ -65,9 +67,23 @@ class AudioCache:
             logger.error(f"Cache read error: {e}")
         return None
 
-    def save_to_cache(self, rule: str, word: str, language: str, text_content: str, source_audio_path: Path, madhab: str = "shafi") -> Path:
+    def get_cached_by_text(self, text_content: str, language: str, madhab: str = "shafi"):
+        """Returns cache entry if text_content matches, else None."""
+        try:
+            norm_text = text_content.strip().lower()
+            cursor = self.conn.cursor()
+            # Select by exact normalized text match
+            cursor.execute('SELECT audio_path, text_content FROM audio_cache WHERE LOWER(TRIM(text_content)) = ? AND language = ?', (norm_text, language.lower()))
+            row = cursor.fetchone()
+            if row and Path(row[0]).exists():
+                return {"audio_path": row[0], "text": row[1]}
+        except Exception as e:
+            logger.error(f"Cache read by text error: {e}")
+        return None
+
+    def save_to_cache(self, rule: str, word: str, language: str, text_content: str, source_audio_path: Path, madhab: str = "shafi", guidance: str = "") -> Path:
         """Saves generated audio to cache and returns the new permanent path."""
-        hash_key = self._generate_hash(rule, word, language, madhab)
+        hash_key = self._generate_hash(rule, word, language, madhab, guidance)
         new_audio_path = CACHE_AUDIO_DIR / f"{hash_key}.mp3"
         
         try:

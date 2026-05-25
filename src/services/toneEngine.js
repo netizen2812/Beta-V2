@@ -97,7 +97,7 @@ export function buildAskPrompt(language_code, userQuestion, ayahContext = null, 
   const cleanRules = GLOBAL_RULES
     .replace("8. Format the output as valid JSON:", "")
     .replace(/\{[\s\S]*\}/, "")
-    .trim() + "\n8. Return the response as PLAIN TEXT only. Do NOT use markdown code blocks, and do NOT wrap the output in JSON format.\n9. CRITICAL FORMATTING: Structure your response in a strict 80/20 split. The first 80% must be warm, personal spiritual guidance and counseling directly addressing the user's emotional state, reflections, or questions. The final 20% must be a distinct, concluding paragraph summarizing the specific traditional jurisprudence, Tajweed rules, or practical actions per the classical schools of thought (Hanafi, Shafi'i, Maliki, Hanbali).";
+    .trim() + "\n8. Return the response as PLAIN TEXT only. Do NOT use markdown code blocks, and do NOT wrap the output in JSON format.";
 
   return `${contextBlock}${ragBlock}
 User's question: "${userQuestion}"

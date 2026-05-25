@@ -84,24 +84,6 @@ export default function ChatPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [playbackAudio, setPlaybackAudio] = useState<HTMLAudioElement | null>(null);
-  const [playVoiceResponse, setPlayVoiceResponse] = useState(true);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("imam_chat_voice_response");
-      if (stored !== null) {
-        setPlayVoiceResponse(stored === "true");
-      }
-    }
-  }, []);
-
-  const handleToggleVoiceResponse = () => {
-    setPlayVoiceResponse(prev => {
-      const next = !prev;
-      localStorage.setItem("imam_chat_voice_response", String(next));
-      return next;
-    });
-  };
 
   const handlePlayVoice = (text: string) => {
     if (playbackAudio) {
@@ -113,9 +95,30 @@ export default function ChatPage() {
       .replace(/[\r\n]+/g, " ")
       .trim();
 
+    const textLower = cleanedText.toLowerCase();
+    let topic = "Anxiety";
+    let theme = "Worry";
+
+    if (textLower.includes("exam") || textLower.includes("academic") || textLower.includes("study") || textLower.includes("school") || textLower.includes("test")) {
+      topic = "Academic Stress";
+      theme = "Exams";
+    } else if (textLower.includes("anxious") || textLower.includes("anxiety") || textLower.includes("worry") || textLower.includes("fear") || textLower.includes("worried")) {
+      topic = "Anxiety";
+      theme = "Worry";
+    } else if (textLower.includes("grief") || textLower.includes("lonely") || textLower.includes("loneliness") || textLower.includes("sad") || textLower.includes("death")) {
+      topic = "Grief";
+      theme = "Loneliness";
+    } else if (textLower.includes("family") || textLower.includes("parent") || textLower.includes("mother") || textLower.includes("father") || textLower.includes("sibling")) {
+      topic = "Family Issues";
+      theme = "Family";
+    } else if (textLower.includes("overwhelmed") || textLower.includes("heavy") || textLower.includes("burnout")) {
+      topic = "Overwhelmed";
+      theme = "Overwhelmed";
+    }
+
     const params = new URLSearchParams({
-      rule: "Spiritual Guidance",
-      word: "Advice",
+      rule: topic,
+      word: theme,
       guidance: cleanedText,
       language: "english",
       madhab: madhab.toLowerCase(),
@@ -167,16 +170,14 @@ export default function ChatPage() {
       if (res.ok) {
         const json = await res.json();
         if (json.status === "success" && json.data) {
-           const maulanaMsg: Message = {
+          const maulanaMsg: Message = {
             id: `m-${Date.now()}`,
             role: "maulana",
             text: json.data.answer,
             timestamp: new Date(),
           };
           setMessages(prev => [...prev, maulanaMsg]);
-          if (playVoiceResponse) {
-            handlePlayVoice(json.data.answer);
-          }
+          handlePlayVoice(json.data.answer);
         } else {
           throw new Error(json.message || "Failed to query Maulana");
         }
@@ -194,9 +195,7 @@ export default function ChatPage() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, maulanaMsg]);
-      if (playVoiceResponse) {
-        handlePlayVoice(maulanaMsg.text);
-      }
+      handlePlayVoice(maulanaMsg.text);
     } finally {
       setIsTyping(false);
     }
@@ -223,58 +222,42 @@ export default function ChatPage() {
           <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#10b981" }}>Scholar-Grade AI</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Voice Response Toggle */}
+        {/* Madhab selector */}
+        <div className="relative">
           <button
-            onClick={handleToggleVoiceResponse}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all"
-            style={{
-              background: playVoiceResponse ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.04)",
-              color: playVoiceResponse ? "#10b981" : "var(--text-dim)",
-              border: `1px solid ${playVoiceResponse ? "rgba(16,185,129,0.25)" : "var(--border)"}`
-            }}
+            onClick={() => setShowMadhabMenu(v => !v)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold"
+            style={{ background: "rgba(212,175,55,0.1)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.25)" }}
           >
-            <Volume2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Voice</span>
+            {activeMadhab.label}
+            <ChevronDown className="w-3.5 h-3.5" />
           </button>
 
-          {/* Madhab selector */}
-          <div className="relative">
-            <button
-              onClick={() => setShowMadhabMenu(v => !v)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold"
-              style={{ background: "rgba(212,175,55,0.1)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.25)" }}
-            >
-              {activeMadhab.label}
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
-
-            <AnimatePresence>
-              {showMadhabMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                  className="absolute right-0 top-12 glass rounded-2xl p-2 w-40 z-50"
-                  style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
-                >
-                  {MADHABS.map(m => (
-                    <button
-                      key={m.id}
-                      onClick={() => { setMadhab(m.id); setShowMadhabMenu(false); }}
-                      className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all"
-                      style={{
-                        color: madhab === m.id ? "#D4AF37" : "var(--text-dim)",
-                        background: madhab === m.id ? "rgba(212,175,55,0.1)" : "transparent",
-                      }}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <AnimatePresence>
+            {showMadhabMenu && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                className="absolute right-0 top-12 glass rounded-2xl p-2 w-40 z-50"
+                style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
+              >
+                {MADHABS.map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => { setMadhab(m.id); setShowMadhabMenu(false); }}
+                    className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all"
+                    style={{
+                      color: madhab === m.id ? "#D4AF37" : "var(--text-dim)",
+                      background: madhab === m.id ? "rgba(212,175,55,0.1)" : "transparent",
+                    }}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </header>
 

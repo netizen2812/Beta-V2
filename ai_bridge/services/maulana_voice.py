@@ -175,10 +175,15 @@ async def get_maulana_advice(
 
     rule = error_details.get("rule", "") or ""
     word = error_details.get("word", "") or ""
+    guidance = error_details.get("guidance", "") or ""
 
     # Prevent prompt injection by clamping length and stripping templating characters
     rule = rule[:100].replace("{", "").replace("}", "").replace("\n", " ")
     word = word[:50].replace("{", "").replace("}", "").replace("\n", " ")
+    guidance = guidance[:300].replace("{", "").replace("}", "").replace("\n", " ")
+
+    rule_lower = rule.lower()
+    is_emotional = any(k in rule_lower for k in ["academic", "exam", "anxiety", "worry", "fear", "grief", "lonely", "loneliness", "sad", "family", "parent", "overwhelmed", "burnout", "spiritual", "emotional"])
 
     lang_code = (
         "ur" if "urdu"    in language.lower() else
@@ -187,7 +192,18 @@ async def get_maulana_advice(
     )
 
     # 1. Fast Path: Check Cache first to prevent redundant LLM/TTS calls
-    cached_data = audio_cache_manager.get_cached_insight(rule, word, lang_code, madhab)
+    cached_data = None
+    if is_emotional:
+        if len(guidance) > 80:
+            # Frontend playback uses the full stitched advice text as the guidance parameter
+            cached_data = audio_cache_manager.get_cached_by_text(guidance, lang_code, madhab)
+        if not cached_data and guidance:
+            # Express ask uses the user question as guidance
+            cached_data = audio_cache_manager.get_cached_insight(rule, word, lang_code, madhab, guidance=guidance)
+    else:
+        # Tajweed rules are globally cached at the category/word level
+        cached_data = audio_cache_manager.get_cached_insight(rule, word, lang_code, madhab)
+
     if cached_data:
         logger.info(f"[MaulanaVoice] Returning cached advice for {rule} on {word} ({madhab})")
         audio_stream = _stream_audio_file(Path(cached_data["audio_path"]))
@@ -222,7 +238,17 @@ async def get_maulana_advice(
     if not pedagogical_key:
         # Fallback mapping
         rule_lower = rule.lower()
-        if "throat" in rule_lower or "halqi" in rule_lower:
+        if "academic" in rule_lower or "exam" in rule_lower:
+            pedagogical_key = "bridge.emotional.stress.academic_stress"
+        elif "anxiety" in rule_lower or "worry" in rule_lower or "fear" in rule_lower:
+            pedagogical_key = "bridge.emotional.stress.anxiety"
+        elif "grief" in rule_lower or "lonely" in rule_lower or "loneliness" in rule_lower or "sad" in rule_lower:
+            pedagogical_key = "bridge.emotional.personal.grief_loneliness"
+        elif "family" in rule_lower or "parent" in rule_lower:
+            pedagogical_key = "bridge.emotional.personal.family_issues"
+        elif "overwhelmed" in rule_lower or "burnout" in rule_lower:
+            pedagogical_key = "bridge.emotional.stress.overwhelmed"
+        elif "throat" in rule_lower or "halqi" in rule_lower:
             pedagogical_key = "pedagogy.correction.makharij.throat_halqi"
         elif "madd" in rule_lower:
             pedagogical_key = "pedagogy.correction.sifaat.madd_length"
@@ -307,16 +333,26 @@ async def get_maulana_advice(
             da = f"According to the {madhab.upper()} school, this error must be corrected."
     else:
         lang_directive = LANGUAGE_DIRECTIVES.get(language.lower(), LANGUAGE_DIRECTIVES["english"])
-        prompt = (
-            f"You are a warm, gentle, and highly scholarly Quran teacher (Maulana) providing custom correction advice to a student.\n\n"
-            f"Retrieved Fiqh & Quranic RAG Context for this attempt:\n"
-            f"  - Student's Selected School (Madhab): {madhab.upper()}\n"
-            f"  - Madhab Fiqh Rulings: {madhab_context}\n"
-            f"  - Quranic Meaning / Tafsir of this Ayah: {quran_context}\n\n"
-            f"Your task is to generate a custom, warm scholarly advisory sentence in {language.upper()} (using its native script: Urdu script for Urdu, Arabic script for Arabic) that briefly warns the student about the theological/Fiqh implications of their specific Tajweed mistake '{rule}' on the word '{word}' according to the {madhab.upper()} school, and/or references the Quranic meaning.\n\n"
-            f"It MUST be extremely concise, and MUST NOT exceed {max_dynamic_words} words under any circumstances.\n"
-            f"Return ONLY a JSON object with a single field 'dynamic_advice'."
-        )
+        if is_emotional:
+            prompt = (
+                f"You are a warm, gentle, and highly scholarly Quran teacher (Maulana) providing personal spiritual comfort to a student.\n\n"
+                f"Student's selected school: {madhab.upper()}\n"
+                f"Student's personal situation/guidance text: {guidance}\n\n"
+                f"Your task is to generate a very brief, custom, warm bridging sentence of comfort in {language.upper()} (using its native script: Urdu for Urdu, Arabic for Arabic) that directly addresses the student's situation regarding '{rule}' and theme '{word}', offering a word of gentle encouragement, trust in Allah ('tawakkul'), and reminding them that Allah is always near.\n\n"
+                f"It MUST be extremely concise, and MUST NOT exceed {max_dynamic_words} words under any circumstances.\n"
+                f"Return ONLY a JSON object with a single field 'dynamic_advice'."
+            )
+        else:
+            prompt = (
+                f"You are a warm, gentle, and highly scholarly Quran teacher (Maulana) providing custom correction advice to a student.\n\n"
+                f"Retrieved Fiqh & Quranic RAG Context for this attempt:\n"
+                f"  - Student's Selected School (Madhab): {madhab.upper()}\n"
+                f"  - Madhab Fiqh Rulings: {madhab_context}\n"
+                f"  - Quranic Meaning / Tafsir of this Ayah: {quran_context}\n\n"
+                f"Your task is to generate a custom, warm scholarly advisory sentence in {language.upper()} (using its native script: Urdu script for Urdu, Arabic script for Arabic) that briefly warns the student about the theological/Fiqh implications of their specific Tajweed mistake '{rule}' on the word '{word}' according to the {madhab.upper()} school, and/or references the Quranic meaning.\n\n"
+                f"It MUST be extremely concise, and MUST NOT exceed {max_dynamic_words} words under any circumstances.\n"
+                f"Return ONLY a JSON object with a single field 'dynamic_advice'."
+            )
 
         try:
             logger.info(f"[MaulanaVoice] Querying Gemini for madhab-aware ({madhab}) dynamic advice...")
@@ -414,7 +450,7 @@ async def get_maulana_advice(
 
         if stitch_success and stitched_temp.exists() and stitched_temp.stat().st_size > 1024:
             # Cache the stitched WAV
-            final_path = audio_cache_manager.save_to_cache(rule, word, lang_code, advice_text, stitched_temp, madhab)
+            final_path = audio_cache_manager.save_to_cache(rule, word, lang_code, advice_text, stitched_temp, madhab, guidance=guidance if is_emotional else "")
             audio_stream = _stream_audio_file(final_path)
             return {
                 "text": advice_text,
@@ -435,7 +471,7 @@ async def get_maulana_advice(
         try:
             success = tts_engine.synthesize(advice_text, lang_code, fallback_temp)
             if success and fallback_temp.exists():
-                final_path = audio_cache_manager.save_to_cache(rule, word, lang_code, advice_text, fallback_temp, madhab)
+                final_path = audio_cache_manager.save_to_cache(rule, word, lang_code, advice_text, fallback_temp, madhab, guidance=guidance if is_emotional else "")
                 audio_stream = _stream_audio_file(final_path)
                 return {
                     "text": advice_text,

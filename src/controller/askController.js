@@ -42,7 +42,8 @@ export const askImam = async (req, res) => {
       }
     }
 
-    const { answer, raw_prompt } = await askImamStandalone(user_question, language_code, ayah_id, ayahContext);
+    const madhab = req.body.madhab || "shafi";
+    const { answer, raw_prompt } = await askImamStandalone(user_question, language_code, ayah_id, ayahContext, madhab);
 
     if (mongoose.connection.readyState === 1) {
       QuranAiLog.create({ endpoint: "ask", ayah_id, language_code, prompt_sent: raw_prompt, response_received: answer, was_cached: false, user_clerk_id: clerkId })
