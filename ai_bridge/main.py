@@ -14,8 +14,9 @@ import time
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from models.whisper_engine import WhisperEngine
 from models.phonetic_engine import PhoneticEngine
@@ -115,9 +116,25 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+@app.middleware("http")
+async def verify_api_key(request: Request, call_next):
+    if request.url.path.startswith("/api/") and request.url.path != "/api/health":
+        internal_key = os.getenv("INTERNAL_API_KEY")
+        if internal_key:
+            key = request.headers.get("X-API-Key")
+            if key != internal_key:
+                return JSONResponse(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    content={"detail": "Unauthorized: Invalid or missing X-API-Key header."}
+                )
+    return await call_next(request)
+
+origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+origins = [o.strip() for o in origins_str.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"], # Tightened for credential safety (P2.10)
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

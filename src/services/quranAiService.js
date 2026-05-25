@@ -35,7 +35,11 @@ export async function generateQuranExplanation(ayah_id, arabic_text, translation
   let ragContext = "";
   try {
     const ragResponse = await axios.get(`${AI_BRIDGE_URL}/api/tafsir/context`, {
-      params: { ayah_id }
+      params: { ayah_id },
+      headers: {
+        "X-API-Key": process.env.INTERNAL_API_KEY || "",
+      },
+      timeout: 5000,
     });
     ragContext = ragResponse.data.context;
     console.log(`✅ Retrieved RAG context for ${ayah_id} (${ragContext.length} chars)`);
@@ -68,7 +72,11 @@ export async function askImamStandalone(user_question, language_code, ayah_id, a
   if (ayah_id) {
     try {
       const ragResponse = await axios.get(`${AI_BRIDGE_URL}/api/tafsir/context`, {
-        params: { ayah_id }
+        params: { ayah_id },
+        headers: {
+          "X-API-Key": process.env.INTERNAL_API_KEY || "",
+        },
+        timeout: 5000,
       });
       ragContext = ragResponse.data.context;
     } catch (e) {}

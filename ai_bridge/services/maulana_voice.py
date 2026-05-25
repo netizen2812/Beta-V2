@@ -168,8 +168,18 @@ async def get_maulana_advice(
     from services.audio_cache import audio_cache_manager
     from services.local_tts import tts_engine
     
-    rule = error_details.get("rule", "")
-    word = error_details.get("word", "")
+    VALID_MADHABS = {"hanafi", "shafi", "maliki", "hanbali"}
+    madhab = madhab.lower().strip()
+    if madhab not in VALID_MADHABS:
+        madhab = "shafi"
+
+    rule = error_details.get("rule", "") or ""
+    word = error_details.get("word", "") or ""
+
+    # Prevent prompt injection by clamping length and stripping templating characters
+    rule = rule[:100].replace("{", "").replace("}", "").replace("\n", " ")
+    word = word[:50].replace("{", "").replace("}", "").replace("\n", " ")
+
     lang_code = (
         "ur" if "urdu"    in language.lower() else
         "ar" if "arabic"  in language.lower() else

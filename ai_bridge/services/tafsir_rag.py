@@ -206,6 +206,8 @@ class TafsirRAG:
         if not self.is_loaded or self._collection is None:
             return []
 
+        n_results = min(max(1, n_results), 10)
+
         # Direct bypass for exact ayah_id
         if ayah_id:
             exact_results = self._collection.get(where={"ayah_id": ayah_id})

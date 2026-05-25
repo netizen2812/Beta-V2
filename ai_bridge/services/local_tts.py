@@ -491,9 +491,11 @@ class LocalTTSEngine:
                 "temperature": 0.85,
             }
 
-            # Natively pace up English to address user request cleanly
+            # Natively pace up English to address user request cleanly based on sentence length
             if language == "en":
-                synth_params["speed"] = 1.15
+                word_count = len(text.split())
+                speed = 1.0 if word_count < 8 else 1.1 if word_count < 15 else 1.15
+                synth_params["speed"] = speed
 
             # Arabic: lower temperature for stable Quranic prosody
             if language == "ar":

@@ -87,14 +87,46 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     if (!text.trim()) return;
     const userMsg: Message = { id: `u-${Date.now()}`, role: "user", text: text.trim(), timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
+      const res = await fetch(`${backendUrl}/api/quran/ask`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_question: text.trim(),
+          ayah_id: "1:1", // Default context
+          language_code: "en",
+          madhab: madhab,
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.status === "success" && json.data) {
+          const maulanaMsg: Message = {
+            id: `m-${Date.now()}`,
+            role: "maulana",
+            text: json.data.answer,
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, maulanaMsg]);
+        } else {
+          throw new Error(json.message || "Failed to query Maulana");
+        }
+      } else {
+        throw new Error("HTTP error " + res.status);
+      }
+    } catch (err) {
+      console.warn("⚠️ Backend query failed, using static template fallback.", err);
       const demo = DEMO_RESPONSES[text.trim()];
       const maulanaMsg: Message = {
         id: `m-${Date.now()}`,
@@ -104,8 +136,9 @@ export default function ChatPage() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, maulanaMsg]);
+    } finally {
       setIsTyping(false);
-    }, 1400 + Math.random() * 800);
+    }
   };
 
   const activeMadhab = MADHABS.find(m => m.id === madhab)!;

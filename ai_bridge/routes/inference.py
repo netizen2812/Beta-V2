@@ -131,8 +131,26 @@ async def tajweed_check(
     if not reference_words:
         raise HTTPException(404, f"No phonetic reference found for ayah {ayah_id}")
 
-    # Step 1: Whisper transcription (identifies what was recited)
-    whisper_result = whisper.transcribe(audio_bytes, mime_type=audio_file.content_type or "audio/webm")
+    # Step 1 & 2: Concurrently run Whisper ASR and Wav2Vec2 CTC logits extraction to minimize latency
+    import asyncio
+    
+    async def run_whisper_parallel():
+        return await asyncio.to_thread(
+            whisper.transcribe,
+            audio_bytes,
+            mime_type=audio_file.content_type or "audio/webm"
+        )
+        
+    async def run_phonetics_parallel():
+        return await asyncio.to_thread(
+            phonetic_engine.get_ctc_logits,
+            audio_bytes
+        )
+        
+    whisper_task = asyncio.create_task(run_whisper_parallel())
+    phonetics_task = asyncio.create_task(run_phonetics_parallel())
+    
+    whisper_result, (logits, audio_length) = await asyncio.gather(whisper_task, phonetics_task)
     transcribed_text = whisper_result["text"]
 
     # Guard against completely empty/silent or untranscribable recitation (P2.12)
@@ -177,8 +195,7 @@ async def tajweed_check(
             },
         }
 
-    # Step 2 & 4: Wav2Vec2 single-pass inference (P0.3)
-    logits, audio_length = phonetic_engine.get_ctc_logits(audio_bytes)
+    # Step 4: Decode Wav2Vec2 phonetics
     phonetic_result = phonetic_engine.decode_logits(logits)
     actual_phonetics = phonetic_result["words"]
 

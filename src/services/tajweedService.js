@@ -46,8 +46,11 @@ export async function checkRecitation(audioBuffer, ayahId, expectedArabicText, l
       `${AI_BRIDGE_URL}/api/tajweed-check`,
       formData,
       {
-        headers: formData.getHeaders(),
-        timeout: 90000, // 90s timeout for model inference
+        headers: {
+          ...formData.getHeaders(),
+          "X-API-Key": process.env.INTERNAL_API_KEY || "",
+        },
+        timeout: 25000, // 25s timeout for parallel model inference
       }
     );
 

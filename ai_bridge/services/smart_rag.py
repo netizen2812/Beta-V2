@@ -17,6 +17,8 @@ class SmartRAG:
         self._tafsir_collection = None
         self.is_loaded = False
         self.wisdom_templates = {}
+        self._emb_fn = None
+        self._query_emb_cache = {}
 
     def load(self):
         """Initialize ChromaDB clients and collections."""
@@ -32,6 +34,7 @@ class SmartRAG:
             self._client = chromadb.PersistentClient(path=str(CHROMA_DIR))
             from chromadb.utils import embedding_functions
             emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="intfloat/multilingual-e5-large", device="cpu")
+            self._emb_fn = emb_fn
 
             # Load madhab rules collection
             try:
@@ -101,6 +104,7 @@ class SmartRAG:
             return []
 
         madhab = madhab.lower().strip()
+        n_results = min(max(1, n_results), 10)
         
         # Valid schools
         valid_schools = ["hanafi", "shafi", "maliki", "hanbali"]
@@ -110,20 +114,39 @@ class SmartRAG:
             # We index with boolean flags for each school (e.g. shafi=True)
             where_filter = {madhab: True}
 
+        query_embedding = None
+        if self._emb_fn:
+            if query_text not in self._query_emb_cache:
+                self._query_emb_cache[query_text] = self._emb_fn([query_text])[0]
+            query_embedding = self._query_emb_cache[query_text]
+
         try:
-            results = self._madhab_collection.query(
-                query_texts=[query_text],
-                n_results=n_results,
-                where=where_filter
-            )
+            if query_embedding:
+                results = self._madhab_collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=n_results,
+                    where=where_filter
+                )
+            else:
+                results = self._madhab_collection.query(
+                    query_texts=[query_text],
+                    n_results=n_results,
+                    where=where_filter
+                )
         except Exception as e:
             logger.error(f"ChromaDB query error in madhab_rules: {e}")
             # Retry without metadata filter if it failed or had no results
             try:
-                results = self._madhab_collection.query(
-                    query_texts=[query_text],
-                    n_results=n_results
-                )
+                if query_embedding:
+                    results = self._madhab_collection.query(
+                        query_embeddings=[query_embedding],
+                        n_results=n_results
+                    )
+                else:
+                    results = self._madhab_collection.query(
+                        query_texts=[query_text],
+                        n_results=n_results
+                    )
             except Exception:
                 return []
 
@@ -175,6 +198,8 @@ class SmartRAG:
         if not self.is_loaded or self._tafsir_collection is None:
             return []
 
+        n_results = min(max(1, n_results), 10)
+
         # Direct get for exact ayah
         if ayah_id:
             try:
@@ -194,11 +219,23 @@ class SmartRAG:
             except Exception:
                 pass
 
+        query_embedding = None
+        if self._emb_fn and query_text:
+            if query_text not in self._query_emb_cache:
+                self._query_emb_cache[query_text] = self._emb_fn([query_text])[0]
+            query_embedding = self._query_emb_cache[query_text]
+
         try:
-            results = self._tafsir_collection.query(
-                query_texts=[query_text],
-                n_results=n_results
-            )
+            if query_embedding:
+                results = self._tafsir_collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=n_results
+                )
+            else:
+                results = self._tafsir_collection.query(
+                    query_texts=[query_text],
+                    n_results=n_results
+                )
         except Exception:
             return []
 

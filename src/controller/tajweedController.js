@@ -63,6 +63,9 @@ export const getPhoneticRef = async (req, res) => {
   try {
     const { ayahId } = req.params;
     const response = await axios.get(`${AI_BRIDGE_URL}/api/phonetic-ref/${ayahId}`, {
+      headers: {
+        "X-API-Key": process.env.INTERNAL_API_KEY || "",
+      },
       timeout: 5000,
     });
     res.json(response.data);
@@ -95,7 +98,10 @@ export const transcribeAudio = async (req, res) => {
       `${AI_BRIDGE_URL}/api/transcribe`,
       formData,
       {
-        headers: formData.getHeaders(),
+        headers: {
+          ...formData.getHeaders(),
+          "X-API-Key": process.env.INTERNAL_API_KEY || "",
+        },
         timeout: 30000,
       }
     );

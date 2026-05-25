@@ -473,29 +473,52 @@ export default function IbadahPage() {
   };
 
   useEffect(() => {
+    const fetchPrayerTimes = async (lat: number, lng: number, method: string) => {
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
+        const res = await fetch(`${backendUrl}/api/quran/ibadah/timings?latitude=${lat}&longitude=${lng}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.status === "success" && json.data) {
+            setPrayerTimes(json.data);
+            setLocationMethod(method);
+            return;
+          }
+        }
+        throw new Error("Failed to fetch timings");
+      } catch (e) {
+        console.warn("⚠️ Express prayer timings fetch failed, using frontend local calculation fallback.", e);
+        // Fallback local calculations
+        const offset = Math.round((lng - 39.8262) * 4);
+        const updateTime = (orig: string, addMins: number) => {
+          const [h, m] = orig.split(':').map(Number);
+          const total = h * 60 + m + addMins;
+          const nh = Math.floor(total / 60) % 24;
+          const nm = total % 60;
+          return `${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')}`;
+        };
+        setPrayerTimes(PRAYERS_DEFAULT.map(p => ({
+          ...p,
+          time: updateTime(p.time, offset)
+        })));
+        setLocationMethod(method);
+      }
+    };
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           setLocation({ lat, lng });
-          setLocationMethod('GPS Auto-detected');
-          // Update prayer times slightly based on coordinates
-          const offset = Math.round((lng - 39.8) * 4); // rough offset from Mecca time in minutes
-          const updateTime = (orig: string, addMins: number) => {
-            const [h, m] = orig.split(':').map(Number);
-            const total = h * 60 + m + addMins;
-            const nh = Math.floor(total / 60) % 24;
-            const nm = total % 60;
-            return `${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')}`;
-          };
-          setPrayerTimes(PRAYERS_DEFAULT.map(p => ({
-            ...p,
-            time: updateTime(p.time, offset)
-          })));
+          fetchPrayerTimes(lat, lng, 'GPS Auto-detected');
         },
-        () => setLocationMethod('Mecca (Default)')
+        () => {
+          fetchPrayerTimes(21.4225, 39.8262, 'Mecca (Default)');
+        }
       );
+    } else {
+      fetchPrayerTimes(21.4225, 39.8262, 'Mecca (Default)');
     }
   }, []);
 

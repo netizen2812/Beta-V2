@@ -6,6 +6,7 @@ import { getAyahHandler } from "../controller/quranController.js";
 import { explainAyah } from "../controller/explainController.js";
 import { askImam } from "../controller/askController.js";
 import { checkTajweed, getPhoneticRef, transcribeAudio } from "../controller/tajweedController.js";
+import { getIbadahTimings, getDailyHadith } from "../controller/ibadahController.js";
 
 const router = express.Router();
 const audioUpload = multer({ storage: multer.memoryStorage() });
@@ -21,5 +22,9 @@ router.post("/tajweed-check", requireAuth, audioUpload.single("audio_file"), che
 // ─── New Routes (AI Bridge proxy) ────────────────────────────────────────────
 router.get("/phonetic-ref/:ayahId", getPhoneticRef);
 router.post("/transcribe", requireAuth, audioUpload.single("audio_file"), transcribeAudio);
+
+// ─── Ibadah Routes ───────────────────────────────────────────────────────────
+router.get("/ibadah/timings", getIbadahTimings);
+router.get("/hadith/daily", getDailyHadith);
 
 export default router;
