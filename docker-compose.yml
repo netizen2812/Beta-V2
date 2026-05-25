@@ -32,6 +32,8 @@ services:
       - MONGO_URI=${MONGO_URI}
       - AI_BRIDGE_URL=http://ai-bridge:8000
       - PORT=5001
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
     depends_on:
       - ai-bridge
     networks:
