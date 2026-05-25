@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).parent.parent
 DATA_DIR = BASE_DIR / "data"
 CHROMA_DIR = DATA_DIR / "chroma_db"
-PDF_PATH = Path("c:/Users/acer/Downloads/AI/rag/four-madhabs.pdf")
+PDF_PATH = DATA_DIR / "four-madhabs.pdf"
+if not PDF_PATH.exists():
+    PDF_PATH = Path("c:/Users/acer/Downloads/AI/rag/four-madhabs.pdf")
 
 def main():
     # 1. Load SentenceTransformer on CPU first to prevent memory/CUDA silent crashes
