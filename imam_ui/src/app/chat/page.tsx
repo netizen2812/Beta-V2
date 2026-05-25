@@ -84,6 +84,24 @@ export default function ChatPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [playbackAudio, setPlaybackAudio] = useState<HTMLAudioElement | null>(null);
+  const [playVoiceResponse, setPlayVoiceResponse] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("imam_chat_voice_response");
+      if (stored !== null) {
+        setPlayVoiceResponse(stored === "true");
+      }
+    }
+  }, []);
+
+  const handleToggleVoiceResponse = () => {
+    setPlayVoiceResponse(prev => {
+      const next = !prev;
+      localStorage.setItem("imam_chat_voice_response", String(next));
+      return next;
+    });
+  };
 
   const handlePlayVoice = (text: string) => {
     if (playbackAudio) {
@@ -149,14 +167,16 @@ export default function ChatPage() {
       if (res.ok) {
         const json = await res.json();
         if (json.status === "success" && json.data) {
-          const maulanaMsg: Message = {
+           const maulanaMsg: Message = {
             id: `m-${Date.now()}`,
             role: "maulana",
             text: json.data.answer,
             timestamp: new Date(),
           };
           setMessages(prev => [...prev, maulanaMsg]);
-          handlePlayVoice(json.data.answer);
+          if (playVoiceResponse) {
+            handlePlayVoice(json.data.answer);
+          }
         } else {
           throw new Error(json.message || "Failed to query Maulana");
         }
@@ -174,7 +194,9 @@ export default function ChatPage() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, maulanaMsg]);
-      handlePlayVoice(maulanaMsg.text);
+      if (playVoiceResponse) {
+        handlePlayVoice(maulanaMsg.text);
+      }
     } finally {
       setIsTyping(false);
     }
@@ -201,42 +223,58 @@ export default function ChatPage() {
           <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#10b981" }}>Scholar-Grade AI</p>
         </div>
 
-        {/* Madhab selector */}
-        <div className="relative">
+        <div className="flex items-center gap-2">
+          {/* Voice Response Toggle */}
           <button
-            onClick={() => setShowMadhabMenu(v => !v)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold"
-            style={{ background: "rgba(212,175,55,0.1)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.25)" }}
+            onClick={handleToggleVoiceResponse}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all"
+            style={{
+              background: playVoiceResponse ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.04)",
+              color: playVoiceResponse ? "#10b981" : "var(--text-dim)",
+              border: `1px solid ${playVoiceResponse ? "rgba(16,185,129,0.25)" : "var(--border)"}`
+            }}
           >
-            {activeMadhab.label}
-            <ChevronDown className="w-3.5 h-3.5" />
+            <Volume2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Voice</span>
           </button>
 
-          <AnimatePresence>
-            {showMadhabMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                className="absolute right-0 top-12 glass rounded-2xl p-2 w-40 z-50"
-                style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
-              >
-                {MADHABS.map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => { setMadhab(m.id); setShowMadhabMenu(false); }}
-                    className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all"
-                    style={{
-                      color: madhab === m.id ? "#D4AF37" : "var(--text-dim)",
-                      background: madhab === m.id ? "rgba(212,175,55,0.1)" : "transparent",
-                    }}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Madhab selector */}
+          <div className="relative">
+            <button
+              onClick={() => setShowMadhabMenu(v => !v)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold"
+              style={{ background: "rgba(212,175,55,0.1)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.25)" }}
+            >
+              {activeMadhab.label}
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+
+            <AnimatePresence>
+              {showMadhabMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                  className="absolute right-0 top-12 glass rounded-2xl p-2 w-40 z-50"
+                  style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
+                >
+                  {MADHABS.map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => { setMadhab(m.id); setShowMadhabMenu(false); }}
+                      className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all"
+                      style={{
+                        color: madhab === m.id ? "#D4AF37" : "var(--text-dim)",
+                        background: madhab === m.id ? "rgba(212,175,55,0.1)" : "transparent",
+                      }}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </header>
 
