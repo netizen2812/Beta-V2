@@ -327,8 +327,8 @@ function JourneyScrollSection() {
   );
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
-const AI_BRIDGE_URL = process.env.NEXT_PUBLIC_AI_BRIDGE_URL || "http://localhost:8000";
+const BACKEND_URL = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001");
+const AI_BRIDGE_URL = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_AI_BRIDGE_URL || "http://localhost:8000");
 
 // ─── TYPES & DATA ─────────────────────────────────────────────────────────────
 type Mode = 'recitation' | 'chat';

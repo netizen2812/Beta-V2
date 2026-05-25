@@ -262,7 +262,7 @@ const HadithView = ({ onBack }: { onBack: () => void }) => {
   const fetchHadith = async () => {
     setLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001';
+      const backendUrl = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001');
       const res = await fetch(`${backendUrl}/api/quran/hadith/daily`);
       if (res.ok) {
         const data = await res.json();
@@ -475,7 +475,7 @@ export default function IbadahPage() {
   useEffect(() => {
     const fetchPrayerTimes = async (lat: number, lng: number, method: string) => {
       try {
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
+        const backendUrl = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001");
         const res = await fetch(`${backendUrl}/api/quran/ibadah/timings?latitude=${lat}&longitude=${lng}`);
         if (res.ok) {
           const json = await res.json();

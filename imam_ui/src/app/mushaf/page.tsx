@@ -44,7 +44,7 @@ export default function MushafulScreen() {
         setPhase("analyzing");
 
         try {
-          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
+          const backendUrl = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001");
           const formData = new FormData();
           formData.append("audio_file", audioBlob, "recitation.webm");
           formData.append("ayah_id", "1:1");

@@ -95,7 +95,7 @@ export default function ChatPage() {
     setIsTyping(true);
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
+      const backendUrl = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001");
       const res = await fetch(`${backendUrl}/api/quran/ask`, {
         method: "POST",
         headers: {
