@@ -283,23 +283,24 @@ async def get_maulana_advice(
         closure_en = "May Allah keep you safe. Assalamu alaikum."
         closure_idx = 0
 
-    # 3. Retrieve Context from RAG vector database
-    # 3a. Tafsir / Quranic Context
+    # 3. Retrieve Context from RAG vector database (Skip for emotional comfort queries to save CPU)
     quran_context = "No specific ayah context."
-    if ayah_id:
-        tafsir_results = smart_rag.query_tafsir("", ayah_id=ayah_id, n_results=1)
-        if tafsir_results:
-            quran_context = tafsir_results[0]["text"]
-    elif word:
-        tafsir_results = smart_rag.query_tafsir(f"meaning of {word}", n_results=1)
-        if tafsir_results:
-            quran_context = tafsir_results[0]["text"]
-
-    # 3b. Madhab-Aware Theological Context
-    madhab_results = smart_rag.query_madhab(madhab, f"recitation error {rule} {word}", n_results=1)
     madhab_context = "No specific madhab ruling found."
-    if madhab_results:
-        madhab_context = madhab_results[0]["text"]
+    if not is_emotional:
+        # 3a. Tafsir / Quranic Context
+        if ayah_id:
+            tafsir_results = smart_rag.query_tafsir("", ayah_id=ayah_id, n_results=1)
+            if tafsir_results:
+                quran_context = tafsir_results[0]["text"]
+        elif word:
+            tafsir_results = smart_rag.query_tafsir(f"meaning of {word}", n_results=1)
+            if tafsir_results:
+                quran_context = tafsir_results[0]["text"]
+
+        # 3b. Madhab-Aware Theological Context
+        madhab_results = smart_rag.query_madhab(madhab, f"recitation error {rule} {word}", n_results=1)
+        if madhab_results:
+            madhab_context = madhab_results[0]["text"]
 
     # 4. Resolve translated texts from cache
     tg = smart_rag.get_localized_template(lang_code, greeting_key, greeting_idx)
