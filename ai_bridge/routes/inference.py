@@ -126,19 +126,61 @@ async def tajweed_check(
 
     start = time.time()
 
+    # Step 3: Get reference phonetics from Buraaq DB
+    reference_words = phonetic_db.search_by_ayah_id(ayah_id)
+    if not reference_words:
+        raise HTTPException(404, f"No phonetic reference found for ayah {ayah_id}")
+
     # Step 1: Whisper transcription (identifies what was recited)
     whisper_result = whisper.transcribe(audio_bytes, mime_type=audio_file.content_type or "audio/webm")
     transcribed_text = whisper_result["text"]
+
+    # Guard against completely empty/silent or untranscribable recitation (P2.12)
+    if not transcribed_text:
+        elapsed = time.time() - start
+        return {
+            "status": "success",
+            "data": {
+                "maulana_feedback": {
+                    "status": "Correction Required (Niqis)",
+                    "score": 0.0,
+                    "guidance": "Silence or untranscribable audio detected. Please speak clearly near the microphone.",
+                    "summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)}
+                },
+                "tajweed_score": 0.0,
+                "total_words": len(reference_words),
+                "correct_words": 0,
+                "error_summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)},
+                "ayah_id": ayah_id,
+                "madhab": madhab,
+                "transcribed_text": "",
+                "phonetic_transcript": "",
+                "word_results": [
+                    {
+                        "word_index": ref["word_index"],
+                        "word_ar": ref["word_ar"],
+                        "expected_phonetic": ref["word_tr"],
+                        "actual_phonetic": "",
+                        "similarity": 0.0,
+                        "status": "major_error",
+                        "rule": "Missing Word",
+                        "guidance": "No recitation detected for this word.",
+                        "error_details": {
+                            "error_type": "tongue_lisani",
+                            "pedagogical_key": "pedagogy.correction.makharij.tongue_lisani",
+                            "description": "No audio signal detected"
+                        }
+                    }
+                    for ref in reference_words
+                ],
+                "inference_time_ms": round(elapsed * 1000, 1),
+            },
+        }
 
     # Step 2 & 4: Wav2Vec2 single-pass inference (P0.3)
     logits, audio_length = phonetic_engine.get_ctc_logits(audio_bytes)
     phonetic_result = phonetic_engine.decode_logits(logits)
     actual_phonetics = phonetic_result["words"]
-
-    # Step 3: Get reference phonetics from Buraaq DB
-    reference_words = phonetic_db.search_by_ayah_id(ayah_id)
-    if not reference_words:
-        raise HTTPException(404, f"No phonetic reference found for ayah {ayah_id}")
 
     # Step 4: Forced alignment
     aligned_words = AlignmentEngine.align_words(
@@ -147,7 +189,7 @@ async def tajweed_check(
 
     # Step 5: Tajweed scoring with Maulana Grade Logic
     # We now integrate temporal and spectral feedback
-    precision_feedback = []
+    merged_feedback = {}
     
     # 5a. Temporal Feedback (Madd/Ghunnah)
     if request.app.state.temporal_engine:
@@ -155,7 +197,11 @@ async def tajweed_check(
             {"word_index": i, "duration": w["end_time"] - w["start_time"]} 
             for i, w in enumerate(aligned_words)
         ]
-        precision_feedback.extend(request.app.state.temporal_engine.validate_durations(ayah_id, user_word_timings))
+        temp_feedback = request.app.state.temporal_engine.validate_durations(ayah_id, user_word_timings)
+        for tf in temp_feedback:
+            if tf.get("error"):
+                w_idx = tf["word_index"]
+                merged_feedback[w_idx] = tf
 
     # 5b. Spectral Feedback (Qalqalah)
     if request.app.state.spectral_analyzer:
@@ -180,7 +226,16 @@ async def tajweed_check(
             })
             
         spectral_feedback = request.app.state.spectral_analyzer.detect_qalqalah(temp_audio_path, segment_times)
-        precision_feedback.extend(spectral_feedback)
+        for sf in spectral_feedback:
+            if sf.get("error"):
+                w_idx = sf["word_index"]
+                if w_idx in merged_feedback:
+                    # Combine errors if a word has both timing and spectral errors
+                    existing = merged_feedback[w_idx]
+                    existing["rule"] = f"{existing['rule']} & {sf['rule']}"
+                    existing["guidance"] = f"{existing['guidance']} Also, {sf['guidance'].lower()}"
+                else:
+                    merged_feedback[w_idx] = sf
         
         # Cleanup
         try: os.remove(temp_audio_path)
@@ -190,7 +245,7 @@ async def tajweed_check(
     report = TajweedScorer.score_recitation(
         actual_phonetics=actual_phonetics, 
         reference_words=reference_words,
-        temporal_feedback=precision_feedback # Merged feedback
+        temporal_feedback=merged_feedback # Merged feedback dict
     )
 
     elapsed = time.time() - start
@@ -199,6 +254,10 @@ async def tajweed_check(
         "status": "success",
         "data": {
             "maulana_feedback": report["maulana_feedback"],
+            "tajweed_score": report["tajweed_score"],
+            "total_words": len(reference_words),
+            "correct_words": report["maulana_feedback"]["summary"].get("correct", 0),
+            "error_summary": report["maulana_feedback"]["summary"],
             "ayah_id": ayah_id,
             "madhab": madhab,
             "transcribed_text": transcribed_text,

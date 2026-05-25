@@ -31,14 +31,15 @@ class WhisperEngine:
 
     def load(self):
         """Load the Whisper model and processor."""
-        self.device = torch.device("cpu")
-        torch_dtype = torch.float32
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+        logger.info(f"Loading Whisper on device: {self.device} with dtype: {torch_dtype}")
 
         self.processor = AutoProcessor.from_pretrained(MODEL_ID)
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
             MODEL_ID,
             torch_dtype=torch_dtype,
-            low_cpu_mem_usage=True,
+            low_cpu_mem_usage=not torch.cuda.is_available(),
         ).to(self.device)
 
         # Fix for generation config timestamps ValueError in transformers
@@ -87,13 +88,21 @@ class WhisperEngine:
         # Convert bytes to numpy array at 16kHz mono
         audio_array = self._bytes_to_array(audio_bytes)
         
+        # Guard against completely empty or trimmed silent audio (P2.12)
+        if len(audio_array) == 0:
+            logger.warning("Audio array is empty or silent after VAD trimming.")
+            return {
+                "text": "",
+                "chunks": [],
+            }
+
         if len(audio_array) / 16000 > 30:
             logger.warning("Audio >30s — Whisper will truncate. Consider chunking.")
 
-        # Run inference
+        # Run inference with token limits to prevent infinite loop / CUDA device assert (P2.12)
         result = self.pipe(
             audio_array,
-            generate_kwargs={},
+            generate_kwargs={"max_new_tokens": 128},
             return_timestamps=False,
         )
 
@@ -121,5 +130,9 @@ class WhisperEngine:
 
         # VAD: Trim leading and trailing silence (top_db=30 is a good baseline)
         audio, _ = librosa.effects.trim(audio, top_db=30)
+
+        # Check if the overall energy is near zero (silence) to prevent Whisper hallucinations
+        if len(audio) == 0 or np.max(np.abs(audio)) < 1e-4:
+            return np.array([], dtype=np.float32)
 
         return audio.astype(np.float32)

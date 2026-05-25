@@ -48,6 +48,10 @@ class TemporalEngine:
             gold_dur = gold_word["duration"]
             is_madd = gold_word.get("is_madd", False)
             
+            # Check for Ghunnah rules (double nasal characters nn or mm in the transliteration)
+            gold_word_tr = gold_word.get("word", "").lower()
+            is_ghunnah = any(g in gold_word_tr for g in ["nn", "mm"])
+            
             # Tajweed count (haraka) conversion (P1.5)
             HARAKA_SECONDS = 0.30  
             user_counts = round(user_dur / HARAKA_SECONDS, 1)
@@ -60,6 +64,13 @@ class TemporalEngine:
                     "error": True,
                     "rule": "Madd Tabee'i",
                     "guidance": f"Elongate for at least {gold_counts:.0f} counts; you held it for {user_counts:.1f}."
+                })
+            elif is_ghunnah and user_dur < (0.8 * gold_dur):
+                feedback.append({
+                    "word_index": i,
+                    "error": True,
+                    "rule": "Ghunnah",
+                    "guidance": f"Hold the Ghunnah nasalization for at least {gold_counts:.0f} counts; you held it for {user_counts:.1f}."
                 })
             else:
                 feedback.append({"word_index": i, "error": False})

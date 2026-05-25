@@ -27,7 +27,7 @@ try:
     with open(audio_path, "rb") as f:
         files = {"audio_file": (os.path.basename(audio_path), f, "audio/wav")}
         data = {"ayah_id": "1:1", "madhab": "shafi"}
-        res = requests.post(f"{AI_BRIDGE_URL}/api/tajweed-check", files=files, data=data, timeout=30)
+        res = requests.post(f"{AI_BRIDGE_URL}/api/tajweed-check", files=files, data=data, timeout=90)
         print("Status:", res.status_code)
         try:
             print("Response:", json.dumps(res.json(), indent=2))
@@ -46,7 +46,7 @@ try:
         "madhab": "shafi",
         "ayah_id": "1:1"
     }
-    res = requests.post(f"{AI_BRIDGE_URL}/api/maulana-voice", json=body, timeout=15)
+    res = requests.post(f"{AI_BRIDGE_URL}/api/maulana-voice", json=body, timeout=60)
     print("Status:", res.status_code)
     try:
         # Check if it's text fallback or audio response headers

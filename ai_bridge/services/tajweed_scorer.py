@@ -290,9 +290,15 @@ class TajweedScorer:
 
             # Integrate Temporal/Spectral Feedback if provided
             maulana_guidance = None
-            if temporal_feedback and i < len(temporal_feedback):
-                tf = temporal_feedback[i]
-                if tf.get("error"):
+            if temporal_feedback:
+                if isinstance(temporal_feedback, dict):
+                    tf = temporal_feedback.get(i)
+                elif isinstance(temporal_feedback, list) and i < len(temporal_feedback):
+                    tf = temporal_feedback[i]
+                else:
+                    tf = None
+
+                if tf and tf.get("error"):
                     status = "major_error" # Timing/Spectral errors are major
                     rule = tf["rule"]
                     maulana_guidance = tf["guidance"]

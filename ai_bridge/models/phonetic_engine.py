@@ -27,7 +27,7 @@ class PhoneticEngine:
 
     def load(self):
         """Load the Wav2Vec2 phonetic model and processor."""
-        self.device = torch.device("cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.processor = Wav2Vec2Processor.from_pretrained(MODEL_ID)
         
@@ -113,5 +113,8 @@ class PhoneticEngine:
 
     def _bytes_to_array(self, audio_bytes: bytes) -> np.ndarray:
         """Convert raw audio bytes to 16kHz mono float32 using the VoiceProcessor pipeline."""
-        from ai_bridge.services.voice_processor import VoiceProcessor
+        try:
+            from services.voice_processor import VoiceProcessor
+        except ImportError:
+            from ai_bridge.services.voice_processor import VoiceProcessor
         return VoiceProcessor.process_audio(audio_bytes, sample_rate=16000)
