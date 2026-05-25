@@ -83,6 +83,43 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const [playbackAudio, setPlaybackAudio] = useState<HTMLAudioElement | null>(null);
+
+  const handlePlayVoice = (text: string) => {
+    if (playbackAudio) {
+      playbackAudio.pause();
+    }
+
+    const cleanedText = text
+      .replace(/\*\*/g, "")
+      .replace(/[\r\n]+/g, " ")
+      .trim();
+
+    const params = new URLSearchParams({
+      rule: "Spiritual Guidance",
+      word: "Advice",
+      guidance: cleanedText,
+      language: "english",
+      madhab: madhab.toLowerCase(),
+      ayah_id: "1:1"
+    });
+
+    const aiBridgeUrl = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_AI_BRIDGE_URL || "http://localhost:8000");
+    const audioUrl = `${aiBridgeUrl}/api/maulana-voice?${params.toString()}`;
+
+    const audio = new Audio(audioUrl);
+    audio.play().catch(e => console.warn("Failed to play Maulana voice:", e));
+    setPlaybackAudio(audio);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (playbackAudio) {
+        playbackAudio.pause();
+      }
+    };
+  }, [playbackAudio]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
@@ -119,6 +156,7 @@ export default function ChatPage() {
             timestamp: new Date(),
           };
           setMessages(prev => [...prev, maulanaMsg]);
+          handlePlayVoice(json.data.answer);
         } else {
           throw new Error(json.message || "Failed to query Maulana");
         }
@@ -136,6 +174,7 @@ export default function ChatPage() {
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, maulanaMsg]);
+      handlePlayVoice(maulanaMsg.text);
     } finally {
       setIsTyping(false);
     }
@@ -248,8 +287,11 @@ export default function ChatPage() {
 
                 {/* Voice button for Maulana */}
                 {msg.role === "maulana" && (
-                  <button className="flex items-center gap-1.5 mt-3 text-[11px] font-bold px-3 py-1.5 rounded-lg"
-                    style={{ background: "rgba(212,175,55,0.1)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.2)" }}>
+                  <button 
+                    onClick={() => handlePlayVoice(msg.text)}
+                    className="flex items-center gap-1.5 mt-3 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all hover:bg-[rgba(212,175,55,0.15)]"
+                    style={{ background: "rgba(212,175,55,0.1)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.2)" }}
+                  >
                     <Volume2 className="w-3.5 h-3.5" />
                     Listen
                   </button>
