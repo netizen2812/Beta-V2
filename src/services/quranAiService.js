@@ -103,7 +103,7 @@ export async function askImamStandalone(user_question, language_code, ayah_id, a
         headers: {
           "X-API-Key": process.env.INTERNAL_API_KEY || "",
         },
-        timeout: 15000,
+        timeout: 180000,
       });
 
       const answer = bridgeRes.headers["x-maulana-text"];
