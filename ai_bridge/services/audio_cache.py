@@ -5,8 +5,11 @@ from pathlib import Path
 
 logger = logging.getLogger("AudioCache")
 
-CACHE_DB_PATH = Path("ai_bridge/data/audio_cache.db")
-CACHE_AUDIO_DIR = Path("ai_bridge/data/cache_wavs")
+# Absolute path resolutions based on the file location to ensure Cwd-independence
+SERVICE_DIR = Path(__file__).resolve().parent
+AI_BRIDGE_DIR = SERVICE_DIR.parent
+CACHE_DB_PATH = AI_BRIDGE_DIR / "data" / "audio_cache.db"
+CACHE_AUDIO_DIR = AI_BRIDGE_DIR / "data" / "cache_wavs"
 
 class AudioCache:
     def __init__(self):
