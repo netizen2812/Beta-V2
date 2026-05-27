@@ -44,6 +44,29 @@ LANGUAGE_DIRECTIVES = {
     "arabic":  "Arabic (Arabic script with proper harakaat). Keep it warm, Islamic, gentle, and brief.",
 }
 
+def _fetch_alquran_translation(ayah_id: str, lang: str = "en") -> str:
+    """Fetches the exact text and translation of an Ayah from api.alquran.cloud dynamically."""
+    import urllib.request
+    import json
+    
+    edition = "en.sahih" if lang == "en" else "ur.jandagarhi"
+    url = f"http://api.alquran.cloud/v1/ayah/{ayah_id}/{edition}"
+    
+    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    try:
+        with urllib.request.urlopen(req, timeout=8) as response:
+            data = json.loads(response.read())
+            if data['code'] == 200:
+                ayah_text = data['data']['text']
+                surah_name = data['data']['surah']['englishName']
+                surah_num = data['data']['surah']['number']
+                ayah_num = data['data']['numberInSurah']
+                return f'Surah {surah_name} ({surah_num}:{ayah_num}) says: "{ayah_text}"'
+    except Exception as e:
+        logger.error(f"Failed to fetch translation from alquran.api for {ayah_id}: {e}")
+    return ""
+
+
 # ─── Step 1: Deterministic Template Selection ───────────────────────────────
 
 def _get_stable_template_idx(category_key: str, seed: str, max_variations: int = 3) -> tuple[str, int]:
@@ -290,25 +313,41 @@ async def get_maulana_advice(
         closure_en = "May Allah keep you safe. Assalamu alaikum."
         closure_idx = 0
 
-    # 3. Retrieve Context from RAG vector database
+    # 3. Retrieve Context from RAG vector database & alquran.api fallback
     quran_context = "No specific ayah context."
     madhab_context = "No specific madhab ruling found."
+    
     if is_emotional:
-        # For emotional queries: fetch an ayah about patience, ease after hardship, or trust in Allah
-        emotional_query = f"{rule} {word} patience ease hardship trust Allah comfort"
-        tafsir_results = smart_rag.query_tafsir(emotional_query, n_results=2)
-        if tafsir_results:
-            quran_context = " | ".join(r["text"] for r in tafsir_results[:2])
+        # Check if a specific Ayah was requested, else search by comfort context
+        fetched_translation = ""
+        if ayah_id:
+            fetched_translation = _fetch_alquran_translation(ayah_id, lang_code)
+            
+        if fetched_translation:
+            quran_context = fetched_translation
+        else:
+            # For emotional queries: fetch an ayah about patience, ease after hardship, or trust in Allah
+            emotional_query = f"{rule} {word} patience ease hardship trust Allah comfort"
+            tafsir_results = smart_rag.query_tafsir(emotional_query, n_results=2)
+            if tafsir_results:
+                quran_context = " | ".join(r["text"] for r in tafsir_results[:2])
     else:
         # 3a. Tafsir / Quranic Context
+        fetched_translation = ""
         if ayah_id:
-            tafsir_results = smart_rag.query_tafsir("", ayah_id=ayah_id, n_results=1)
-            if tafsir_results:
-                quran_context = tafsir_results[0]["text"]
-        elif word:
-            tafsir_results = smart_rag.query_tafsir(f"meaning of {word}", n_results=1)
-            if tafsir_results:
-                quran_context = tafsir_results[0]["text"]
+            fetched_translation = _fetch_alquran_translation(ayah_id, lang_code)
+            
+        if fetched_translation:
+            quran_context = fetched_translation
+        else:
+            if ayah_id:
+                tafsir_results = smart_rag.query_tafsir("", ayah_id=ayah_id, n_results=1)
+                if tafsir_results:
+                    quran_context = tafsir_results[0]["text"]
+            elif word:
+                tafsir_results = smart_rag.query_tafsir(f"meaning of {word}", n_results=1)
+                if tafsir_results:
+                    quran_context = tafsir_results[0]["text"]
 
         # 3b. Madhab-Aware Theological Context
         madhab_results = smart_rag.query_madhab(madhab, f"recitation error {rule} {word}", n_results=1)
