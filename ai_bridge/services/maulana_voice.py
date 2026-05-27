@@ -49,6 +49,11 @@ def _fetch_alquran_translation(ayah_id: str, lang: str = "en") -> str:
     import urllib.request
     import json
     
+    # Clean ayah_id (e.g., convert "1:1:1" -> "1:1")
+    parts = ayah_id.split(":")
+    if len(parts) >= 2:
+        ayah_id = f"{parts[0]}:{parts[1]}"
+        
     edition = "en.sahih" if lang == "en" else "ur.jandagarhi"
     url = f"http://api.alquran.cloud/v1/ayah/{ayah_id}/{edition}"
     
@@ -313,43 +318,43 @@ async def get_maulana_advice(
         closure_en = "May Allah keep you safe. Assalamu alaikum."
         closure_idx = 0
 
-    # 3. Retrieve Context from RAG vector database & alquran.api fallback
+    # 3. Retrieve Context from alquran.api directly (ChromaDB local tafsir query completely bypassed)
     quran_context = "No specific ayah context."
     madhab_context = "No specific madhab ruling found."
     
     if is_emotional:
-        # Check if a specific Ayah was requested, else search by comfort context
-        fetched_translation = ""
-        if ayah_id:
-            fetched_translation = _fetch_alquran_translation(ayah_id, lang_code)
-            
-        if fetched_translation:
-            quran_context = fetched_translation
-        else:
-            # For emotional queries: fetch an ayah about patience, ease after hardship, or trust in Allah
-            emotional_query = f"{rule} {word} patience ease hardship trust Allah comfort"
-            tafsir_results = smart_rag.query_tafsir(emotional_query, n_results=2)
-            if tafsir_results:
-                quran_context = " | ".join(r["text"] for r in tafsir_results[:2])
+        # Determine appropriate comfort Ayah if no ayah_id is provided
+        if not ayah_id:
+            pedagogy_lower = str(pedagogical_key).lower()
+            rule_lower = rule.lower()
+            if "academic_stress" in pedagogy_lower or "academic" in rule_lower or "exam" in rule_lower:
+                ayah_id = "94:5"  # Surah Ash-Sharh (hardship/ease)
+            elif "anxiety" in pedagogy_lower or "worry" in rule_lower or "fear" in rule_lower:
+                ayah_id = "2:186" # Surah Al-Baqarah (Allah is near)
+            elif "overwhelmed" in pedagogy_lower or "burnout" in rule_lower:
+                ayah_id = "2:286" # Surah Al-Baqarah (Allah does not burden)
+            elif "grief_loneliness" in pedagogy_lower or "sad" in rule_lower or "grief" in rule_lower:
+                ayah_id = "50:16" # Surah Qaf (closer than jugular vein)
+            elif "family_issues" in pedagogy_lower or "family" in rule_lower or "parent" in rule_lower:
+                ayah_id = "17:23" # Surah Al-Isra (parents treatment)
+            else:
+                ayah_id = "94:5"  # Default comforting verse
+                
+        # Fetch the exact text and translation directly from Al Quran Cloud
+        quran_context = _fetch_alquran_translation(ayah_id, lang_code)
+        if not quran_context:
+            quran_context = f"Surah Ash-Sharh (94:5-6) says: 'For indeed, with hardship [will be] ease.'"
     else:
-        # 3a. Tafsir / Quranic Context
-        fetched_translation = ""
+        # 3a. Tafsir / Quranic Context — strictly fetch from Al Quran Cloud
         if ayah_id:
-            fetched_translation = _fetch_alquran_translation(ayah_id, lang_code)
-            
-        if fetched_translation:
-            quran_context = fetched_translation
-        else:
-            if ayah_id:
-                tafsir_results = smart_rag.query_tafsir("", ayah_id=ayah_id, n_results=1)
-                if tafsir_results:
-                    quran_context = tafsir_results[0]["text"]
-            elif word:
-                tafsir_results = smart_rag.query_tafsir(f"meaning of {word}", n_results=1)
-                if tafsir_results:
-                    quran_context = tafsir_results[0]["text"]
+            quran_context = _fetch_alquran_translation(ayah_id, lang_code)
+        elif word:
+            # If only word is passed for Tajweed, lookup meaning using local RAG as fallback
+            tafsir_results = smart_rag.query_tafsir(f"meaning of {word}", n_results=1)
+            if tafsir_results:
+                quran_context = tafsir_results[0]["text"]
 
-        # 3b. Madhab-Aware Theological Context
+        # 3b. Madhab-Aware Theological Context — retrieved from ChromaDB (madhab-specific)
         madhab_results = smart_rag.query_madhab(madhab, f"recitation error {rule} {word}", n_results=1)
         if madhab_results:
             madhab_context = madhab_results[0]["text"]
