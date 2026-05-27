@@ -16,11 +16,11 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/api/maulana-voice",
-        destination: `${aiBridgeHost}/api/maulana-voice`,
+        destination: `${backendHost}/api/quran/maulana-voice`,
       },
       {
         source: "/api/audio-playlist",
-        destination: `${aiBridgeHost}/api/audio-playlist`,
+        destination: `${backendHost}/api/quran/audio-playlist`,
       },
     ];
   },
