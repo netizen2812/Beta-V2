@@ -276,17 +276,30 @@ async def get_maulana_advice(
         correction_en = "Please focus on the pronunciation and the rules of Tajweed for this word."
         correction_idx = 0
 
-    # 2c. Closure
-    closure_key = "reception.closures.standard.until_next_time"
-    closure_en, closure_idx = _get_stable_template_idx(closure_key, seed)
+    # 2c. Closure — use a non-Tajweed closure for emotional/spiritual queries
+    if is_emotional:
+        closure_key = "reception.closures.encouragement.consistency_promise"
+        closure_en, closure_idx = _get_stable_template_idx(closure_key, seed)
+        if not closure_en:
+            closure_key = "reception.closures.standard.farewell"
+            closure_en, closure_idx = _get_stable_template_idx(closure_key, seed)
+    else:
+        closure_key = "reception.closures.standard.until_next_time"
+        closure_en, closure_idx = _get_stable_template_idx(closure_key, seed)
     if not closure_en:
         closure_en = "May Allah keep you safe. Assalamu alaikum."
         closure_idx = 0
 
-    # 3. Retrieve Context from RAG vector database (Skip for emotional comfort queries to save CPU)
+    # 3. Retrieve Context from RAG vector database
     quran_context = "No specific ayah context."
     madhab_context = "No specific madhab ruling found."
-    if not is_emotional:
+    if is_emotional:
+        # For emotional queries: fetch an ayah about patience, ease after hardship, or trust in Allah
+        emotional_query = f"{rule} {word} patience ease hardship trust Allah comfort"
+        tafsir_results = smart_rag.query_tafsir(emotional_query, n_results=2)
+        if tafsir_results:
+            quran_context = " | ".join(r["text"] for r in tafsir_results[:2])
+    else:
         # 3a. Tafsir / Quranic Context
         if ayah_id:
             tafsir_results = smart_rag.query_tafsir("", ayah_id=ayah_id, n_results=1)
@@ -314,10 +327,14 @@ async def get_maulana_advice(
 
     # Enforce at most 20% dynamic ratio constraint mathematically
     total_premade_words = len(tg.split()) + len(tc.split()) + len(tcl.split())
-    # Dynamic <= 0.25 * Premade guarantees Dynamic / (Premade + Dynamic) <= 20%
-    max_dynamic_words = int(total_premade_words * 0.25)
-    if max_dynamic_words < 3:
-        max_dynamic_words = 3 # Ensure a basic sentence is allowed
+    if is_emotional:
+        # Emotional comfort needs room for a Quranic ayah + translation; allow at least 50 words
+        max_dynamic_words = max(50, int(total_premade_words * 0.25))
+    else:
+        # Dynamic <= 0.25 * Premade guarantees Dynamic / (Premade + Dynamic) <= 20%
+        max_dynamic_words = int(total_premade_words * 0.25)
+        if max_dynamic_words < 3:
+            max_dynamic_words = 3  # Ensure a basic sentence is allowed
 
     # 5. Invoke Gemini 2.0 Flash for structured localized dynamic advice segment
     da = ""
@@ -338,9 +355,13 @@ async def get_maulana_advice(
             prompt = (
                 f"You are a warm, gentle, and highly scholarly Quran teacher (Maulana) providing personal spiritual comfort to a student.\n\n"
                 f"Student's selected school: {madhab.upper()}\n"
-                f"Student's personal situation/guidance text: {guidance}\n\n"
-                f"Your task is to generate a very brief, custom, warm bridging sentence of comfort in {language.upper()} (using its native script: Urdu for Urdu, Arabic for Arabic) that directly addresses the student's situation regarding '{rule}' and theme '{word}', offering a word of gentle encouragement, trust in Allah ('tawakkul'), and reminding them that Allah is always near.\n\n"
-                f"It MUST be extremely concise, and MUST NOT exceed {max_dynamic_words} words under any circumstances.\n"
+                f"Student's personal situation/guidance text: {guidance}\n"
+                f"Quranic context retrieved from the knowledge base: {quran_context}\n\n"
+                f"Your task is to generate a very brief, custom, warm bridging sentence of spiritual comfort in {language.upper()} (using its native script: Urdu for Urdu, Arabic for Arabic) that:\n"
+                f"1. Directly addresses the student's emotional situation: '{rule}'.\n"
+                f"2. Quotes or references ONE specific, relevant Quranic Ayah (e.g. Surah Ash-Sharh 94:5-6, or Al-Baqarah 2:286) that is appropriate for their situation. Include the Ayah reference AND its meaning/translation in {language.upper()}.\n"
+                f"3. Ends with a word of gentle encouragement and trust in Allah ('tawakkul').\n\n"
+                f"It MUST NOT exceed {max_dynamic_words} words under any circumstances. Do NOT mention Tajweed, Makhraj, or recitation corrections.\n"
                 f"Return ONLY a JSON object with a single field 'dynamic_advice'."
             )
         else:
@@ -362,7 +383,7 @@ async def get_maulana_advice(
                 contents=prompt,
                 config=genai_types.GenerateContentConfig(
                     temperature=0.7,
-                    max_output_tokens=200,
+                    max_output_tokens=500 if is_emotional else 200,
                     response_mime_type="application/json",
                 )
             )
