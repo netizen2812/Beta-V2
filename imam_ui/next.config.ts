@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
         source: "/api/audio-playlist",
         destination: `${backendHost}/api/quran/audio-playlist`,
       },
+      {
+        source: "/api/tts",
+        destination: `${backendHost}/api/quran/tts`,
+      },
     ];
   },
 };

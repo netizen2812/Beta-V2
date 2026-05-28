@@ -1065,8 +1065,18 @@ export default function FullscreenAiPage() {
             text: answerText
           });
           if (playVoiceResponse) {
-            // Warm non-blocking ElevenLabs TTS vocal intro to welcome user
-            playMaulanaVoiceAdvisory("Jurisprudence", "Imam Guidance", answerText.slice(0, 120));
+            // Synthesize the actual answer text directly — not a generic advisory
+            const ttsLang = globalLanguage === 'ar' ? 'ar' : globalLanguage === 'ur' ? 'ur' : 'en';
+            const ttsRes = await fetch(`${BACKEND_URL}/api/quran/tts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: answerText, language: ttsLang })
+            });
+            if (ttsRes.ok) {
+              const blob = await ttsRes.blob();
+              const audioUrl = URL.createObjectURL(blob);
+              handlePlayVoice(audioUrl);
+            }
           }
         } else {
           throw new Error();

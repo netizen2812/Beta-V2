@@ -4,7 +4,7 @@ import rateLimit from "express-rate-limit";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { getAyahHandler } from "../controller/quranController.js";
 import { explainAyah } from "../controller/explainController.js";
-import { askImam, getMaulanaVoice, getAudioPlaylist } from "../controller/askController.js";
+import { askImam, getMaulanaVoice, getAudioPlaylist, getDirectTTS } from "../controller/askController.js";
 import { checkTajweed, getPhoneticRef, transcribeAudio } from "../controller/tajweedController.js";
 import { getIbadahTimings, getDailyHadith } from "../controller/ibadahController.js";
 
@@ -25,6 +25,7 @@ router.post("/transcribe", requireAuth, audioUpload.single("audio_file"), transc
 router.get("/maulana-voice", getMaulanaVoice);
 router.post("/maulana-voice", getMaulanaVoice);
 router.post("/audio-playlist", getAudioPlaylist);
+router.post("/tts", getDirectTTS);
 
 // ─── Ibadah Routes ───────────────────────────────────────────────────────────
 router.get("/ibadah/timings", getIbadahTimings);

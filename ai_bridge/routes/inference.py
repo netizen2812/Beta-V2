@@ -357,6 +357,87 @@ async def get_tafsir_context(request: Request, ayah_id: str):
     }
 
 
+# ─── Direct TTS Endpoint (for RAG answer voiceover) ───────────────────────────
+
+class TTSRequest(BaseModel):
+    text: str
+    language: str = "en"   # 'en' | 'ar' | 'ur'
+
+@router.post("/tts")
+async def direct_tts(req: TTSRequest):
+    """
+    POST /api/tts
+
+    Synthesizes raw text directly to audio — no templates, no caching.
+    Used for voicing RAG/chat answers verbatim so every unique response
+    has unique audio (fixes the "same audio repeating" bug).
+
+    Body:
+        text     (str): The text to synthesize
+        language (str): 'en' | 'ar' | 'ur'
+
+    Returns:
+        audio/wav stream
+    """
+    import io
+    from services.local_tts import tts_engine
+
+    text = req.text.strip()
+    if not text:
+        raise HTTPException(400, "text is required")
+
+    # Clamp to a reasonable length for voice response (~300 words max)
+    words = text.split()
+    if len(words) > 300:
+        text = " ".join(words[:300])
+        if not text.endswith((".", "!", "?")):
+            text += "."
+
+    lang = req.language.lower().strip()
+    if lang not in ("en", "ar", "ur"):
+        lang = "en"
+
+    if not tts_engine.is_loaded:
+        tts_engine.load_models(lang)
+
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            out_path = tmp.name
+
+        success = tts_engine.synthesize(text, lang, out_path)
+        if not success:
+            raise RuntimeError("TTS synthesis failed")
+
+        # Stream back the WAV file then delete
+        async def wav_stream():
+            try:
+                with open(out_path, "rb") as f:
+                    while True:
+                        chunk = f.read(4096)
+                        if not chunk:
+                            break
+                        yield chunk
+            finally:
+                try:
+                    os.remove(out_path)
+                except Exception:
+                    pass
+
+        return StreamingResponse(
+            wav_stream(),
+            media_type="audio/wav",
+            headers={"X-TTS-Language": lang},
+        )
+
+    except Exception as e:
+        logger.error(f"[/api/tts] Direct TTS failed: {e}")
+        try:
+            os.remove(out_path)
+        except Exception:
+            pass
+        raise HTTPException(500, f"TTS synthesis failed: {str(e)}")
+
+
 # ─── Maulana Voice Endpoint ────────────────────────────────────────────────────
 
 class MaulanaVoiceRequest(BaseModel):

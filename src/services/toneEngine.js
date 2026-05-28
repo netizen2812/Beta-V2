@@ -91,13 +91,15 @@ export function buildAskPrompt(language_code, userQuestion, ayahContext = null, 
     : "";
   
   const ragBlock = ragContext 
-    ? `\n### SCHOLARLY FOUNDATION:\n${ragContext}\n`
+    ? `\n### SCHOLARLY FOUNDATION (always cite Surah name and ayah number when referencing these):\n${ragContext}\n`
     : "";
 
   const cleanRules = GLOBAL_RULES
     .replace("8. Format the output as valid JSON:", "")
     .replace(/\{[\s\S]*\}/, "")
-    .trim() + "\n8. Return the response as PLAIN TEXT only. Do NOT use markdown code blocks, and do NOT wrap the output in JSON format.";
+    .trim() +
+    "\n8. Return the response as PLAIN TEXT only. Do NOT use markdown code blocks, and do NOT wrap the output in JSON format." +
+    "\n9. CRITICAL: Whenever you reference or quote any Quranic ayah, you MUST explicitly name the Surah and ayah number (e.g., \"Surah Al-Baqarah (2:286) says...\"). Never use vague pronouns like \"this ayah\", \"it says\", or \"the verse\" without identifying which surah and ayah number it is.";
 
   return `${contextBlock}${ragBlock}
 User's question: "${userQuestion}"

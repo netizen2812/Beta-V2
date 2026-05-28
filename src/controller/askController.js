@@ -151,3 +151,27 @@ export const getAudioPlaylist = async (req, res) => {
     res.status(status).json({ status: "error", message });
   }
 };
+
+export const getDirectTTS = async (req, res) => {
+  try {
+    const AI_BRIDGE_URL = process.env.AI_BRIDGE_URL || "http://127.0.0.1:8000";
+    const response = await axios.post(
+      `${AI_BRIDGE_URL}/api/tts`,
+      req.body,
+      {
+        headers: {
+          "X-API-Key": process.env.INTERNAL_API_KEY || "",
+          "Content-Type": "application/json",
+        },
+        responseType: "stream",
+        timeout: 120000,
+      }
+    );
+    res.setHeader("Content-Type", "audio/wav");
+    response.data.pipe(res);
+  } catch (error) {
+    console.error("❌ Proxy Direct TTS error:", error.message);
+    const status = error.response?.status || 500;
+    res.status(status).json({ status: "error", message: error.message });
+  }
+};
