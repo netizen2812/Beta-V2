@@ -41,6 +41,21 @@ def download_buraaq_dataset():
     print(f"✅ Buraaq dataset cached: {db.total_words} words, {db.total_ayahs} ayahs.")
 
 
+def download_tafsir_rag():
+    print("📥 Initializing and pre-building Tafsir RAG database ...")
+    from services.tafsir_rag import TafsirRAG
+    rag = TafsirRAG()
+    rag.load()
+    print(f"✅ Tafsir RAG pre-built successfully (size: {rag.collection_size}).")
+
+
+def download_smart_rag():
+    print("📥 Initializing and pre-building SmartRAG database ...")
+    from services.smart_rag import smart_rag
+    smart_rag.load()
+    print("✅ SmartRAG pre-built successfully.")
+
+
 if __name__ == "__main__":
     print("=" * 60)
     print("  Faith-Tech AI Bridge — Model Download Script")
@@ -54,6 +69,12 @@ if __name__ == "__main__":
     print()
 
     download_buraaq_dataset()
+    print()
+
+    download_tafsir_rag()
+    print()
+
+    download_smart_rag()
     print()
 
     print("=" * 60)

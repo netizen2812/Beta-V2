@@ -13,6 +13,7 @@ Logic:
 import os
 import logging
 import httpx
+import torch
 from typing import AsyncIterator
 
 logger = logging.getLogger(__name__)

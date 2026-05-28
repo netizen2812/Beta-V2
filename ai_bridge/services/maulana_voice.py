@@ -178,6 +178,171 @@ async def _stream_audio_file(file_path: Path) -> AsyncGenerator[bytes, None]:
             yield chunk
             chunk = await f.read(4096)
 
+
+def _enforce_80_20_audio_ratio(
+    premade_paths: list[Path],
+    dynamic_wav: Path | None,
+    target_sr: int = 24000,
+    max_dynamic_ratio: float = 0.20,
+) -> Path | None:
+    """
+    Enforces the 80/20 audio budget constraint at the WAV sample level.
+
+    Measures actual audio duration (in samples) of:
+      • premade segments (greeting + correction + closure)
+      • dynamic live TTS segment (Gemini-generated advice)
+
+    If dynamic_duration / total_duration > max_dynamic_ratio (default 20%):
+      • Hard-truncates the dynamic WAV in-place at the sample boundary.
+      • Applies a 50ms fade-out to prevent a click at the cut point.
+
+    Returns the (potentially truncated) dynamic_wav Path, or None if no
+    dynamic segment exists or truncation makes it too short to use.
+
+    This is the WAV-level enforcement that backs the word-count budget set
+    in the LLM prompt — ensuring the ratio holds even if TTS synthesis
+    produces different durations than the word count predicts.
+    """
+    if dynamic_wav is None or not dynamic_wav.exists():
+        return None
+
+    try:
+        import soundfile as sf
+        import numpy as np
+
+        # 1. Measure premade duration (samples)
+        premade_samples = 0
+        for p in premade_paths:
+            if p and p.exists():
+                info = sf.info(str(p))
+                premade_samples += info.frames
+
+        if premade_samples == 0:
+            # No premade audio — ratio is undefined, let dynamic pass
+            return dynamic_wav
+
+        # 2. Measure dynamic duration
+        dynamic_data, sr = sf.read(str(dynamic_wav), dtype="float32")
+        dynamic_samples = len(dynamic_data)
+
+        total_samples = premade_samples + dynamic_samples
+        actual_ratio = dynamic_samples / total_samples if total_samples > 0 else 0.0
+
+        logger.info(
+            f"[80/20 Enforcer] Premade: {premade_samples / target_sr:.2f}s | "
+            f"Dynamic: {dynamic_samples / target_sr:.2f}s | "
+            f"Ratio: {actual_ratio:.1%} (limit {max_dynamic_ratio:.0%})"
+        )
+
+        if actual_ratio <= max_dynamic_ratio:
+            # Within budget — no truncation needed
+            return dynamic_wav
+
+        # 3. Calculate the maximum allowed dynamic samples
+        # dynamic / (premade + dynamic) = max_ratio
+        # => dynamic = max_ratio * premade / (1 - max_ratio)
+        max_dynamic_samples = int(max_dynamic_ratio * premade_samples / (1 - max_dynamic_ratio))
+
+        if max_dynamic_samples < int(target_sr * 0.3):  # < 300ms is too short to be meaningful
+            logger.warning(
+                f"[80/20 Enforcer] Max allowed dynamic duration < 300ms. "
+                f"Dropping dynamic segment entirely."
+            )
+            return None
+
+        # 4. Truncate dynamic WAV at the sample boundary
+        truncated = dynamic_data[:max_dynamic_samples]
+
+        # 5. Apply 50ms fade-out at the cut point to avoid click
+        fade_samples = min(int(target_sr * 0.05), len(truncated))
+        if fade_samples > 0:
+            fade_out = np.linspace(1.0, 0.0, fade_samples, dtype=np.float32)
+            truncated[-fade_samples:] *= fade_out
+
+        sf.write(str(dynamic_wav), truncated, sr)
+
+        new_ratio = max_dynamic_samples / (premade_samples + max_dynamic_samples)
+        logger.info(
+            f"[80/20 Enforcer] Truncated dynamic: {max_dynamic_samples / target_sr:.2f}s "
+            f"(new ratio: {new_ratio:.1%})"
+        )
+        return dynamic_wav
+
+    except Exception as e:
+        logger.error(f"[80/20 Enforcer] Failed: {e}. Skipping enforcement.")
+        return dynamic_wav  # Soft fallback — don't crash the pipeline
+
+
+def _get_ayah_audio_segment(ayah_id: str, edition: str) -> Optional[Path]:
+    """
+    Downloads, converts, and caches a specific Quranic audio segment (e.g. ar.alafasy or en.walk)
+    as a 24kHz mono WAV in a persistent cache folder.
+    """
+    from services.smart_rag import DATA_DIR
+    import urllib.request
+    import json
+    import tempfile
+    import librosa
+    import soundfile as sf
+    import os
+    
+    # Determine persistent cache directory
+    if os.getenv("HF_HOME") and os.path.exists("/models"):
+        cache_dir = Path("/models/quran_audio")
+    else:
+        cache_dir = DATA_DIR / "assets" / "quran_audio"
+        
+    safe_edition = edition.replace(".", "_")
+    safe_ayah = ayah_id.replace(":", "_")
+    wav_path = cache_dir / safe_edition / f"{safe_ayah}.wav"
+    
+    if wav_path.exists() and wav_path.stat().st_size > 1024:
+        return wav_path
+        
+    try:
+        wav_path.parent.mkdir(parents=True, exist_ok=True)
+        # Fetch the direct audio URL from Al Quran Cloud API
+        api_url = f"http://api.alquran.cloud/v1/ayah/{ayah_id}/{edition}"
+        req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+        audio_url = None
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read())
+            if data['code'] == 200:
+                audio_url = data['data']['audio']
+                
+        if not audio_url:
+            logger.error(f"Could not resolve audio url from api for {ayah_id} ({edition})")
+            return None
+            
+        # Download the MP3 file
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+            tmp_mp3_path = Path(tmp.name)
+            
+        logger.info(f"Downloading {edition} for {ayah_id} from {audio_url}...")
+        download_req = urllib.request.Request(audio_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(download_req, timeout=20) as response:
+            with open(tmp_mp3_path, "wb") as f:
+                f.write(response.read())
+                
+        # Load and resample to 24000Hz mono using librosa
+        logger.info(f"Converting and resampling {tmp_mp3_path} to 24kHz mono WAV...")
+        data, sr = librosa.load(str(tmp_mp3_path), sr=24000, mono=True)
+        
+        # Save as WAV
+        sf.write(str(wav_path), data, 24000)
+        
+        try:
+            os.remove(tmp_mp3_path)
+        except Exception:
+            pass
+            
+        logger.info(f"Successfully cached {edition} for {ayah_id} at {wav_path}")
+        return wav_path
+    except Exception as e:
+        logger.error(f"Failed to get audio segment for {ayah_id} ({edition}): {e}")
+        return None
+
+
 # ─── Step 3: Orchestrator — Public API ────────────────────────────────────────
 
 async def get_maulana_advice(
@@ -211,7 +376,8 @@ async def get_maulana_advice(
     guidance = guidance[:300].replace("{", "").replace("}", "").replace("\n", " ")
 
     rule_lower = rule.lower()
-    is_emotional = any(k in rule_lower for k in ["academic", "exam", "anxiety", "worry", "fear", "grief", "lonely", "loneliness", "sad", "family", "parent", "overwhelmed", "burnout", "spiritual", "emotional"])
+    word_lower = word.lower()
+    is_emotional = any(k in rule_lower or k in word_lower for k in ["academic", "exam", "anxiety", "worry", "fear", "grief", "lonely", "loneliness", "sad", "family", "parent", "overwhelmed", "burnout", "spiritual", "emotional", "envy", "hasad", "jealous", "comfort"])
 
     lang_code = (
         "ur" if "urdu"    in language.lower() else
@@ -276,6 +442,10 @@ async def get_maulana_advice(
             pedagogical_key = "bridge.emotional.personal.family_issues"
         elif "overwhelmed" in rule_lower or "burnout" in rule_lower:
             pedagogical_key = "bridge.emotional.stress.overwhelmed"
+        elif "envy" in rule_lower or "hasad" in rule_lower or "jealous" in rule_lower:
+            pedagogical_key = "bridge.emotional.personal.envy_hasad"
+        elif "comfort" in rule_lower or "spiritual" in rule_lower or "general" in rule_lower:
+            pedagogical_key = "bridge.emotional.general_comfort"
         elif "throat" in rule_lower or "halqi" in rule_lower:
             pedagogical_key = "pedagogy.correction.makharij.throat_halqi"
         elif "madd" in rule_lower:
@@ -323,22 +493,35 @@ async def get_maulana_advice(
     madhab_context = "No specific madhab ruling found."
     
     if is_emotional:
-        # Determine appropriate comfort Ayah if no ayah_id is provided
-        if not ayah_id:
-            pedagogy_lower = str(pedagogical_key).lower()
-            rule_lower = rule.lower()
-            if "academic_stress" in pedagogy_lower or "academic" in rule_lower or "exam" in rule_lower:
-                ayah_id = "94:5"  # Surah Ash-Sharh (hardship/ease)
-            elif "anxiety" in pedagogy_lower or "worry" in rule_lower or "fear" in rule_lower:
-                ayah_id = "2:186" # Surah Al-Baqarah (Allah is near)
-            elif "overwhelmed" in pedagogy_lower or "burnout" in rule_lower:
-                ayah_id = "2:286" # Surah Al-Baqarah (Allah does not burden)
-            elif "grief_loneliness" in pedagogy_lower or "sad" in rule_lower or "grief" in rule_lower:
-                ayah_id = "50:16" # Surah Qaf (closer than jugular vein)
-            elif "family_issues" in pedagogy_lower or "family" in rule_lower or "parent" in rule_lower:
-                ayah_id = "17:23" # Surah Al-Isra (parents treatment)
-            else:
-                ayah_id = "94:5"  # Default comforting verse
+        # Determine appropriate comfort Ayah if no ayah_id is provided or if it is the default "1:1"
+        if not ayah_id or ayah_id == "1:1":
+            try:
+                # Query ChromaDB collection 'quran_tafsir' based on the user's question (guidance)
+                results = smart_rag.query_tafsir(query_text=guidance, n_results=1)
+                if results:
+                    ayah_id = results[0]["ayah_id"]
+                    logger.info(f"[MaulanaVoice] RAG selected comfort ayah_id: {ayah_id} dynamically based on guidance: '{guidance}'")
+            except Exception as e:
+                logger.error(f"[MaulanaVoice] RAG search failed for emotional comfort: {e}")
+                
+            # Fallback if RAG returned nothing or failed
+            if not ayah_id or ayah_id == "1:1":
+                pedagogy_lower = str(pedagogical_key).lower()
+                rule_lower = rule.lower()
+                if "academic_stress" in pedagogy_lower or "academic" in rule_lower or "exam" in rule_lower:
+                    ayah_id = "94:5"  # Surah Ash-Sharh (hardship/ease)
+                elif "anxiety" in pedagogy_lower or "worry" in rule_lower or "fear" in rule_lower:
+                    ayah_id = "2:186" # Surah Al-Baqarah (Allah is near)
+                elif "overwhelmed" in pedagogy_lower or "burnout" in rule_lower:
+                    ayah_id = "2:286" # Surah Al-Baqarah (Allah does not burden)
+                elif "grief_loneliness" in pedagogy_lower or "sad" in rule_lower or "grief" in rule_lower:
+                    ayah_id = "50:16" # Surah Qaf (closer than jugular vein)
+                elif "family_issues" in pedagogy_lower or "family" in rule_lower or "parent" in rule_lower:
+                    ayah_id = "17:23" # Surah Al-Isra (parents treatment)
+                elif "envy_hasad" in pedagogy_lower or "envy" in rule_lower or "hasad" in rule_lower or "jealous" in rule_lower:
+                    ayah_id = "113:5" # Surah Al-Falaq (envy/hasad)
+                else:
+                    ayah_id = "94:5"  # Default comforting verse
                 
         # Fetch the exact text and translation directly from Al Quran Cloud
         quran_context = _fetch_alquran_translation(ayah_id, lang_code)
@@ -501,12 +684,43 @@ async def get_maulana_advice(
                 logger.error("Live dynamic audio synthesis failed.")
                 dynamic_wav = None
 
+        # Fetch pre-recorded Quran recitation and translation if emotional
+        arabic_wav = None
+        translation_wav = None
+        if is_emotional and ayah_id and ayah_id != "1:1":
+            arabic_wav = _get_ayah_audio_segment(ayah_id, "ar.alafasy")
+            if lang_code == "en":
+                translation_wav = _get_ayah_audio_segment(ayah_id, "en.walk")
+            elif lang_code == "ur":
+                translation_wav = _get_ayah_audio_segment(ayah_id, "ur.khan")
+
+        # ── 80/20 Audio Budget Enforcement ───────────────────────────────────────
+        # Enforce the ratio at the WAV level (not just word count). This guarantees
+        # that even if TTS synthesis runs longer than predicted, the dynamic segment
+        # is hard-capped to ≤ 20% of the total audio duration before stitching.
+        premade_audio_paths = [greeting_wav, correction_wav, closure_wav]
+        if is_emotional:
+            if arabic_wav:
+                premade_audio_paths.append(arabic_wav)
+            if translation_wav:
+                premade_audio_paths.append(translation_wav)
+
+        dynamic_wav = _enforce_80_20_audio_ratio(
+            premade_paths=premade_audio_paths,
+            dynamic_wav=dynamic_wav,
+        )
+
         # Stitch all segments
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
             stitched_temp = Path(tmp.name)
         temp_files_to_clean.append(stitched_temp)
 
         audio_parts = [greeting_wav, correction_wav]
+        if is_emotional:
+            if arabic_wav:
+                audio_parts.append(arabic_wav)
+            if translation_wav:
+                audio_parts.append(translation_wav)
         if dynamic_wav:
             audio_parts.append(dynamic_wav)
         audio_parts.append(closure_wav)

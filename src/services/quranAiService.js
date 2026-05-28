@@ -87,6 +87,12 @@ export async function askImamStandalone(user_question, language_code, ayah_id, a
   } else if (textLower.includes("overwhelmed") || textLower.includes("heavy") || textLower.includes("burnout")) {
     topic = "Overwhelmed";
     theme = "Overwhelmed";
+  } else if (textLower.includes("envy") || textLower.includes("envious") || textLower.includes("hasad") || textLower.includes("jealous") || textLower.includes("jealousy")) {
+    topic = "Envy";
+    theme = "Hasad";
+  } else if (textLower.includes("patience") || textLower.includes("sabr") || textLower.includes("allah") || textLower.includes("dua") || textLower.includes("test") || textLower.includes("peace") || textLower.includes("repent") || textLower.includes("heart") || textLower.includes("comfort") || textLower.includes("faith") || textLower.includes("trust") || textLower.includes("hardship") || textLower.includes("ease") || textLower.includes("guidance") || textLower.includes("soul") || textLower.includes("spiritual")) {
+    topic = "General Comfort";
+    theme = "Spiritual";
   }
 
   if (topic) {
@@ -118,7 +124,7 @@ export async function askImamStandalone(user_question, language_code, ayah_id, a
 
   // If not emotional or bridge call failed, fall back to OpenRouter
   let ragContext = "";
-  if (ayah_id) {
+  if (ayah_id && ayah_id !== "1:1") {
     try {
       const ragResponse = await axios.get(`${AI_BRIDGE_URL}/api/tafsir/context`, {
         params: { ayah_id },
@@ -129,6 +135,26 @@ export async function askImamStandalone(user_question, language_code, ayah_id, a
       });
       ragContext = ragResponse.data.context;
     } catch (e) {}
+  } else {
+    // General chat question: perform semantic search on the Tafsir vector database using the user's question (adapting the FaithTech dynamic search concept)
+    try {
+      const ragResponse = await axios.post(`${AI_BRIDGE_URL}/api/tafsir-query`, {
+        query: user_question,
+        n_results: 3
+      }, {
+        headers: {
+          "X-API-Key": process.env.INTERNAL_API_KEY || "",
+          "Content-Type": "application/json",
+        },
+        timeout: 5000,
+      });
+      if (ragResponse.data?.data?.results) {
+        ragContext = ragResponse.data.data.results.map(r => `[Quran/Tafsir ${r.ayah_id}] ${r.text}`).join("\n\n");
+        console.log(`✅ Retrieved semantic search RAG context (${ragResponse.data.data.results.length} results)`);
+      }
+    } catch (e) {
+      console.warn("⚠️ Semantic RAG search failed, falling back without context:", e.message);
+    }
   }
 
   const prompt = buildAskPrompt(language_code, user_question, ayahContext, ragContext);

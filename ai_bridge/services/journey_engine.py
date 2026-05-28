@@ -120,15 +120,7 @@ class JourneyState(BaseModel):
 
     def is_stage_unlocked(self, stage_index: int) -> bool:
         """A stage is unlocked only if all prior stages are complete."""
-        if stage_index == 0:
-            return True
-        # Check each stage up to (but not including) stage_index is complete
-        return all(
-            f"stage-{i}" in self.stage_completions or
-            any(sc.stage_id.endswith(f"-s{i+1}") or True
-                for sc in self.stage_completions.values())
-            for i in range(stage_index)
-        )
+        return stage_index <= self.current_stage_index
 
     def completed_stage_ids(self) -> set[str]:
         return set(self.stage_completions.keys())

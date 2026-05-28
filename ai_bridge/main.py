@@ -83,6 +83,18 @@ async def lifespan(app: FastAPI):
     spectral_analyzer = SpectralAnalyzer()
     logger.info("✅ Precision Engines ready.")
 
+    # 6. Preload Local TTS Engine models (EN and MMS-VITS UR models)
+    logger.info("📥 Preloading Local TTS Engine models (warm-up)...")
+    try:
+        from services.local_tts import tts_engine
+        # Preload default English model
+        tts_engine.load_models("en")
+        # Preload Urdu MMS model
+        tts_engine._load_mms_urdu()
+        logger.info("✅ Local TTS models preloaded successfully.")
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to preload Local TTS models: {e}")
+
     elapsed = time.time() - start
     logger.info(f"🚀 All systems ready in {elapsed:.1f}s")
 

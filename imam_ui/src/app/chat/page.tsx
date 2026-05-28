@@ -114,6 +114,9 @@ export default function ChatPage() {
     } else if (textLower.includes("overwhelmed") || textLower.includes("heavy") || textLower.includes("burnout")) {
       topic = "Overwhelmed";
       theme = "Overwhelmed";
+    } else if (textLower.includes("envy") || textLower.includes("envious") || textLower.includes("hasad") || textLower.includes("jealous") || textLower.includes("jealousy")) {
+      topic = "Envy";
+      theme = "Hasad";
     }
 
     const params = new URLSearchParams({

@@ -12,9 +12,15 @@ logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).parent.parent
 DATA_DIR = BASE_DIR / "data"
 CHROMA_DIR = DATA_DIR / "chroma_db"
+if os.getenv("HF_HOME") and os.path.exists("/models"):
+    CHROMA_DIR = Path("/models/chroma_db")
 PDF_PATH = DATA_DIR / "four-madhabs.pdf"
 if not PDF_PATH.exists():
-    PDF_PATH = Path("c:/Users/acer/Downloads/AI/rag/four-madhabs.pdf")
+    # Fallback to absolute paths or other locations if needed
+    for p in [BASE_DIR / "rag" / "four-madhabs.pdf", Path("c:/Users/acer/Downloads/AI/rag/four-madhabs.pdf"), Path("/usr/src/app/rag/four-madhabs.pdf")]:
+        if p.exists():
+            PDF_PATH = p
+            break
 
 def main():
     # 1. Load SentenceTransformer on CPU first to prevent memory/CUDA silent crashes

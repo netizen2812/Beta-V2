@@ -3,8 +3,9 @@ from pathlib import Path
 import os
 import torch
 
-# Restrict PyTorch thread count to prevent CPU starvation on e2-standard-2
-torch.set_num_threads(2)
+# Restrict PyTorch thread count to prevent CPU starvation on CPU-bound servers
+if not torch.cuda.is_available():
+    torch.set_num_threads(2)
 
 import numpy as np
 import unicodedata

@@ -8,6 +8,8 @@ logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 CHROMA_DIR = DATA_DIR / "chroma_db"
+if os.getenv("HF_HOME") and os.path.exists("/models"):
+    CHROMA_DIR = Path("/models/chroma_db")
 WISDOM_PATH = DATA_DIR / "wisdom_templates.json"
 
 class SmartRAG:
@@ -32,8 +34,10 @@ class SmartRAG:
         try:
             CHROMA_DIR.mkdir(parents=True, exist_ok=True)
             self._client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+            import torch
+            device = "cuda" if torch.cuda.is_available() else "cpu"
             from chromadb.utils import embedding_functions
-            emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="intfloat/multilingual-e5-large", device="cpu")
+            emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="intfloat/multilingual-e5-large", device=device)
             self._emb_fn = emb_fn
 
             # Load madhab rules collection
