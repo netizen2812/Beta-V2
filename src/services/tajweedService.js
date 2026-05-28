@@ -50,7 +50,7 @@ export async function checkRecitation(audioBuffer, ayahId, expectedArabicText, l
           ...formData.getHeaders(),
           "X-API-Key": process.env.INTERNAL_API_KEY || "",
         },
-        timeout: 25000, // 25s timeout for parallel model inference
+        timeout: 90000, // 90s — covers parallel Whisper+Wav2Vec2 + cold-start
       }
     );
 
@@ -96,11 +96,26 @@ export async function checkRecitation(audioBuffer, ayahId, expectedArabicText, l
 
     // If it's an HTTP error from the bridge, forward the message
     if (error.response) {
-      const msg = error.response.data?.detail || error.response.data?.message || "AI Bridge error";
-      console.error("❌ AI Bridge error:", msg);
+      const detail = error.response.data?.detail;
+      const msg = Array.isArray(detail)
+        ? detail.map(d => d.msg || JSON.stringify(d)).join("; ")
+        : (detail || error.response.data?.message || "AI Bridge error");
+      console.error("❌ AI Bridge error [HTTP", error.response.status, "]:", msg);
       return {
         correctness: "error",
         feedback: msg,
+        similarity_score: 0,
+        tajweed_score: 0,
+        word_results: [],
+        error_summary: {},
+      };
+    }
+
+    if (error.code === "ECONNABORTED") {
+      console.error("❌ AI Bridge request timed out after 90s");
+      return {
+        correctness: "error",
+        feedback: "Recitation analysis timed out. The AI models may still be loading. Please try again in 10 seconds.",
         similarity_score: 0,
         tajweed_score: 0,
         word_results: [],

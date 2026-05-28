@@ -19,6 +19,7 @@ export const checkTajweed = async (req, res) => {
   try {
     const { ayah_id, language_code = "en", madhab = "shafi" } = req.body;
     if (!req.file) return res.status(400).json({ status: "error", message: "audio_file required" });
+    if (!ayah_id) return res.status(400).json({ status: "error", message: "ayah_id required" });
 
     let arabicText = "";
     try {
@@ -34,7 +35,15 @@ export const checkTajweed = async (req, res) => {
       const fallbackArabic = {
         "1:1": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
         "1:2": "ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ",
-        "112:1": "قُلْ هُوَ ٱللَّهُ أَحَدٌ"
+        "1:3": "ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+        "1:4": "مَٰلِكِ يَوْمِ ٱلدِّينِ",
+        "1:5": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+        "1:6": "ٱهْدِنَا ٱلصِّرَٰطَ ٱلْمُسْتَقِيمَ",
+        "1:7": "صِرَٰطَ ٱلَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ ٱلْمَغْضُوبِ عَلَيْهِمْ وَلَا ٱلضَّآلِّينَ",
+        "112:1": "قُلْ هُوَ ٱللَّهُ أَحَدٌ",
+        "112:2": "ٱللَّهُ ٱلصَّمَدُ",
+        "112:3": "لَمْ يَلِدْ وَلَمْ يُولَدْ",
+        "112:4": "وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ"
       };
       arabicText = fallbackArabic[ayah_id] || fallbackArabic["1:1"];
     }
@@ -47,6 +56,28 @@ export const checkTajweed = async (req, res) => {
       req.file.mimetype,
       madhab
     );
+
+    // Even "error" correctness has useful feedback to show the user
+    if (result.correctness === "error") {
+      return res.json({
+        status: "success",
+        data: {
+          tajweed_score: 0,
+          maulana_feedback: {
+            status: "Connection Error",
+            score: 0,
+            guidance: result.feedback,
+            summary: { correct: 0, minor_error: 0, major_error: 0 }
+          },
+          word_results: result.word_results || [],
+          error_summary: result.error_summary || {},
+          transcribed_text: "",
+          phonetic_transcript: "",
+          total_words: 0,
+          correct_words: 0,
+        }
+      });
+    }
 
     res.json({ status: "success", data: result });
   } catch (error) {

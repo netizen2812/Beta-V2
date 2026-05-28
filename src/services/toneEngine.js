@@ -99,7 +99,8 @@ export function buildAskPrompt(language_code, userQuestion, ayahContext = null, 
     .replace(/\{[\s\S]*\}/, "")
     .trim() +
     "\n8. Return the response as PLAIN TEXT only. Do NOT use markdown code blocks, and do NOT wrap the output in JSON format." +
-    "\n9. CRITICAL: Whenever you reference or quote any Quranic ayah, you MUST explicitly name the Surah and ayah number (e.g., \"Surah Al-Baqarah (2:286) says...\"). Never use vague pronouns like \"this ayah\", \"it says\", or \"the verse\" without identifying which surah and ayah number it is.";
+    "\n9. CRITICAL: Whenever you reference or quote any Quranic ayah, you MUST explicitly name the Surah and ayah number (e.g., \"Surah Al-Baqarah (2:286) says...\"). Never use vague pronouns like \"this ayah\", \"it says\", or \"the verse\" without identifying which surah and ayah number it is." +
+    "\n10. CRITICAL: After naming the Surah and ayah number, always include the actual translation of that ayah in quotes (e.g., \"Surah Al-Baqarah (2:286): 'Allah does not burden a soul beyond that it can bear.'\" ). Do not just cite the reference — always quote the meaning.";
 
   return `${contextBlock}${ragBlock}
 User's question: "${userQuestion}"

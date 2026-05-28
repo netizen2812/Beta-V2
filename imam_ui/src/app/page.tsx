@@ -993,12 +993,11 @@ export default function FullscreenAiPage() {
             const firstError = report.word_results?.find((w: any) =>
               w.status === 'error' || w.status === 'minor_error' || w.status === 'major_error'
             );
-            const errorWordText = firstError ? (firstError.word_ar || firstError.word || firstError.text || "") : "Recitation";
-            playMaulanaVoiceAdvisory(
-              firstError ? "Tajweed Precision" : "Excellent",
-              errorWordText,
-              feedbackText
-            );
+            // Use the specific detected rule+word for targeted Maulana voice advice
+            const advisoryRule = firstError?.rule || (score >= 85 ? 'Excellent' : 'Tajweed Precision');
+            const advisoryWord = firstError?.word_ar || firstError?.word || firstError?.text || 'Recitation';
+            const advisoryGuidance = firstError?.guidance || feedbackText;
+            playMaulanaVoiceAdvisory(advisoryRule, advisoryWord, advisoryGuidance);
           }
         } else {
           throw new Error(payload.message || "Recitation parsing failed.");
@@ -1007,10 +1006,22 @@ export default function FullscreenAiPage() {
         throw new Error("HTTP " + res.status);
       }
     } catch (e: any) {
-      console.error("Tajweed endpoint error:", e);
-      setTajweedFeedback(`⚠️ Connection error: Failed to reach Tajweed verification service. Please ensure the backend is running and speak clearly near the microphone.`);
+      console.error('Tajweed endpoint error:', e);
+      const msg: string = e?.message || '';
+      const isTimeout = msg.includes('timed out') || msg.includes('timeout');
+      const isDown = msg.includes('not loaded') || msg.includes('not running') || msg.includes('ECONNREFUSED') || msg.includes('503') || msg === 'Failed to fetch';
+      let userMessage: string;
+      if (isTimeout) {
+        userMessage = '⏳ Analysis timed out — the AI models are loading (~30s on first call). Please try again in a moment.';
+      } else if (isDown) {
+        userMessage = '⚠️ AI Bridge is starting up. Please wait 30 seconds and try again.';
+      } else if (msg) {
+        userMessage = `⚠️ ${msg}`;
+      } else {
+        userMessage = '⚠️ Connection error: Could not reach the analysis server. Check that the backend is running.';
+      }
+      setTajweedFeedback(userMessage);
       setTajweedScore(0);
-      // Reset all words to pending so we do not mock 3 correct words when a network failure occurs
       setWords(words.map(w => ({
         ...w,
         status: 'pending' as const,
