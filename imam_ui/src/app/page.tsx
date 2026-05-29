@@ -540,16 +540,26 @@ export default function FullscreenAiPage() {
   // Play Maulana Dynamic TTS Voice Advisory
   const playMaulanaVoiceAdvisory = async (rule: string, word: string, guidanceText: string) => {
     try {
-      const params = new URLSearchParams({
-        rule,
-        word,
-        guidance: guidanceText,
-        language: globalLanguage === 'en' ? 'english' : globalLanguage === 'ar' ? 'arabic' : 'urdu',
-        madhab: madhab.toLowerCase(),
-        ayah_id: selectedAyah
+      // Route through Node.js backend proxy — never call AI Bridge directly from browser
+      // AI_BRIDGE_URL is empty in Vercel production; BACKEND_URL is the correct entry point
+      const response = await fetch(`${BACKEND_URL}/api/quran/maulana-voice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rule,
+          word,
+          guidance: guidanceText,
+          language: globalLanguage === 'en' ? 'english' : globalLanguage === 'ar' ? 'arabic' : 'urdu',
+          madhab: madhab.toLowerCase(),
+          ayah_id: selectedAyah
+        })
       });
-      // Stream ElevenLabs TTS directly from local FastAPI bridge (port 8000)
-      const audioUrl = `${AI_BRIDGE_URL}/api/maulana-voice?${params.toString()}`;
+      if (!response.ok) {
+        console.warn(`Maulana voice advisory returned ${response.status} — skipping audio`);
+        return;
+      }
+      const blob = await response.blob();
+      const audioUrl = URL.createObjectURL(blob);
       handlePlayVoice(audioUrl);
     } catch (e) {
       console.error("Failed to play Maulana voice advisory:", e);

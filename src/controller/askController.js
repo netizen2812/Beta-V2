@@ -54,17 +54,17 @@ export const askImam = async (req, res) => {
     res.json({ status: "success", data: { answer } });
   } catch (error) {
     console.error("❌ askImam error:", error.message);
-    // Provide warm offline Maulana fallback advice
-    let fallbackText = `As per the traditional schools: `;
+    // Warm offline Maulana fallback — gives a genuine answer to any question type
     const text = user_question.toLowerCase();
+    let fallbackText;
     if (text.includes("qalqalah")) {
-      fallbackText += "The letters of Qalqalah are five (ق, ط, ب, ج, د). When they have a sukoon or are stopped upon, they require a bouncing or echoing sound. Depending on their position, it can be Kubra (strong, at the end of a verse) or Sughra (subtle, in the middle of a word).";
+      fallbackText = "Qalqalah refers to the echoing or bouncing sound produced when one of the five Qalqalah letters (ق، ط، ب، ج، د) carries a sukoon or is stopped upon. The level of echo is stronger at the end of a verse (Kubra) and subtler in the middle of a word (Sughra). Practice these letters slowly and let the sound naturally resonate.";
     } else if (text.includes("madd")) {
-      fallbackText += "Madd rules govern the elongation of vowel sounds. For instance, Madd Lazim is obligatory and must be extended for 6 counts (harakat), whereas Madd Tabee'ee is natural and extended for 2 counts.";
+      fallbackText = "Madd governs the elongation of vowel sounds in Quranic recitation. The natural Madd (Tabee'ee) extends for 2 counts, while obligatory Madd types like Madd Lazim extend for 6 counts. Proper Madd gives the recitation its beautiful flowing rhythm — give each vowel its full, unhurried length.";
     } else if (text.includes("ghunnah")) {
-      fallbackText += "Ghunnah is a nasalization sound produced from the nose, primarily applied to Noon (ن) and Meem (م) when they have a shaddah (ّ), and held for 2 counts.";
+      fallbackText = "Ghunnah is the nasal resonance produced from the nose, applied to Noon (ن) and Meem (م) when they carry a shaddah, and held for 2 counts. It is also applied in cases of Idghaam, Ikhfaa, and Iqlaab. Focus on resonating the sound through your nose — it gives the recitation a warm, melodic quality.";
     } else {
-      fallbackText += "The Prophet (peace be upon him) said: 'The one who is proficient in the recitation of the Quran will be with the honorable and obedient scribes (angels).' Reciting slowly with proper pronunciation and reflection is highly recommended. Focus on learning the exit points (makharij) and attributes (sifaat) of the letters.";
+      fallbackText = `The Quran is guidance and mercy for all who seek it. Allah ﷻ says in Surah Al-Baqarah (2:286): 'Allah does not burden a soul beyond that it can bear.' Whatever your question or concern, know that the Quran speaks directly to the human heart. Take time to sit with the words, reflect on their meaning, and allow them to guide you. Every moment spent with the Quran is a moment of closeness to Allah.`;
     }
     res.json({ status: "success", data: { answer: fallbackText }, fallback: true });
   }
@@ -73,6 +73,9 @@ export const askImam = async (req, res) => {
 export const getMaulanaVoice = async (req, res) => {
   try {
     const AI_BRIDGE_URL = process.env.AI_BRIDGE_URL || "http://127.0.0.1:8000";
+    if (!AI_BRIDGE_URL || AI_BRIDGE_URL === "http://ai-bridge:8000" && process.env.NODE_ENV !== "production") {
+      console.warn("⚠️ getMaulanaVoice: AI Bridge URL not configured for this environment");
+    }
     const config = {
       headers: {
         "X-API-Key": process.env.INTERNAL_API_KEY || "",
