@@ -110,7 +110,7 @@ def download_models():
 @app.function(
     image=image,
     gpu="t4",
-    min_containers=1,
+    min_containers=0,
     timeout=600,
     volumes={MODEL_VOLUME_PATH: model_volume},
     secrets=[
