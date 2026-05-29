@@ -25,13 +25,13 @@ COPY . .
 ENV HF_HOME=/root/.cache/huggingface
 ENV COQUI_TOS_AGREED=1
 
-# Pre-download Whisper, Wav2Vec2, and the Buraaq dataset during docker build
-RUN python scripts/download_models.py
-
-# Pre-synthesize static Maulana audio templates at runtime rather than build-time to avoid blocking
-# RUN python scripts/generate_premade_audios.py
+# Models are downloaded at container startup (not build time) to avoid
+# long SSH timeouts during 'docker-compose up'. The /usr/src/app/models
+# directory is volume-mounted, so downloads persist across restarts.
+# See: docker-compose.yml volumes: ./ai_bridge/models:/usr/src/app/models
 
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Entrypoint: download models on first boot (persisted in volume), then start server
+CMD ["bash", "-c", "python scripts/download_models.py && uvicorn main:app --host 0.0.0.0 --port 8000"]

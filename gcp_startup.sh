@@ -57,9 +57,45 @@ EOT
 
 echo "✅ Environment variables configured at /opt/Beta-V2/.env."
 
-# 5. Start the Infrastructure with Docker Compose
-echo "🚀 Booting the Dockerized Node.js Backend & CPU AI Bridge..."
-docker-compose up -d --build
+# 5. Install Docker Buildx (modern builder, avoids legacy warnings)
+echo "🔧 Installing Docker Buildx plugin..."
+mkdir -p /usr/local/lib/docker/cli-plugins
+curl -SL https://github.com/docker/buildx/releases/download/v0.16.2/buildx-v0.16.2.linux-amd64 \
+  -o /usr/local/lib/docker/cli-plugins/docker-buildx
+chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
+echo "✅ Docker Buildx installed."
 
-echo "🎉 IMAM AI GCE VM Setup Script Executed Successfully!"
+# 6. Create a systemd service so docker-compose auto-restarts on preemption/reboot
+echo "🛡️ Creating systemd auto-restart service for Imam AI..."
+cat <<SERVICE > /etc/systemd/system/imam-ai.service
+[Unit]
+Description=Imam AI Docker Compose Stack
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/Beta-V2
+ExecStart=/usr/bin/docker-compose up -d --build
+ExecStop=/usr/bin/docker-compose down
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+systemctl daemon-reload
+systemctl enable imam-ai.service
+echo "✅ Systemd service registered."
+
+# 7. Start the Infrastructure with Docker Compose (detached via nohup — survives SSH disconnect)
+echo "🚀 Booting the Dockerized Node.js Backend & CPU AI Bridge (in background)..."
+nohup docker-compose -f /opt/Beta-V2/docker-compose.yml up -d --build \
+  > /tmp/imam-docker-compose.log 2>&1 &
+
+echo "🎉 IMAM AI GCE VM Setup Script Dispatched Successfully!"
+echo "   Build is running in background. Check progress with:"
+echo "   sudo cat /tmp/imam-docker-compose.log"
+echo "   sudo docker ps"
 date
