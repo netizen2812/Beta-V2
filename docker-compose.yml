@@ -4,7 +4,7 @@ services:
   ai-bridge:
     build:
       context: ./ai_bridge
-      dockerfile: Dockerfile.gpu
+      dockerfile: Dockerfile.python
     container_name: quran-ai-bridge
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
@@ -15,13 +15,6 @@ services:
       # Mount data dir directly to reflect git updates and persist caches locally
       - ./ai_bridge/data:/usr/src/app/data
       - ./ai_bridge/models:/usr/src/app/models
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     networks:
       - quran-net
     restart: always
