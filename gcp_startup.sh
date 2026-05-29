@@ -23,10 +23,15 @@ systemctl start docker
 systemctl enable docker
 echo "✅ Docker setup completed."
 
-# 3. Clone Repository
-echo "🧬 Cloning IMAM AI repository..."
-rm -rf /opt/Beta-V2
-git clone https://github.com/netizen2812/Beta-V2.git /opt/Beta-V2
+# 3. Clone Repository (or pull latest if already exists — idempotent on preemption restart)
+echo "🧬 Syncing IMAM AI repository..."
+if [ -d "/opt/Beta-V2/.git" ]; then
+  echo "  Repo already exists — pulling latest changes..."
+  git -C /opt/Beta-V2 pull origin main
+else
+  echo "  Fresh clone..."
+  git clone https://github.com/netizen2812/Beta-V2.git /opt/Beta-V2
+fi
 cd /opt/Beta-V2
 
 # 4. Retrieve Secrets from GCP Custom Instance Metadata
