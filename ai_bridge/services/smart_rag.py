@@ -121,11 +121,14 @@ class SmartRAG:
         query_embedding = None
         if self._emb_fn:
             if query_text not in self._query_emb_cache:
-                self._query_emb_cache[query_text] = self._emb_fn([query_text])[0]
+                emb = self._emb_fn([query_text])[0]
+                if hasattr(emb, "tolist"):
+                    emb = emb.tolist()
+                self._query_emb_cache[query_text] = emb
             query_embedding = self._query_emb_cache[query_text]
 
         try:
-            if query_embedding:
+            if query_embedding is not None:
                 results = self._madhab_collection.query(
                     query_embeddings=[query_embedding],
                     n_results=n_results,
@@ -141,7 +144,7 @@ class SmartRAG:
             logger.error(f"ChromaDB query error in madhab_rules: {e}")
             # Retry without metadata filter if it failed or had no results
             try:
-                if query_embedding:
+                if query_embedding is not None:
                     results = self._madhab_collection.query(
                         query_embeddings=[query_embedding],
                         n_results=n_results
@@ -226,11 +229,14 @@ class SmartRAG:
         query_embedding = None
         if self._emb_fn and query_text:
             if query_text not in self._query_emb_cache:
-                self._query_emb_cache[query_text] = self._emb_fn([query_text])[0]
+                emb = self._emb_fn([query_text])[0]
+                if hasattr(emb, "tolist"):
+                    emb = emb.tolist()
+                self._query_emb_cache[query_text] = emb
             query_embedding = self._query_emb_cache[query_text]
 
         try:
-            if query_embedding:
+            if query_embedding is not None:
                 results = self._tafsir_collection.query(
                     query_embeddings=[query_embedding],
                     n_results=n_results

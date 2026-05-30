@@ -115,6 +115,14 @@ class PhoneticEngine:
         """Convert raw audio bytes to 16kHz mono float32 using the VoiceProcessor pipeline."""
         try:
             from services.voice_processor import VoiceProcessor
-        except ImportError:
-            from ai_bridge.services.voice_processor import VoiceProcessor
+        except ImportError as e:
+            # If it's a nested import failure (e.g. noisereduce or pyloudnorm is missing),
+            # e.name will be the name of the missing package (not voice_processor).
+            # In that case, raise it immediately so it doesn't get masked!
+            if e.name and 'voice_processor' not in e.name and 'services' not in e.name:
+                raise
+            try:
+                from ai_bridge.services.voice_processor import VoiceProcessor
+            except ImportError:
+                raise e
         return VoiceProcessor.process_audio(audio_bytes, sample_rate=16000)
