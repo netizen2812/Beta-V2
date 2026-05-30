@@ -113,12 +113,21 @@ class WhisperEngine:
 
     def _bytes_to_array(self, audio_bytes: bytes) -> np.ndarray:
         """Convert raw audio bytes to a 16kHz mono float32 numpy array."""
+        import tempfile
+        import os
+        
+        # Write to temporary file first to support all formats (MP3, WebM, etc. via ffmpeg/audioread)
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+            
         try:
-            # Try soundfile first (WAV, FLAC, OGG)
-            audio, sr = sf.read(io.BytesIO(audio_bytes))
-        except Exception:
-            # Fallback to librosa (handles MP3, WebM via ffmpeg)
-            audio, sr = librosa.load(io.BytesIO(audio_bytes), sr=None, mono=True)
+            audio, sr = librosa.load(tmp_path, sr=None, mono=True)
+        finally:
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
 
         # Convert stereo to mono
         if audio.ndim > 1:

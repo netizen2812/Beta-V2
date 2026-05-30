@@ -16,8 +16,21 @@ class VoiceProcessor:
         3. LUFS Normalization (Consistency)
         4. High-Frequency Articulation Boost (Makharij focus)
         """
-        # 1. Load
-        audio, sr = librosa.load(io.BytesIO(audio_bytes), sr=sample_rate, mono=True)
+        # 1. Load from temporary file (to support WebM/MP3/Opus decoding via ffmpeg/audioread)
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
+            
+        try:
+            audio, sr = librosa.load(tmp_path, sr=sample_rate, mono=True)
+        finally:
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
         
         # 2. Stationary Noise Reduction
         # This removes steady background hum/hiss without destroying phonemes
