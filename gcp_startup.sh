@@ -34,6 +34,44 @@ else
 fi
 cd /opt/Beta-V2
 
+# 3b. Restore large seed files from GCS (these are in .gitignore so git doesn't track them)
+# This runs on EVERY boot including preemption restarts to ensure data is always present.
+echo "🗃️ Restoring seed data from GCS bucket gs://imam-ai-seed-data/..."
+DATA_DIR="/opt/Beta-V2/ai_bridge/data"
+
+# Restore phonetic cache (7.6MB)
+if [ ! -f "$DATA_DIR/phonetic_cache.json" ]; then
+  echo "  Downloading phonetic_cache.json..."
+  gsutil cp gs://imam-ai-seed-data/phonetic_cache.json "$DATA_DIR/phonetic_cache.json"
+  chmod 777 "$DATA_DIR/phonetic_cache.json"
+  echo "  ✅ phonetic_cache.json restored."
+else
+  echo "  ✅ phonetic_cache.json already present."
+fi
+
+# Restore ChromaDB (28MB zip -> ~40MB extracted)
+CHROMA_COMPLETE_FLAG="$DATA_DIR/chroma_db/build_complete.flag"
+if [ ! -f "$CHROMA_COMPLETE_FLAG" ]; then
+  echo "  Downloading and extracting chroma_db.zip (~100MB)..."
+  gsutil cp gs://imam-ai-seed-data/chroma_db.zip /tmp/chroma_db.zip
+  rm -rf "$DATA_DIR/chroma_db"
+  unzip -o /tmp/chroma_db.zip -d /tmp/chroma_extract
+  # Handle both zip structures (with or without ai_bridge/data prefix)
+  if [ -d "/tmp/chroma_extract/ai_bridge/data/chroma_db" ]; then
+    mv /tmp/chroma_extract/ai_bridge/data/chroma_db "$DATA_DIR/chroma_db"
+  else
+    mv /tmp/chroma_extract/chroma_db "$DATA_DIR/chroma_db"
+  fi
+  chmod -R 777 "$DATA_DIR/chroma_db"
+  rm -f /tmp/chroma_db.zip
+  rm -rf /tmp/chroma_extract
+  echo "  ✅ chroma_db restored."
+else
+  echo "  ✅ chroma_db already present."
+fi
+
+echo "✅ GCS seed data restore complete."
+
 # 4. Retrieve Secrets from GCP Custom Instance Metadata
 echo "🔑 Injecting configuration credentials from GCP Metadata Server..."
 METADATA_URL="http://metadata.google.internal/computeMetadata/v1/instance/attributes"
