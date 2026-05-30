@@ -491,8 +491,8 @@ export default function FullscreenAiPage() {
   }, []);
 
   // Voice Option Checkboxes
-  const [playVoiceFeedback, setPlayVoiceFeedback] = useState(true);
   const [playVoiceResponse, setPlayVoiceResponse] = useState(true);
+  const [isAdvisoryLoading, setIsAdvisoryLoading] = useState(false);
 
   // Recitation Target States
   const [selectedAyah, setSelectedAyah] = useState("1:1");
@@ -539,6 +539,7 @@ export default function FullscreenAiPage() {
 
   // Play Maulana Dynamic TTS Voice Advisory
   const playMaulanaVoiceAdvisory = async (rule: string, word: string, guidanceText: string) => {
+    setIsAdvisoryLoading(true);
     try {
       // Route through Node.js backend proxy — never call AI Bridge directly from browser
       // AI_BRIDGE_URL is empty in Vercel production; BACKEND_URL is the correct entry point
@@ -556,6 +557,7 @@ export default function FullscreenAiPage() {
       });
       if (!response.ok) {
         console.warn(`Maulana voice advisory returned ${response.status} — skipping audio`);
+        setIsAdvisoryLoading(false);
         return;
       }
       const blob = await response.blob();
@@ -563,6 +565,8 @@ export default function FullscreenAiPage() {
       handlePlayVoice(audioUrl);
     } catch (e) {
       console.error("Failed to play Maulana voice advisory:", e);
+    } finally {
+      setIsAdvisoryLoading(false);
     }
   };
 
@@ -999,16 +1003,7 @@ export default function FullscreenAiPage() {
             })));
           }
 
-          if (playVoiceFeedback) {
-            const firstError = report.word_results?.find((w: any) =>
-              w.status === 'error' || w.status === 'minor_error' || w.status === 'major_error'
-            );
-            // Use the specific detected rule+word for targeted Maulana voice advice
-            const advisoryRule = firstError?.rule || (score >= 85 ? 'Excellent' : 'Tajweed Precision');
-            const advisoryWord = firstError?.word_ar || firstError?.word || firstError?.text || 'Recitation';
-            const advisoryGuidance = firstError?.guidance || feedbackText;
-            playMaulanaVoiceAdvisory(advisoryRule, advisoryWord, advisoryGuidance);
-          }
+          // Automatic voice feedback has been disabled to prevent CPU load timeouts. Playback is manual on-demand.
         } else {
           throw new Error(payload.message || "Recitation parsing failed.");
         }
@@ -1270,19 +1265,7 @@ export default function FullscreenAiPage() {
                         </p>
                       </div>
 
-                      {/* voice feedback option checkbox */}
-                      <div className="flex items-center gap-2.5 px-5 py-2.5 bg-white border border-emerald-50 rounded-full shadow-sm select-none">
-                        <input
-                          type="checkbox"
-                          id="voiceFeedback"
-                          checked={playVoiceFeedback}
-                          onChange={e => setPlayVoiceFeedback(e.target.checked)}
-                          className="w-4 h-4 rounded text-emerald-600 border-slate-200 focus:ring-emerald-500 cursor-pointer"
-                        />
-                        <label htmlFor="voiceFeedback" className="text-[10px] font-black uppercase tracking-wider text-[#0D4433] cursor-pointer">
-                          Voice Feedback 🔊
-                        </label>
-                      </div>
+
                     </div>
 
                     {/* Right Column: Mushaf display (2/3rds width on desktop) */}
@@ -1308,10 +1291,20 @@ export default function FullscreenAiPage() {
                             </div>
                             <div className="flex gap-2 shrink-0">
                               <button
+                                disabled={isAdvisoryLoading}
                                 onClick={() => playMaulanaVoiceAdvisory("Advisory", "Recitation", tajweedFeedback || "MashaAllah, recitation parsed successfully.")}
-                                className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-[#0D4433] border border-emerald-100 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-emerald-50 transition-all shadow-sm"
+                                className={`flex items-center gap-1.5 px-4 py-2.5 bg-white text-[#0D4433] border border-emerald-100 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-emerald-50 transition-all shadow-sm ${isAdvisoryLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
                               >
-                                <Volume2 className="w-3.5 h-3.5" /> Listen
+                                {isAdvisoryLoading ? (
+                                  <>
+                                    <div className="w-3.5 h-3.5 border-2 border-[#0D4433] border-t-transparent rounded-full animate-spin" />
+                                    Generating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Volume2 className="w-3.5 h-3.5" /> Listen
+                                  </>
+                                )}
                               </button>
                               <button
                                 onClick={() => setShowTafsirDrawer(true)}
