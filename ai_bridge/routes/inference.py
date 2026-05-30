@@ -507,11 +507,12 @@ async def maulana_voice(
             async for chunk in result["audio_stream"]:
                 yield chunk
 
+        import urllib.parse
         return StreamingResponse(
             audio_generator(),
             media_type="audio/mpeg",
             headers={
-                "X-Maulana-Text":     result["text"],
+                "X-Maulana-Text":     urllib.parse.quote(result["text"]),
                 "X-Maulana-Language": req_language,
                 "X-Maulana-Madhab":   req_madhab,
                 "X-Fallback":         "false",

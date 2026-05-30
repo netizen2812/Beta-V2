@@ -31,7 +31,7 @@ export default function MushafulPage({
   };
 
   const statusColor = (s: Word["status"]) =>
-    s === "correct" ? "#D4AF37" : s === "error" ? "#ef4444" : "rgba(238,242,247,0.2)";
+    s === "correct" ? "#10b981" : s === "error" ? "#ef4444" : "rgba(238,242,247,0.2)";
 
   const correctCount = words.filter(w => w.status === "correct").length;
   const errorCount   = words.filter(w => w.status === "error").length;

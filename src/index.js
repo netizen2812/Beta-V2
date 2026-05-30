@@ -12,6 +12,8 @@ dotenv.config({ path: '../FaithTech/FaithTech/backend/.env' });
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+app.set('trust proxy', true);
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));

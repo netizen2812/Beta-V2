@@ -112,7 +112,8 @@ export async function askImamStandalone(user_question, language_code, ayah_id, a
         timeout: 180000,
       });
 
-      const answer = bridgeRes.headers["x-maulana-text"];
+      const rawAnswer = bridgeRes.headers["x-maulana-text"];
+      const answer = rawAnswer ? decodeURIComponent(rawAnswer) : undefined;
       if (answer) {
         console.log(`[AskImam] Successfully retrieved 80/20 stitched text from AI Bridge.`);
         return { answer, raw_prompt: `Emotional RAG 80/20 Stitched: ${topic}` };

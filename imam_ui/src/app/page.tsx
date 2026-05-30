@@ -1306,12 +1306,20 @@ export default function FullscreenAiPage() {
                                 {tajweedFeedback || "MashaAllah, recitation parsed successfully."}
                               </p>
                             </div>
-                            <button
-                              onClick={() => setShowTafsirDrawer(true)}
-                              className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-[#0D4433] border border-emerald-100 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-emerald-50 transition-all shadow-sm"
-                            >
-                              Tafsir <ChevronRight className="w-4 h-4" />
-                            </button>
+                            <div className="flex gap-2 shrink-0">
+                              <button
+                                onClick={() => playMaulanaVoiceAdvisory("Advisory", "Recitation", tajweedFeedback || "MashaAllah, recitation parsed successfully.")}
+                                className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-[#0D4433] border border-emerald-100 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-emerald-50 transition-all shadow-sm"
+                              >
+                                <Volume2 className="w-3.5 h-3.5" /> Listen
+                              </button>
+                              <button
+                                onClick={() => setShowTafsirDrawer(true)}
+                                className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-[#0D4433] border border-emerald-100 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-emerald-50 transition-all shadow-sm"
+                              >
+                                Tafsir <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
