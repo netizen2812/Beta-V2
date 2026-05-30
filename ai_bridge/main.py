@@ -12,6 +12,7 @@ Run: uvicorn main:app --reload --port 8000
 import os
 import time
 import logging
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
@@ -83,17 +84,28 @@ async def lifespan(app: FastAPI):
     spectral_analyzer = SpectralAnalyzer()
     logger.info("✅ Precision Engines ready.")
 
-    # 6. Preload Local TTS Engine models (EN and MMS-VITS UR models)
-    logger.info("📥 Preloading Local TTS Engine models (warm-up)...")
-    try:
-        from services.local_tts import tts_engine
-        # Preload default English model
-        tts_engine.load_models("en")
-        # Preload Urdu MMS model
-        tts_engine._load_mms_urdu()
-        logger.info("✅ Local TTS models preloaded successfully.")
-    except Exception as e:
-        logger.warning(f"⚠️ Failed to preload Local TTS models: {e}")
+    # 6. Two-Stage TTS: Start XTTSv2 loading in background thread.
+    # edge-tts (Microsoft cloud) serves audio immediately while XTTSv2 warms up (~88s).
+    # Once XTTSv2 is ready, tts_router automatically switches all future calls to local model.
+    logger.info("📥 [Stage 1] edge-tts cloud TTS ready immediately (zero load time).")
+    logger.info("📥 [Stage 2] Starting XTTSv2 background load (will auto-switch when ready)...")
+
+    def _load_xtts_background():
+        """Background thread: load XTTSv2 + MMS-Urdu, then flip the router to local mode."""
+        try:
+            from services.local_tts import tts_engine
+            from services.tts_router import tts_router
+            logger.info("[BG] Loading XTTSv2 English model...")
+            tts_engine.load_models("en")
+            logger.info("[BG] Loading MMS-VITS Urdu model...")
+            tts_engine._load_mms_urdu()
+            tts_router.mark_xtts_ready()  # Auto-switches all future TTS calls to local model
+            logger.info("✅ [BG] XTTSv2 + MMS-Urdu fully loaded. Switched from edge-tts → local model.")
+        except Exception as e:
+            logger.error(f"[BG] XTTSv2 background load failed: {e}. edge-tts will continue serving.")
+
+    bg_thread = threading.Thread(target=_load_xtts_background, daemon=True, name="xtts-loader")
+    bg_thread.start()
 
     elapsed = time.time() - start
     logger.info(f"🚀 All systems ready in {elapsed:.1f}s")
@@ -159,6 +171,7 @@ app.include_router(journeys_router)
 
 @app.get("/api/health")
 async def health():
+    from services.tts_router import tts_router
     return {
         "status": "ok",
         "models": {
@@ -168,4 +181,5 @@ async def health():
         "phonetic_db": app.state.phonetic_db is not None and app.state.phonetic_db.is_loaded,
         "tafsir_rag": app.state.tafsir_rag is not None and app.state.tafsir_rag.is_loaded,
         "device": str(app.state.whisper.device) if app.state.whisper else "unknown",
+        "tts_stage": tts_router.active_stage,  # "edge-tts-cloud" or "local-xtts"
     }

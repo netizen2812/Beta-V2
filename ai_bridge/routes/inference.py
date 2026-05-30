@@ -14,6 +14,7 @@ import time
 import logging
 import os
 import tempfile
+from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, Form, Request, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
@@ -380,7 +381,7 @@ async def direct_tts(req: TTSRequest):
         audio/wav stream
     """
     import io
-    from services.local_tts import tts_engine
+    from services.tts_router import tts_router
 
     text = req.text.strip()
     if not text:
@@ -397,14 +398,11 @@ async def direct_tts(req: TTSRequest):
     if lang not in ("en", "ar", "ur"):
         lang = "en"
 
-    if not tts_engine.is_loaded:
-        tts_engine.load_models(lang)
-
     try:
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
             out_path = tmp.name
 
-        success = tts_engine.synthesize(text, lang, out_path)
+        success = tts_router.synthesize(text, lang, Path(out_path))
         if not success:
             raise RuntimeError("TTS synthesis failed")
 
@@ -426,7 +424,7 @@ async def direct_tts(req: TTSRequest):
         return StreamingResponse(
             wav_stream(),
             media_type="audio/wav",
-            headers={"X-TTS-Language": lang},
+            headers={"X-TTS-Language": lang, "X-TTS-Stage": tts_router.active_stage},
         )
 
     except Exception as e:
@@ -436,6 +434,7 @@ async def direct_tts(req: TTSRequest):
         except Exception:
             pass
         raise HTTPException(500, f"TTS synthesis failed: {str(e)}")
+
 
 
 # ─── Maulana Voice Endpoint ────────────────────────────────────────────────────
