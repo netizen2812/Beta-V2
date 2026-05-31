@@ -14,6 +14,7 @@ services:
       - INTERNAL_API_KEY=${INTERNAL_API_KEY}
       # FIX: Pass ALLOWED_ORIGINS so AI Bridge CORS allows production domains
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://www.imamapp.co,https://imamapp.co,http://localhost:3000}
+      - TAFSIR_FAST_START=${TAFSIR_FAST_START:-1}
     volumes:
       # Mount data dir directly to reflect git updates and persist caches locally
       - ./ai_bridge/data:/usr/src/app/data
