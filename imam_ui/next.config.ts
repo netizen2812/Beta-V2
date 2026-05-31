@@ -27,8 +27,10 @@ const nextConfig: NextConfig = {
       ? "http://localhost:5001"
       : "http://34.122.221.254:5001";
 
-    const backendHost =
-      process.env.NEXT_PUBLIC_BACKEND_URL || defaultBackend;
+    // Force the active production GCP VM external IP in Vercel to override any stale project env vars.
+    const backendHost = isDev
+      ? (process.env.NEXT_PUBLIC_BACKEND_URL || defaultBackend)
+      : "http://34.122.221.254:5001";
 
     return [
       // ── Core AI features (proxied to AI Bridge via Express) ─────────────
