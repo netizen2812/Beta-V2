@@ -29,6 +29,15 @@ app.get("/health", async (req, res) => {
   });
 });
 
+app.get("/api/quran/health", async (req, res) => {
+  const aiBridge = await checkAiBridgeHealth();
+  res.json({
+    status: "ok",
+    node_backend: true,
+    ai_bridge: aiBridge,
+  });
+});
+
 const start = async () => {
   try {
     mongoose.connect(process.env.MONGO_URI)
