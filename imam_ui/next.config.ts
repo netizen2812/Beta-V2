@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
     // ⚠ Reserve a static IP in GCP Console and update this if the VM changes.
     const defaultBackend = isDev
       ? "http://localhost:5001"
-      : "http://35.239.42.61:5001";
+      : "http://34.122.221.254:5001";
 
     const backendHost =
       process.env.NEXT_PUBLIC_BACKEND_URL || defaultBackend;
