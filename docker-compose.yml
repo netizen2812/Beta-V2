@@ -15,6 +15,7 @@ services:
       # FIX: Pass ALLOWED_ORIGINS so AI Bridge CORS allows production domains
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://www.imamapp.co,https://imamapp.co,http://localhost:3000}
       - TAFSIR_FAST_START=${TAFSIR_FAST_START:-1}
+      - PYTHONUNBUFFERED=1
     volumes:
       # Mount data dir directly to reflect git updates and persist caches locally
       - ./ai_bridge/data:/usr/src/app/data
@@ -29,7 +30,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 120s  # models take ~90s to load on T4
+      start_period: 300s  # allow up to 5 mins for CPU embedding generation/cold start
 
   node-backend:
     build:
