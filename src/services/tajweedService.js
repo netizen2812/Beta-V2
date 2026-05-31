@@ -35,8 +35,9 @@ export async function checkRecitation(audioBuffer, ayahId, expectedArabicText, l
     // Prepare form data for the Python bridge
     const FormData = (await import("form-data")).default;
     const formData = new FormData();
+    const ext = mimeType.includes("mp4") ? "mp4" : mimeType.includes("ogg") ? "ogg" : "webm";
     formData.append("audio_file", audioBuffer, {
-      filename: "recitation.webm",
+      filename: `recitation.${ext}`,
       contentType: mimeType,
     });
     formData.append("ayah_id", ayahId);

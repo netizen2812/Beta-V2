@@ -811,9 +811,11 @@ export default function FullscreenAiPage() {
 
         recorder.onstop = async () => {
           stream.getTracks().forEach(track => track.stop());
-          const audioBlob = new Blob(chatAudioChunksRef.current, { type: mimeType || 'audio/webm' });
+          const actualMime = mimeType || 'audio/webm';
+          const ext = actualMime.includes("mp4") ? "mp4" : actualMime.includes("ogg") ? "ogg" : "webm";
+          const audioBlob = new Blob(chatAudioChunksRef.current, { type: actualMime });
           if (audioBlob.size > 0) {
-            await transcribeChatAudio(audioBlob);
+            await transcribeChatAudio(audioBlob, ext);
           }
         };
 
@@ -832,13 +834,13 @@ export default function FullscreenAiPage() {
     }
   };
 
-  const transcribeChatAudio = async (audioBlob: Blob) => {
+  const transcribeChatAudio = async (audioBlob: Blob, ext: string = "webm") => {
     setChatInput("Transcribing your question...");
     setIsChatLoading(true);
 
     try {
       const formData = new FormData();
-      formData.append("audio_file", audioBlob, "question.webm");
+      formData.append("audio_file", audioBlob, `question.${ext}`);
 
       const res = await fetch(`${BACKEND_URL}/api/quran/transcribe`, {
         method: 'POST',
@@ -913,7 +915,9 @@ export default function FullscreenAiPage() {
 
         recorder.onstop = async () => {
           stream.getTracks().forEach(track => track.stop());
-          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType || 'audio/webm' });
+          const actualMime = mimeType || 'audio/webm';
+          const ext = actualMime.includes("mp4") ? "mp4" : actualMime.includes("ogg") ? "ogg" : "webm";
+          const audioBlob = new Blob(audioChunksRef.current, { type: actualMime });
 
           // Guard: reject silent/empty recordings
           if (audioBlob.size < MIN_AUDIO_BYTES) {
@@ -924,7 +928,7 @@ export default function FullscreenAiPage() {
             return;
           }
 
-          await processRecitationAudio(audioBlob);
+          await processRecitationAudio(audioBlob, ext);
         };
 
         mediaRecorderRef.current = recorder;
@@ -950,13 +954,13 @@ export default function FullscreenAiPage() {
     }
   };
 
-  const processRecitationAudio = async (audioBlob: Blob) => {
+  const processRecitationAudio = async (audioBlob: Blob, ext: string = "webm") => {
     setRecitationPhase('done');
     setIsChatLoading(true);
 
     try {
       const formData = new FormData();
-      formData.append("audio_file", audioBlob, "recitation.webm");
+      formData.append("audio_file", audioBlob, `recitation.${ext}`);
       formData.append("ayah_id", selectedAyah);
       formData.append("madhab", madhab.toLowerCase());
       formData.append("language_code", globalLanguage);

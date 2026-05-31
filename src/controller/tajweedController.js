@@ -120,9 +120,11 @@ export const transcribeAudio = async (req, res) => {
 
     const FormData = (await import("form-data")).default;
     const formData = new FormData();
+    const mime = req.file.mimetype || "audio/webm";
+    const ext = mime.includes("mp4") ? "mp4" : mime.includes("ogg") ? "ogg" : "webm";
     formData.append("audio_file", req.file.buffer, {
-      filename: "audio.webm",
-      contentType: req.file.mimetype || "audio/webm",
+      filename: `audio.${ext}`,
+      contentType: mime,
     });
 
     const response = await axios.post(
