@@ -52,8 +52,7 @@ services:
       - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID}
       - FRONTEND_URL=${FRONTEND_URL:-https://www.imamapp.co}
     depends_on:
-      ai-bridge:
-        condition: service_healthy   # wait for models to load before accepting traffic
+      - ai-bridge
     networks:
       - quran-net
     restart: always
