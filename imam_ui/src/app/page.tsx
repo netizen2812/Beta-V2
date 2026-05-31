@@ -674,7 +674,7 @@ export default function FullscreenAiPage() {
         guidance: `Please pronounce the Arabic word: ${word.text}`,
         language: "arabic"
       });
-      const audioUrl = `${AI_BRIDGE_URL}/api/maulana-voice?${params.toString()}`;
+      const audioUrl = `${BACKEND_URL}/api/quran/maulana-voice?${params.toString()}`;
       handlePlayVoice(audioUrl);
     } catch (e) {
       console.error("Failed to play word pronunciation:", e);
@@ -686,7 +686,7 @@ export default function FullscreenAiPage() {
     try {
       const [surahNum, ayahNum] = selectedAyah.split(":").map(Number);
       
-      const res = await fetch(`${AI_BRIDGE_URL}/api/audio-playlist`, {
+      const res = await fetch(`${BACKEND_URL}/api/quran/audio-playlist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -713,7 +713,7 @@ export default function FullscreenAiPage() {
               
               let finalUrl = item.url;
               if (finalUrl.startsWith("/api/")) {
-                finalUrl = `${AI_BRIDGE_URL}${finalUrl}`;
+                finalUrl = `${BACKEND_URL}${finalUrl}`;
               }
               
               if (playbackAudio) {

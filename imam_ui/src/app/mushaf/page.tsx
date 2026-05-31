@@ -29,7 +29,13 @@ export default function MushafulScreen() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      // iOS Safari does NOT support audio/webm — fall back to audio/mp4
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : MediaRecorder.isTypeSupported("audio/mp4")
+        ? "audio/mp4"
+        : "";
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       mediaRecorderRef.current = recorder;
       audioChunksRef.current = [];
 
@@ -40,13 +46,15 @@ export default function MushafulScreen() {
       };
 
       recorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const actualMime = recorder.mimeType || "audio/webm";
+        const ext = actualMime.includes("mp4") ? "mp4" : actualMime.includes("ogg") ? "ogg" : "webm";
+        const audioBlob = new Blob(audioChunksRef.current, { type: actualMime });
         setPhase("analyzing");
 
         try {
           const backendUrl = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001");
           const formData = new FormData();
-          formData.append("audio_file", audioBlob, "recitation.webm");
+          formData.append("audio_file", audioBlob, `recitation.${ext}`);
           formData.append("ayah_id", "1:1");
           formData.append("madhab", "shafi");
 

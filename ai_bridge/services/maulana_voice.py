@@ -615,8 +615,24 @@ async def get_maulana_advice(
                 )
             )
             
-            data = json.loads(response.text)
-            da = data.get("dynamic_advice", "").strip()
+            logger.info(f"[MaulanaVoice] Gemini raw response: {response.text}")
+            text_to_parse = response.text.strip() if response.text else ""
+            if text_to_parse.startswith("```"):
+                import re
+                text_to_parse = re.sub(r"^```(?:json)?\n", "", text_to_parse)
+                text_to_parse = re.sub(r"\n```$", "", text_to_parse)
+            
+            try:
+                data = json.loads(text_to_parse.strip())
+                da = data.get("dynamic_advice", "").strip()
+            except Exception as parse_err:
+                logger.warning(f"[MaulanaVoice] JSON parsing failed. Trying to extract plain text: {parse_err}")
+                da = text_to_parse.strip()
+                if da.startswith("{") and "dynamic_advice" in da:
+                    import re
+                    match = re.search(r'"dynamic_advice"\s*:\s*"([^"]+)"', da)
+                    if match:
+                        da = match.group(1)
 
             # Enforce mathematical 20% limit on dynamic word count
             dynamic_words = da.split()

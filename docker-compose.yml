@@ -11,13 +11,24 @@ services:
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
       - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      # FIX: Pass ALLOWED_ORIGINS so AI Bridge CORS allows production domains
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://www.imamapp.co,https://imamapp.co,http://localhost:3000}
     volumes:
       # Mount data dir directly to reflect git updates and persist caches locally
       - ./ai_bridge/data:/usr/src/app/data
       - ./ai_bridge/models:/usr/src/app/models
+    # NOTE: No ports: mapping intentional — AI Bridge is internal only.
+    # All external access goes through node-backend proxy routes.
     networks:
       - quran-net
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "X-API-Key:${INTERNAL_API_KEY}", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s  # models take ~90s to load on T4
 
   node-backend:
     build:
@@ -30,13 +41,25 @@ services:
       - MONGO_URI=${MONGO_URI}
       - AI_BRIDGE_URL=http://ai-bridge:8000
       - PORT=5001
+      - NODE_ENV=${NODE_ENV:-production}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      # FIX: These were missing from the original compose — all auth routes failed
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID}
+      - FRONTEND_URL=${FRONTEND_URL:-https://www.imamapp.co}
     depends_on:
-      - ai-bridge
+      ai-bridge:
+        condition: service_healthy   # wait for models to load before accepting traffic
     networks:
       - quran-net
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
 networks:
   quran-net:

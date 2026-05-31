@@ -27,7 +27,7 @@ class PhoneticEngine:
 
     def load(self):
         """Load the Wav2Vec2 phonetic model and processor."""
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
 
         self.processor = Wav2Vec2Processor.from_pretrained(MODEL_ID)
         
@@ -36,7 +36,7 @@ class PhoneticEngine:
 
         self.is_loaded = True
 
-    def transcribe_phonetics(self, audio_bytes: bytes) -> dict:
+    def transcribe_phonetics(self, audio_bytes: bytes | np.ndarray) -> dict:
         """
         Transcribe audio bytes to a phonetic string.
         """
@@ -84,7 +84,7 @@ class PhoneticEngine:
             "char_durations": durations
         }
 
-    def get_ctc_logits(self, audio_bytes: bytes) -> tuple:
+    def get_ctc_logits(self, audio_bytes: bytes | np.ndarray) -> tuple:
         """
         Get raw CTC logits for forced alignment.
 
@@ -94,7 +94,10 @@ class PhoneticEngine:
         if not self.is_loaded:
             raise RuntimeError("Phonetic model not loaded. Call load() first.")
 
-        audio_array = self._bytes_to_array(audio_bytes)
+        if isinstance(audio_bytes, np.ndarray):
+            audio_array = audio_bytes
+        else:
+            audio_array = self._bytes_to_array(audio_bytes)
         audio_length = len(audio_array) / 16000.0
 
         inputs = self.processor(

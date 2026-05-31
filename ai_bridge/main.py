@@ -14,10 +14,23 @@ import time
 import logging
 import threading
 from contextlib import asynccontextmanager
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load env variables from the root workspace folder first, then local if available
+root_env = Path(__file__).resolve().parent.parent / ".env"
+local_env = Path(__file__).resolve().parent / ".env"
+if root_env.exists():
+    load_dotenv(dotenv_path=root_env)
+elif local_env.exists():
+    load_dotenv(dotenv_path=local_env)
+else:
+    load_dotenv()
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
 
 from models.whisper_engine import WhisperEngine
 from models.phonetic_engine import PhoneticEngine

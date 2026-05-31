@@ -31,15 +31,15 @@ class WhisperEngine:
 
     def load(self):
         """Load the Whisper model and processor."""
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+        self.device = torch.device("cpu")
+        torch_dtype = torch.float32
         logger.info(f"Loading Whisper on device: {self.device} with dtype: {torch_dtype}")
 
         self.processor = AutoProcessor.from_pretrained(MODEL_ID)
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
             MODEL_ID,
             torch_dtype=torch_dtype,
-            low_cpu_mem_usage=not torch.cuda.is_available(),
+            low_cpu_mem_usage=True,
         ).to(self.device)
 
         # Fix for generation config timestamps ValueError in transformers
@@ -68,12 +68,12 @@ class WhisperEngine:
 
         self.is_loaded = True
 
-    def transcribe(self, audio_bytes: bytes, mime_type: str = "audio/webm") -> dict:
+    def transcribe(self, audio_bytes: bytes | np.ndarray, mime_type: str = "audio/webm") -> dict:
         """
-        Transcribe audio bytes to Arabic Quranic text.
+        Transcribe audio bytes or pre-loaded array to Arabic Quranic text.
 
         Args:
-            audio_bytes: Raw audio file bytes (webm, mp3, wav, etc.)
+            audio_bytes: Raw audio file bytes (webm, mp3, wav, etc.) or numpy float32 array
             mime_type: MIME type of the audio
 
         Returns:
@@ -85,8 +85,11 @@ class WhisperEngine:
         if not self.is_loaded:
             raise RuntimeError("Whisper model not loaded. Call load() first.")
 
-        # Convert bytes to numpy array at 16kHz mono
-        audio_array = self._bytes_to_array(audio_bytes)
+        if isinstance(audio_bytes, np.ndarray):
+            audio_array = audio_bytes
+        else:
+            # Convert bytes to numpy array at 16kHz mono
+            audio_array = self._bytes_to_array(audio_bytes)
         
         # Guard against completely empty or trimmed silent audio (P2.12)
         if len(audio_array) == 0:

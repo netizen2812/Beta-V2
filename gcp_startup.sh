@@ -73,6 +73,10 @@ fi
 echo "✅ GCS seed data restore complete."
 
 # 4. Retrieve Secrets from GCP Custom Instance Metadata
+# Store secrets via: gcloud compute instances add-metadata INSTANCE_NAME \
+#   --metadata gemini-api-key=XXX,openrouter-api-key=XXX,mongo-uri=XXX,
+#              internal-api-key=XXX,clerk-secret-key=XXX,
+#              elevenlabs-api-key=XXX,elevenlabs-voice-id=XXX
 echo "🔑 Injecting configuration credentials from GCP Metadata Server..."
 METADATA_URL="http://metadata.google.internal/computeMetadata/v1/instance/attributes"
 HEADERS="Metadata-Flavor: Google"
@@ -82,13 +86,23 @@ OPENROUTER_API_KEY=$(curl -s -H "$HEADERS" "$METADATA_URL/openrouter-api-key")
 MONGO_URI=$(curl -s -H "$HEADERS" "$METADATA_URL/mongo-uri")
 INTERNAL_API_KEY=$(curl -s -H "$HEADERS" "$METADATA_URL/internal-api-key")
 
-# If metadata values are not provided, write helpful placeholders
-[ -z "$GEMINI_API_KEY" ] && GEMINI_API_KEY="INSERT_YOUR_GEMINI_API_KEY_HERE"
-[ -z "$OPENROUTER_API_KEY" ] && OPENROUTER_API_KEY="INSERT_YOUR_OPENROUTER_API_KEY_HERE"
-[ -z "$MONGO_URI" ] && MONGO_URI="mongodb+srv://..."
-[ -z "$INTERNAL_API_KEY" ] && INTERNAL_API_KEY="faith_tech_secret_key_2026"
+# FIX: These were missing — all authenticated routes (Clerk) and TTS fallback
+# (ElevenLabs) were failing silently in production.
+CLERK_SECRET_KEY=$(curl -s -H "$HEADERS" "$METADATA_URL/clerk-secret-key")
+ELEVENLABS_API_KEY=$(curl -s -H "$HEADERS" "$METADATA_URL/elevenlabs-api-key")
+ELEVENLABS_VOICE_ID=$(curl -s -H "$HEADERS" "$METADATA_URL/elevenlabs-voice-id")
+
+# Fallback placeholders if metadata not set
+[ -z "$GEMINI_API_KEY" ]        && GEMINI_API_KEY="INSERT_YOUR_GEMINI_API_KEY_HERE"
+[ -z "$OPENROUTER_API_KEY" ]    && OPENROUTER_API_KEY="INSERT_YOUR_OPENROUTER_API_KEY_HERE"
+[ -z "$MONGO_URI" ]             && MONGO_URI="mongodb+srv://..."
+[ -z "$INTERNAL_API_KEY" ]      && INTERNAL_API_KEY="faith_tech_secret_key_2026"
+[ -z "$CLERK_SECRET_KEY" ]      && CLERK_SECRET_KEY="INSERT_CLERK_SECRET_KEY_HERE"
+[ -z "$ELEVENLABS_API_KEY" ]    && ELEVENLABS_API_KEY=""
+[ -z "$ELEVENLABS_VOICE_ID" ]   && ELEVENLABS_VOICE_ID="pNInz6obpgDQGcFmaJgB"
 
 # Write standard runtime .env file
+# FIX: Added CLERK_SECRET_KEY, ELEVENLABS keys, ALLOWED_ORIGINS, FRONTEND_URL
 cat <<EOT > /opt/Beta-V2/.env
 PORT=5001
 MONGO_URI=${MONGO_URI}
@@ -96,9 +110,47 @@ GEMINI_API_KEY=${GEMINI_API_KEY}
 OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
 INTERNAL_API_KEY=${INTERNAL_API_KEY}
 AI_BRIDGE_URL=http://ai-bridge:8000
+
+# Clerk authentication — required by requireAuth middleware
+CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+
+# ElevenLabs TTS fallback
+ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID}
+
+# CORS — AI Bridge allows these origins (Express handles its own CORS separately)
+ALLOWED_ORIGINS=https://www.imamapp.co,https://imamapp.co,https://tryimam.vercel.app,http://localhost:3000
+
+# Frontend URL for Daily.co webhook and CORS
+FRONTEND_URL=https://www.imamapp.co
+NODE_ENV=production
 EOT
 
 echo "✅ Environment variables configured at /opt/Beta-V2/.env."
+
+# ── GCP Firewall check ────────────────────────────────────────────────────────
+# FIX: Port 5001 must be open for Vercel to reach the Node backend.
+# Run this ONCE from your local machine (not this script — needs IAM permission):
+#
+#   gcloud compute firewall-rules create allow-imam-api \
+#     --direction=INGRESS --priority=1000 --network=default \
+#     --action=ALLOW --rules=tcp:5001 \
+#     --source-ranges=0.0.0.0/0 \
+#     --target-tags=imam-ai-server \
+#     --description="Allow IMAM AI Express backend from Vercel"
+#
+#   gcloud compute instances add-tags INSTANCE_NAME \
+#     --tags=imam-ai-server --zone=ZONE
+#
+# Also reserve a static external IP to avoid IP changes on spot VM preemption:
+#   gcloud compute addresses create imam-ai-static-ip --region=REGION
+#   gcloud compute instances delete-access-config INSTANCE_NAME --zone=ZONE \
+#     --access-config-name="External NAT"
+#   gcloud compute instances add-access-config INSTANCE_NAME --zone=ZONE \
+#     --access-config-name="External NAT" \
+#     --address=$(gcloud compute addresses describe imam-ai-static-ip --region=REGION --format='value(address)')
+echo "⚠️  Remember: GCP firewall rule for port 5001 must be created manually once."
+echo "⚠️  Recommend reserving a static external IP to survive preemption restarts."
 
 # 5. Install Docker Buildx (modern builder, avoids legacy warnings)
 echo "🔧 Installing Docker Buildx plugin..."

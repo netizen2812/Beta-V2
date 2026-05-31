@@ -126,36 +126,29 @@ async def tajweed_check(
         raise HTTPException(413, "Audio file exceeds 10 MB limit")
 
     start = time.time()
+    logger.info(f"[/api/tajweed-check] Received request for ayah_id: {ayah_id}, madhab: {madhab}")
 
     # Step 3: Get reference phonetics from Buraaq DB
     reference_words = phonetic_db.search_by_ayah_id(ayah_id)
     if not reference_words:
+        logger.warning(f"[/api/tajweed-check] No phonetic reference found for ayah {ayah_id}")
         raise HTTPException(404, f"No phonetic reference found for ayah {ayah_id}")
 
-    # Step 1 & 2: Concurrently run Whisper ASR and Wav2Vec2 CTC logits extraction to minimize latency
-    import asyncio
+    # Step 1: Pre-process audio once (decode, resample to 16kHz, denoise, normalize, and boost)
+    import numpy as np
+    from services.voice_processor import VoiceProcessor
     
-    async def run_whisper_parallel():
-        return await asyncio.to_thread(
-            whisper.transcribe,
-            audio_bytes,
-            mime_type=audio_file.content_type or "audio/webm"
-        )
-        
-    async def run_phonetics_parallel():
-        return await asyncio.to_thread(
-            phonetic_engine.get_ctc_logits,
-            audio_bytes
-        )
-        
-    whisper_task = asyncio.create_task(run_whisper_parallel())
-    phonetics_task = asyncio.create_task(run_phonetics_parallel())
-    
-    whisper_result, (logits, audio_length) = await asyncio.gather(whisper_task, phonetics_task)
-    transcribed_text = whisper_result["text"]
+    logger.info("[/api/tajweed-check] Step 1: Pre-processing audio array...")
+    audio_array = VoiceProcessor.process_audio(
+        audio_bytes,
+        16000
+    )
+    audio_length = len(audio_array) / 16000.0
+    logger.info(f"[/api/tajweed-check] Step 1 done. Audio length: {audio_length:.2f}s, max amp: {np.max(np.abs(audio_array)) if len(audio_array) > 0 else 0:.4f}")
 
-    # Guard against completely empty/silent or untranscribable recitation (P2.12)
-    if not transcribed_text:
+    # Guard against completely empty/silent recitation
+    if len(audio_array) == 0 or np.max(np.abs(audio_array)) < 1e-4:
+        logger.warning("[/api/tajweed-check] Empty or silent audio array detected.")
         elapsed = time.time() - start
         return {
             "status": "success",
@@ -196,14 +189,76 @@ async def tajweed_check(
             },
         }
 
+    # Step 2: Run Whisper ASR on pre-loaded clean audio array
+    logger.info("[/api/tajweed-check] Step 2: Running Whisper ASR...")
+    whisper_result = whisper.transcribe(
+        audio_array,
+        audio_file.content_type or "audio/webm"
+    )
+    transcribed_text = whisper_result["text"]
+    logger.info(f"[/api/tajweed-check] Step 2 done. Transcribed: '{transcribed_text}'")
+
+    # Guard against empty transcription
+    if not transcribed_text:
+        logger.warning("[/api/tajweed-check] Empty transcription from Whisper.")
+        elapsed = time.time() - start
+        return {
+            "status": "success",
+            "data": {
+                "maulana_feedback": {
+                    "status": "Correction Required (Niqis)",
+                    "score": 0.0,
+                    "guidance": "Silence or untranscribable audio detected. Please speak clearly near the microphone.",
+                    "summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)}
+                },
+                "tajweed_score": 0.0,
+                "total_words": len(reference_words),
+                "correct_words": 0,
+                "error_summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)},
+                "ayah_id": ayah_id,
+                "madhab": madhab,
+                "transcribed_text": "",
+                "phonetic_transcript": "",
+                "word_results": [
+                    {
+                        "word_index": ref["word_index"],
+                        "word_ar": ref["word_ar"],
+                        "expected_phonetic": ref["word_tr"],
+                        "actual_phonetic": "",
+                        "similarity": 0.0,
+                        "status": "major_error",
+                        "rule": "Missing Word",
+                        "guidance": "No recitation detected for this word.",
+                        "error_details": {
+                            "error_type": "tongue_lisani",
+                            "pedagogical_key": "pedagogy.correction.makharij.tongue_lisani",
+                            "description": "No audio signal detected"
+                        }
+                    }
+                    for ref in reference_words
+                ],
+                "inference_time_ms": round(elapsed * 1000, 1),
+            },
+        }
+
+    # Step 3: Run Wav2Vec2 to extract CTC logits
+    logger.info("[/api/tajweed-check] Step 3: Extracting Wav2Vec2 logits...")
+    logits, _ = phonetic_engine.get_ctc_logits(
+        audio_array
+    )
+    logger.info(f"[/api/tajweed-check] Step 3 done. Logits shape: {list(logits.shape)}")
+
     # Step 4: Decode Wav2Vec2 phonetics
+    logger.info("[/api/tajweed-check] Step 4: Decoding Wav2Vec2 phonetics & alignment...")
     phonetic_result = phonetic_engine.decode_logits(logits)
     actual_phonetics = phonetic_result["words"]
+    logger.info(f"[/api/tajweed-check] Step 4 done. actual_phonetics: {actual_phonetics}")
 
     # Step 4: Forced alignment
     aligned_words = AlignmentEngine.align_words(
         logits, audio_length, phonetic_engine.processor
     )
+    logger.info(f"[/api/tajweed-check] Aligned words: {aligned_words}")
 
     # Step 5: Tajweed scoring with Maulana Grade Logic
     # We now integrate temporal and spectral feedback

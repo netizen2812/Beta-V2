@@ -128,8 +128,8 @@ export default function ChatPage() {
       ayah_id: "1:1"
     });
 
-    const aiBridgeUrl = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_AI_BRIDGE_URL || "http://localhost:8000");
-    const audioUrl = `${aiBridgeUrl}/api/maulana-voice?${params.toString()}`;
+    const backendUrl = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001");
+    const audioUrl = `${backendUrl}/api/quran/maulana-voice?${params.toString()}`;
 
     const audio = new Audio(audioUrl);
     audio.play().catch(e => console.warn("Failed to play Maulana voice:", e));

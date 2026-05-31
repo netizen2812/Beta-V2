@@ -3,10 +3,6 @@ from pathlib import Path
 import os
 import torch
 
-# Restrict PyTorch thread count to prevent CPU starvation on CPU-bound servers
-if not torch.cuda.is_available():
-    torch.set_num_threads(2)
-
 import numpy as np
 import unicodedata
 
@@ -152,7 +148,7 @@ class LocalTTSEngine:
         mms_dir = str(MMS_URDU_DIR) if MMS_URDU_DIR.exists() else "facebook/mms-tts-urd-script_arabic"
         log.info(f"Loading MMS-VITS Urdu from: {mms_dir}")
         self._ur_tokenizer = VitsTokenizer.from_pretrained(mms_dir)
-        self._ur_model = VitsModel.from_pretrained(mms_dir).to(self.device)
+        self._ur_model = VitsModel.from_pretrained(mms_dir).to("cpu")
         self._ur_model.eval()
         log.info("✅ MMS-VITS Urdu model loaded.")
 
@@ -275,7 +271,7 @@ class LocalTTSEngine:
             for i, clause in enumerate(clauses):
                 if not clause:
                     continue
-                inputs = self._ur_tokenizer(text=clause, return_tensors="pt").to(self.device)
+                inputs = self._ur_tokenizer(text=clause, return_tensors="pt").to("cpu")
                 with torch.no_grad():
                     waveform = self._ur_model(**inputs).waveform  # [1, T] at 16kHz
                 wav = waveform.squeeze().cpu().numpy()
@@ -348,9 +344,8 @@ class LocalTTSEngine:
                 
             # If not matching target sample rate, resample
             if sr != target_sr:
-                import scipy.signal as signal
-                num_samples = int(len(data) * target_sr / sr)
-                data = signal.resample(data, num_samples).astype(np.float32)
+                import librosa
+                data = librosa.resample(data, orig_sr=sr, target_sr=target_sr).astype(np.float32)
                 sr = target_sr
                 
             # Crop excessive leading/trailing silence using a very sensitive amplitude threshold

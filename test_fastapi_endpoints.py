@@ -14,7 +14,7 @@ except Exception as e:
 
 print("\n2. Testing /api/tajweed-check with a silence/empty file...")
 # Let's generate a tiny dummy audio file or use one of the test audios
-audio_path = "test_ar_soothing.wav"
+audio_path = "golden_samples/1-1/ar.mp3"
 if not os.path.exists(audio_path):
     print(f"Warning: {audio_path} not found. Creating a 1-second silent WAV file.")
     import numpy as np
