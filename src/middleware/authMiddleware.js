@@ -1,10 +1,14 @@
 import { createClerkClient } from '@clerk/backend';
 
 const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+const clerkPublishableKey = process.env.CLERK_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 // Only instantiate clerkClient if secret key is present
 const clerkClient = clerkSecretKey && clerkSecretKey !== "INSERT_CLERK_SECRET_KEY_HERE"
-  ? createClerkClient({ secretKey: clerkSecretKey })
+  ? createClerkClient({ 
+      secretKey: clerkSecretKey,
+      publishableKey: clerkPublishableKey
+    })
   : null;
 
 /**
