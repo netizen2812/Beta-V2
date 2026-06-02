@@ -33,10 +33,22 @@ export const requireAuth = async (req, res, next) => {
   }
 
   try {
+    // Reconstruct the full absolute URL for the Clerk SDK since Express req.url/req.originalUrl is relative
+    const protocol = req.protocol || 'http';
+    const host = req.get('host') || 'localhost:5001';
+    const fullUrl = `${protocol}://${host}${req.originalUrl || req.url}`;
+
+    // Create a request-like object that Clerk authenticateRequest can parse correctly
+    const clerkCompatibleReq = {
+      headers: req.headers,
+      method: req.method,
+      url: fullUrl,
+    };
+
     // authenticateRequest handles standard Clerk token validation from either:
     // 1. Authorization: Bearer <token>
     // 2. Cookie: __session=<token>
-    const requestState = await clerkClient.authenticateRequest(req);
+    const requestState = await clerkClient.authenticateRequest(clerkCompatibleReq);
     
     if (requestState.isSignedIn) {
       req.auth = {
