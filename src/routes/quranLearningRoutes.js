@@ -20,12 +20,13 @@ router.post("/ask", requireAuth, limiter, askImam);
 router.post("/tajweed-check", requireAuth, audioUpload.single("audio_file"), checkTajweed);
 
 // ─── New Routes (AI Bridge proxy) ────────────────────────────────────────────
-router.get("/phonetic-ref/:ayahId", getPhoneticRef);
+router.get("/phonetic-ref/:ayahId", requireAuth, getPhoneticRef);
 router.post("/transcribe", requireAuth, audioUpload.single("audio_file"), transcribeAudio);
-router.get("/maulana-voice", getMaulanaVoice);
-router.post("/maulana-voice", getMaulanaVoice);
-router.post("/audio-playlist", getAudioPlaylist);
-router.post("/tts", getDirectTTS);
+router.get("/maulana-voice", requireAuth, getMaulanaVoice);
+router.post("/maulana-voice", requireAuth, getMaulanaVoice);
+router.post("/audio-playlist", requireAuth, getAudioPlaylist);
+router.get("/tts", requireAuth, getDirectTTS);
+router.post("/tts", requireAuth, getDirectTTS);
 
 // ─── Ibadah Routes ───────────────────────────────────────────────────────────
 router.get("/ibadah/timings", getIbadahTimings);

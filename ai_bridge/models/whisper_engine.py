@@ -119,18 +119,33 @@ class WhisperEngine:
         import tempfile
         import os
         
-        # Write to temporary file first to support all formats (MP3, WebM, etc. via ffmpeg/audioread)
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-            tmp.write(audio_bytes)
-            tmp_path = tmp.name
+        # Write & convert to WAV natively using ultra-fast ffmpeg to bypass slow audioread piping
+        import subprocess
+        import soundfile as sf
+        
+        with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as in_tmp:
+            in_tmp.write(audio_bytes)
+            in_path = in_tmp.name
             
+        out_path = in_path + ".wav"
+        
         try:
-            audio, sr = librosa.load(tmp_path, sr=None, mono=True)
+            subprocess.run([
+                "ffmpeg", "-y", "-i", in_path, 
+                "-ar", "16000", "-ac", "1", 
+                out_path
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            audio, sr = sf.read(out_path)
+        except Exception:
+            audio, sr = librosa.load(in_path, sr=None, mono=True)
         finally:
-            try:
-                os.remove(tmp_path)
-            except Exception:
-                pass
+            for p in [in_path, out_path]:
+                if os.path.exists(p):
+                    try:
+                        os.remove(p)
+                    except Exception:
+                        pass
 
         # Convert stereo to mono
         if audio.ndim > 1:

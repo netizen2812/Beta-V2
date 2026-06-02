@@ -157,10 +157,17 @@ export const getAudioPlaylist = async (req, res) => {
 
 export const getDirectTTS = async (req, res) => {
   try {
+    const text = req.method === "POST" ? req.body?.text : req.query?.text;
+    const language = req.method === "POST" ? req.body?.language : req.query?.language;
+
+    if (!text) {
+      return res.status(400).json({ status: "error", message: "text parameter is required" });
+    }
+
     const AI_BRIDGE_URL = process.env.AI_BRIDGE_URL || "http://127.0.0.1:8000";
     const response = await axios.post(
       `${AI_BRIDGE_URL}/api/tts`,
-      req.body,
+      { text, language: language || "en" },
       {
         headers: {
           "X-API-Key": process.env.INTERNAL_API_KEY || "",

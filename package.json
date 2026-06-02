@@ -11,6 +11,7 @@
     "ai-install": "cd ai_bridge && .\\venv\\Scripts\\pip install -r requirements.txt"
   },
   "dependencies": {
+    "@clerk/backend": "^3.4.14",
     "@google-cloud/speech": "^7.3.0",
     "@google-cloud/storage": "^7.19.0",
     "@google-cloud/text-to-speech": "^6.4.0",

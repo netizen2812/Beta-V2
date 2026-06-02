@@ -45,6 +45,7 @@ async def transcribe(request: Request, audio_file: UploadFile = File(...)):
     """
     Whisper-only transcription: audio → Arabic Quranic text.
     """
+    import asyncio
     whisper = request.app.state.whisper
     if not whisper or not whisper.is_loaded:
         raise HTTPException(503, "Whisper model not loaded")
@@ -54,7 +55,13 @@ async def transcribe(request: Request, audio_file: UploadFile = File(...)):
         raise HTTPException(413, "Audio file exceeds 10 MB limit")
 
     start = time.time()
-    result = whisper.transcribe(audio_bytes, mime_type=audio_file.content_type or "audio/webm")
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(
+        None,
+        whisper.transcribe,
+        audio_bytes,
+        audio_file.content_type or "audio/webm"
+    )
     elapsed = time.time() - start
 
     return {
@@ -72,6 +79,7 @@ async def phonetics(request: Request, audio_file: UploadFile = File(...)):
     """
     Wav2Vec2-only phonetic transcription: audio → phonetic string.
     """
+    import asyncio
     phonetic_engine = request.app.state.phonetic
     if not phonetic_engine or not phonetic_engine.is_loaded:
         raise HTTPException(503, "Phonetic model not loaded")
@@ -81,7 +89,12 @@ async def phonetics(request: Request, audio_file: UploadFile = File(...)):
         raise HTTPException(413, "Audio file exceeds 10 MB limit")
 
     start = time.time()
-    result = phonetic_engine.transcribe_phonetics(audio_bytes)
+    loop = asyncio.get_running_loop()
+    result = await loop.run_in_executor(
+        None,
+        phonetic_engine.transcribe_phonetics,
+        audio_bytes
+    )
     elapsed = time.time() - start
 
     return {
@@ -94,50 +107,29 @@ async def phonetics(request: Request, audio_file: UploadFile = File(...)):
     }
 
 
-@router.post("/tajweed-check")
-async def tajweed_check(
-    request: Request,
-    audio_file: UploadFile = File(...),
-    ayah_id: str = Form(...),
-    madhab: str = Form("shafi"),
+def _run_tajweed_pipeline_sync(
+    whisper,
+    phonetic_engine,
+    phonetic_db,
+    temporal_engine,
+    spectral_analyzer,
+    audio_bytes,
+    content_type,
+    ayah_id,
+    madhab
 ):
-    """
-    Full Tajweed validation pipeline:
-      1. Whisper ASR → Arabic text (ayah identification)
-      2. Wav2Vec2 → Phonetic transcription
-      3. Phonetic DB → Reference phonetics
-      4. Levenshtein scoring → Word-level Tajweed report
-
-    Returns a complete Tajweed Report with per-word scores.
-    """
-    whisper = request.app.state.whisper
-    phonetic_engine = request.app.state.phonetic
-    phonetic_db = request.app.state.phonetic_db
-
-    if not whisper or not whisper.is_loaded:
-        raise HTTPException(503, "Whisper model not loaded")
-    if not phonetic_engine or not phonetic_engine.is_loaded:
-        raise HTTPException(503, "Phonetic model not loaded")
-    if not phonetic_db or not phonetic_db.is_loaded:
-        raise HTTPException(503, "Phonetic reference DB not loaded")
-
-    audio_bytes = await audio_file.read(MAX_AUDIO_BYTES + 1)
-    if len(audio_bytes) > MAX_AUDIO_BYTES:
-        raise HTTPException(413, "Audio file exceeds 10 MB limit")
-
-    start = time.time()
-    logger.info(f"[/api/tajweed-check] Received request for ayah_id: {ayah_id}, madhab: {madhab}")
+    import numpy as np
+    from services.voice_processor import VoiceProcessor
+    from services.alignment import AlignmentEngine
+    from services.tajweed_scorer import TajweedScorer
+    from services.spectral_analyzer import QALQALAH_LETTERS_TR, QALQALAH_LETTERS_AR
 
     # Step 3: Get reference phonetics from Buraaq DB
     reference_words = phonetic_db.search_by_ayah_id(ayah_id)
     if not reference_words:
-        logger.warning(f"[/api/tajweed-check] No phonetic reference found for ayah {ayah_id}")
-        raise HTTPException(404, f"No phonetic reference found for ayah {ayah_id}")
+        raise ValueError(f"No phonetic reference found for ayah {ayah_id}")
 
     # Step 1: Pre-process audio once (decode, resample to 16kHz, denoise, normalize, and boost)
-    import numpy as np
-    from services.voice_processor import VoiceProcessor
-    
     logger.info("[/api/tajweed-check] Step 1: Pre-processing audio array...")
     audio_array = VoiceProcessor.process_audio(
         audio_bytes,
@@ -149,51 +141,46 @@ async def tajweed_check(
     # Guard against completely empty/silent recitation
     if len(audio_array) == 0 or np.max(np.abs(audio_array)) < 1e-4:
         logger.warning("[/api/tajweed-check] Empty or silent audio array detected.")
-        elapsed = time.time() - start
         return {
-            "status": "success",
-            "data": {
-                "maulana_feedback": {
-                    "status": "Correction Required (Niqis)",
-                    "score": 0.0,
-                    "guidance": "Silence or untranscribable audio detected. Please speak clearly near the microphone.",
-                    "summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)}
-                },
-                "tajweed_score": 0.0,
-                "total_words": len(reference_words),
-                "correct_words": 0,
-                "error_summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)},
-                "ayah_id": ayah_id,
-                "madhab": madhab,
-                "transcribed_text": "",
-                "phonetic_transcript": "",
-                "word_results": [
-                    {
-                        "word_index": ref["word_index"],
-                        "word_ar": ref["word_ar"],
-                        "expected_phonetic": ref["word_tr"],
-                        "actual_phonetic": "",
-                        "similarity": 0.0,
-                        "status": "major_error",
-                        "rule": "Missing Word",
-                        "guidance": "No recitation detected for this word.",
-                        "error_details": {
-                            "error_type": "tongue_lisani",
-                            "pedagogical_key": "pedagogy.correction.makharij.tongue_lisani",
-                            "description": "No audio signal detected"
-                        }
-                    }
-                    for ref in reference_words
-                ],
-                "inference_time_ms": round(elapsed * 1000, 1),
+            "maulana_feedback": {
+                "status": "Correction Required (Niqis)",
+                "score": 0.0,
+                "guidance": "Silence or untranscribable audio detected. Please speak clearly near the microphone.",
+                "summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)}
             },
+            "tajweed_score": 0.0,
+            "total_words": len(reference_words),
+            "correct_words": 0,
+            "error_summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)},
+            "ayah_id": ayah_id,
+            "madhab": madhab,
+            "transcribed_text": "",
+            "phonetic_transcript": "",
+            "word_results": [
+                {
+                    "word_index": ref["word_index"],
+                    "word_ar": ref["word_ar"],
+                    "expected_phonetic": ref["word_tr"],
+                    "actual_phonetic": "",
+                    "similarity": 0.0,
+                    "status": "major_error",
+                    "rule": "Missing Word",
+                    "guidance": "No recitation detected for this word.",
+                    "error_details": {
+                        "error_type": "tongue_lisani",
+                        "pedagogical_key": "pedagogy.correction.makharij.tongue_lisani",
+                        "description": "No audio signal detected"
+                    }
+                }
+                for ref in reference_words
+            ]
         }
 
     # Step 2: Run Whisper ASR on pre-loaded clean audio array
     logger.info("[/api/tajweed-check] Step 2: Running Whisper ASR...")
     whisper_result = whisper.transcribe(
         audio_array,
-        audio_file.content_type or "audio/webm"
+        content_type
     )
     transcribed_text = whisper_result["text"]
     logger.info(f"[/api/tajweed-check] Step 2 done. Transcribed: '{transcribed_text}'")
@@ -201,44 +188,39 @@ async def tajweed_check(
     # Guard against empty transcription
     if not transcribed_text:
         logger.warning("[/api/tajweed-check] Empty transcription from Whisper.")
-        elapsed = time.time() - start
         return {
-            "status": "success",
-            "data": {
-                "maulana_feedback": {
-                    "status": "Correction Required (Niqis)",
-                    "score": 0.0,
-                    "guidance": "Silence or untranscribable audio detected. Please speak clearly near the microphone.",
-                    "summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)}
-                },
-                "tajweed_score": 0.0,
-                "total_words": len(reference_words),
-                "correct_words": 0,
-                "error_summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)},
-                "ayah_id": ayah_id,
-                "madhab": madhab,
-                "transcribed_text": "",
-                "phonetic_transcript": "",
-                "word_results": [
-                    {
-                        "word_index": ref["word_index"],
-                        "word_ar": ref["word_ar"],
-                        "expected_phonetic": ref["word_tr"],
-                        "actual_phonetic": "",
-                        "similarity": 0.0,
-                        "status": "major_error",
-                        "rule": "Missing Word",
-                        "guidance": "No recitation detected for this word.",
-                        "error_details": {
-                            "error_type": "tongue_lisani",
-                            "pedagogical_key": "pedagogy.correction.makharij.tongue_lisani",
-                            "description": "No audio signal detected"
-                        }
-                    }
-                    for ref in reference_words
-                ],
-                "inference_time_ms": round(elapsed * 1000, 1),
+            "maulana_feedback": {
+                "status": "Correction Required (Niqis)",
+                "score": 0.0,
+                "guidance": "Silence or untranscribable audio detected. Please speak clearly near the microphone.",
+                "summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)}
             },
+            "tajweed_score": 0.0,
+            "total_words": len(reference_words),
+            "correct_words": 0,
+            "error_summary": {"correct": 0, "minor_error": 0, "major_error": len(reference_words)},
+            "ayah_id": ayah_id,
+            "madhab": madhab,
+            "transcribed_text": "",
+            "phonetic_transcript": "",
+            "word_results": [
+                {
+                    "word_index": ref["word_index"],
+                    "word_ar": ref["word_ar"],
+                    "expected_phonetic": ref["word_tr"],
+                    "actual_phonetic": "",
+                    "similarity": 0.0,
+                    "status": "major_error",
+                    "rule": "Missing Word",
+                    "guidance": "No recitation detected for this word.",
+                    "error_details": {
+                        "error_type": "tongue_lisani",
+                        "pedagogical_key": "pedagogy.correction.makharij.tongue_lisani",
+                        "description": "No audio signal detected"
+                    }
+                }
+                for ref in reference_words
+            ]
         }
 
     # Step 3: Run Wav2Vec2 to extract CTC logits
@@ -265,24 +247,19 @@ async def tajweed_check(
     merged_feedback = {}
     
     # 5a. Temporal Feedback (Madd/Ghunnah)
-    if request.app.state.temporal_engine:
+    if temporal_engine:
         user_word_timings = [
             {"word_index": i, "duration": w["end_time"] - w["start_time"]} 
             for i, w in enumerate(aligned_words)
         ]
-        temp_feedback = request.app.state.temporal_engine.validate_durations(ayah_id, user_word_timings)
+        temp_feedback = temporal_engine.validate_durations(ayah_id, user_word_timings)
         for tf in temp_feedback:
             if tf.get("error"):
                 w_idx = tf["word_index"]
                 merged_feedback[w_idx] = tf
 
     # 5b. Spectral Feedback (Qalqalah)
-    if request.app.state.spectral_analyzer:
-        # Save temp audio for analysis using thread-safe NamedTemporaryFile (P0.2)
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-            tmp.write(audio_bytes)
-            temp_audio_path = tmp.name
-            
+    if spectral_analyzer:
         # Identify words that SHOULD have Qalqalah (P1.6)
         segment_times = []
         for i, word in enumerate(reference_words):
@@ -298,7 +275,8 @@ async def tajweed_check(
                 "is_qalqalah": is_qal
             })
             
-        spectral_feedback = request.app.state.spectral_analyzer.detect_qalqalah(temp_audio_path, segment_times)
+        # Re-use the already decoded audio_array directly (resolves Symptom 1.3)
+        spectral_feedback = spectral_analyzer.detect_qalqalah(audio_array, segment_times)
         for sf in spectral_feedback:
             if sf.get("error"):
                 w_idx = sf["word_index"]
@@ -309,10 +287,6 @@ async def tajweed_check(
                     existing["guidance"] = f"{existing['guidance']} Also, {sf['guidance'].lower()}"
                 else:
                     merged_feedback[w_idx] = sf
-        
-        # Cleanup
-        try: os.remove(temp_audio_path)
-        except: pass
 
     # Step 6: Generate Final Maulana Feedback
     report = TajweedScorer.score_recitation(
@@ -321,21 +295,75 @@ async def tajweed_check(
         temporal_feedback=merged_feedback # Merged feedback dict
     )
 
+    return {
+        "maulana_feedback": report["maulana_feedback"],
+        "tajweed_score": report["tajweed_score"],
+        "total_words": len(reference_words),
+        "correct_words": report["maulana_feedback"]["summary"].get("correct", 0),
+        "error_summary": report["maulana_feedback"]["summary"],
+        "ayah_id": ayah_id,
+        "madhab": madhab,
+        "transcribed_text": transcribed_text,
+        "phonetic_transcript": phonetic_result["phonetics"],
+        "word_results": report["word_results"],
+    }
+
+
+@router.post("/tajweed-check")
+async def tajweed_check(
+    request: Request,
+    audio_file: UploadFile = File(...),
+    ayah_id: str = Form(...),
+    madhab: str = Form("shafi"),
+):
+    """
+    Full Tajweed validation pipeline (non-blocking offloaded to thread pool):
+    """
+    import asyncio
+    whisper = request.app.state.whisper
+    phonetic_engine = request.app.state.phonetic
+    phonetic_db = request.app.state.phonetic_db
+
+    if not whisper or not whisper.is_loaded:
+        raise HTTPException(503, "Whisper model not loaded")
+    if not phonetic_engine or not phonetic_engine.is_loaded:
+        raise HTTPException(503, "Phonetic model not loaded")
+    if not phonetic_db or not phonetic_db.is_loaded:
+        raise HTTPException(503, "Phonetic reference DB not loaded")
+
+    audio_bytes = await audio_file.read(MAX_AUDIO_BYTES + 1)
+    if len(audio_bytes) > MAX_AUDIO_BYTES:
+        raise HTTPException(413, "Audio file exceeds 10 MB limit")
+
+    start = time.time()
+    logger.info(f"[/api/tajweed-check] Received request for ayah_id: {ayah_id}, madhab: {madhab}")
+
+    # Offload the heavy synchronous CPU-bound pipeline to the uvicorn thread pool
+    loop = asyncio.get_running_loop()
+    try:
+        pipeline_result = await loop.run_in_executor(
+            None,
+            _run_tajweed_pipeline_sync,
+            whisper,
+            phonetic_engine,
+            phonetic_db,
+            request.app.state.temporal_engine,
+            request.app.state.spectral_analyzer,
+            audio_bytes,
+            audio_file.content_type or "audio/webm",
+            ayah_id,
+            madhab
+        )
+    except ValueError as val_err:
+        logger.warning(f"[/api/tajweed-check] Phonetic reference query failed: {val_err}")
+        raise HTTPException(404, str(val_err))
+
     elapsed = time.time() - start
 
     return {
         "status": "success",
         "data": {
-            "maulana_feedback": report["maulana_feedback"],
-            "tajweed_score": report["tajweed_score"],
-            "total_words": len(reference_words),
-            "correct_words": report["maulana_feedback"]["summary"].get("correct", 0),
-            "error_summary": report["maulana_feedback"]["summary"],
-            "ayah_id": ayah_id,
-            "madhab": madhab,
-            "transcribed_text": transcribed_text,
-            "phonetic_transcript": phonetic_result["phonetics"],
-            "word_results": report["word_results"],
+            **pipeline_result,
             "inference_time_ms": round(elapsed * 1000, 1),
         },
     }
@@ -457,7 +485,15 @@ async def direct_tts(req: TTSRequest):
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
             out_path = tmp.name
 
-        success = tts_router.synthesize(text, lang, Path(out_path))
+        import asyncio
+        loop = asyncio.get_running_loop()
+        success = await loop.run_in_executor(
+            None,
+            tts_router.synthesize,
+            text,
+            lang,
+            Path(out_path)
+        )
         if not success:
             raise RuntimeError("TTS synthesis failed")
 
@@ -565,7 +601,7 @@ async def maulana_voice(
         import urllib.parse
         return StreamingResponse(
             audio_generator(),
-            media_type="audio/mpeg",
+            media_type="audio/wav",
             headers={
                 "X-Maulana-Text":     urllib.parse.quote(result["text"]),
                 "X-Maulana-Language": req_language,

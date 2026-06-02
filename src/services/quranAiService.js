@@ -10,22 +10,30 @@ async function openRouterRequest(messages, jsonMode = false) {
     throw new Error("OPENROUTER_API_KEY is missing in environment variables.");
   }
 
-  const response = await axios.post(
-    OPENROUTER_URL,
-    {
-      model: MODEL,
-      messages,
-      temperature: 0.65,
-      response_format: jsonMode ? { type: "json_object" } : undefined,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+  try {
+    const response = await axios.post(
+      OPENROUTER_URL,
+      {
+        model: MODEL,
+        messages,
+        temperature: 0.65,
+        response_format: jsonMode ? { type: "json_object" } : undefined,
       },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 10000, // 10s timeout (Symptom 3.1)
+      }
+    );
+    return response.data.choices[0].message.content;
+  } catch (error) {
+    if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+      throw new Error("OpenRouter API request timed out after 10 seconds.");
     }
-  );
-  return response.data.choices[0].message.content;
+    throw error;
+  }
 }
 
 const AI_BRIDGE_URL = process.env.AI_BRIDGE_URL || "http://127.0.0.1:8000";
@@ -95,33 +103,7 @@ export async function askImamStandalone(user_question, language_code, ayah_id, a
     theme = "Spiritual";
   }
 
-  if (topic) {
-    try {
-      console.log(`[AskImam] Emotional topic detected: "${topic}". Querying AI Bridge maulana-voice for 80/20 stitched text...`);
-      const bridgeRes = await axios.post(`${AI_BRIDGE_URL}/api/maulana-voice`, {
-        rule: topic,
-        word: theme,
-        guidance: user_question,
-        language: language_code === "ur" ? "urdu" : language_code === "ar" ? "arabic" : "english",
-        madhab: madhab.toLowerCase(),
-        ayah_id: ayah_id || "1:1"
-      }, {
-        headers: {
-          "X-API-Key": process.env.INTERNAL_API_KEY || "",
-        },
-        timeout: 180000,
-      });
-
-      const rawAnswer = bridgeRes.headers["x-maulana-text"];
-      const answer = rawAnswer ? decodeURIComponent(rawAnswer) : undefined;
-      if (answer) {
-        console.log(`[AskImam] Successfully retrieved 80/20 stitched text from AI Bridge.`);
-        return { answer, raw_prompt: `Emotional RAG 80/20 Stitched: ${topic}` };
-      }
-    } catch (err) {
-      console.warn(`⚠️ Emotional RAG stitched query failed: ${err.message}. Falling back to OpenRouter...`);
-    }
-  }
+  // Fall through to semantic RAG and OpenRouter for instant, high-quality, non-blocking text response
 
   // If not emotional or bridge call failed, fall back to OpenRouter
   let ragContext = "";

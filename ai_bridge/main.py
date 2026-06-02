@@ -97,28 +97,35 @@ async def lifespan(app: FastAPI):
     spectral_analyzer = SpectralAnalyzer()
     logger.info("✅ Precision Engines ready.")
 
-    # 6. Two-Stage TTS: Start XTTSv2 loading in background thread.
-    # edge-tts (Microsoft cloud) serves audio immediately while XTTSv2 warms up (~88s).
-    # Once XTTSv2 is ready, tts_router automatically switches all future calls to local model.
-    logger.info("📥 [Stage 1] edge-tts cloud TTS ready immediately (zero load time).")
-    logger.info("📥 [Stage 2] Starting XTTSv2 background load (will auto-switch when ready)...")
+    # 6. Two-Stage TTS: Only load XTTSv2 if a GPU (CUDA) is available.
+    # On CPU-only environments (like this 2-core VM), local XTTSv2 takes 30-45s of CPU time per call,
+    # causing total CPU starvation and timeouts. edge-tts cloud has <0.5s latency and zero CPU cost.
+    import torch
+    gpu_available = torch.cuda.is_available()
+    
+    if gpu_available:
+        logger.info("📥 [Stage 1] edge-tts cloud TTS ready immediately (zero load time).")
+        logger.info("📥 [Stage 2] GPU detected. Starting XTTSv2 background load...")
+        
+        def _load_xtts_background():
+            """Background thread: load XTTSv2 + MMS-Urdu, then flip the router to local mode."""
+            try:
+                from services.local_tts import tts_engine
+                from services.tts_router import tts_router
+                logger.info("[BG] Loading XTTSv2 English model...")
+                tts_engine.load_models("en")
+                logger.info("[BG] Loading MMS-VITS Urdu model...")
+                tts_engine._load_mms_urdu()
+                tts_router.mark_xtts_ready()  # Auto-switches all future TTS calls to local model
+                logger.info("✅ [BG] XTTSv2 + MMS-Urdu fully loaded. Switched from edge-tts → local model.")
+            except Exception as e:
+                logger.error(f"[BG] XTTSv2 background load failed: {e}. edge-tts will continue serving.")
 
-    def _load_xtts_background():
-        """Background thread: load XTTSv2 + MMS-Urdu, then flip the router to local mode."""
-        try:
-            from services.local_tts import tts_engine
-            from services.tts_router import tts_router
-            logger.info("[BG] Loading XTTSv2 English model...")
-            tts_engine.load_models("en")
-            logger.info("[BG] Loading MMS-VITS Urdu model...")
-            tts_engine._load_mms_urdu()
-            tts_router.mark_xtts_ready()  # Auto-switches all future TTS calls to local model
-            logger.info("✅ [BG] XTTSv2 + MMS-Urdu fully loaded. Switched from edge-tts → local model.")
-        except Exception as e:
-            logger.error(f"[BG] XTTSv2 background load failed: {e}. edge-tts will continue serving.")
-
-    bg_thread = threading.Thread(target=_load_xtts_background, daemon=True, name="xtts-loader")
-    bg_thread.start()
+        bg_thread = threading.Thread(target=_load_xtts_background, daemon=True, name="xtts-loader")
+        bg_thread.start()
+    else:
+        logger.info("⚠️ [Stage 2] No GPU (CUDA) detected. Disabling local heavy XTTSv2 model to save CPU cycles.")
+        logger.info("✅ [Stage 1] Cloud edge-tts active permanently with <0.5s latency.")
 
     elapsed = time.time() - start
     logger.info(f"🚀 All systems ready in {elapsed:.1f}s")

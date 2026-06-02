@@ -83,11 +83,11 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [playbackAudio, setPlaybackAudio] = useState<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handlePlayVoice = (text: string) => {
-    if (playbackAudio) {
-      playbackAudio.pause();
+    if (audioRef.current) {
+      audioRef.current.pause();
     }
 
     const cleanedText = text
@@ -95,54 +95,29 @@ export default function ChatPage() {
       .replace(/[\r\n]+/g, " ")
       .trim();
 
-    const textLower = cleanedText.toLowerCase();
-    let topic = "Anxiety";
-    let theme = "Worry";
-
-    if (textLower.includes("exam") || textLower.includes("academic") || textLower.includes("study") || textLower.includes("school") || textLower.includes("test")) {
-      topic = "Academic Stress";
-      theme = "Exams";
-    } else if (textLower.includes("anxious") || textLower.includes("anxiety") || textLower.includes("worry") || textLower.includes("fear") || textLower.includes("worried")) {
-      topic = "Anxiety";
-      theme = "Worry";
-    } else if (textLower.includes("grief") || textLower.includes("lonely") || textLower.includes("loneliness") || textLower.includes("sad") || textLower.includes("death")) {
-      topic = "Grief";
-      theme = "Loneliness";
-    } else if (textLower.includes("family") || textLower.includes("parent") || textLower.includes("mother") || textLower.includes("father") || textLower.includes("sibling")) {
-      topic = "Family Issues";
-      theme = "Family";
-    } else if (textLower.includes("overwhelmed") || textLower.includes("heavy") || textLower.includes("burnout")) {
-      topic = "Overwhelmed";
-      theme = "Overwhelmed";
-    } else if (textLower.includes("envy") || textLower.includes("envious") || textLower.includes("hasad") || textLower.includes("jealous") || textLower.includes("jealousy")) {
-      topic = "Envy";
-      theme = "Hasad";
-    }
-
-    const params = new URLSearchParams({
-      rule: topic,
-      word: theme,
-      guidance: cleanedText,
-      language: "english",
-      madhab: madhab.toLowerCase(),
-      ayah_id: "1:1"
+    const ttsParams = new URLSearchParams({
+      text: cleanedText,
+      language: "en"
     });
 
     const backendUrl = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001");
-    const audioUrl = `${backendUrl}/api/quran/maulana-voice?${params.toString()}`;
+    const audioUrl = `${backendUrl}/api/quran/tts?${ttsParams.toString()}`;
 
-    const audio = new Audio(audioUrl);
-    audio.play().catch(e => console.warn("Failed to play Maulana voice:", e));
-    setPlaybackAudio(audio);
+    if (audioRef.current) {
+      audioRef.current.src = audioUrl;
+      audioRef.current.load();
+      audioRef.current.play().catch(e => console.warn("Failed to play Maulana voice:", e));
+    }
   };
 
   useEffect(() => {
+    audioRef.current = new Audio();
     return () => {
-      if (playbackAudio) {
-        playbackAudio.pause();
+      if (audioRef.current) {
+        audioRef.current.pause();
       }
     };
-  }, [playbackAudio]);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -150,6 +125,12 @@ export default function ChatPage() {
 
   const sendMessage = async (text: string) => {
     if (!text.trim()) return;
+
+    // Unlock browser audio context on user gesture (comply with strict autoplay policies)
+    if (audioRef.current) {
+      audioRef.current.play().catch(() => {}); // silent / empty play to unlock audio context
+    }
+
     const userMsg: Message = { id: `u-${Date.now()}`, role: "user", text: text.trim(), timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setInput("");

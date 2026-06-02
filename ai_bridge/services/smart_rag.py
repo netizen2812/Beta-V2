@@ -32,13 +32,21 @@ class SmartRAG:
             return
 
         try:
-            CHROMA_DIR.mkdir(parents=True, exist_ok=True)
-            self._client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+            import os
+            # Set library duplication flag to prevent OpenMP/MKL thread collisions on startup
+            os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+            
             import torch
             device = "cpu"
+            
+            # Swapped Loading Order: Load SentenceTransformer FIRST to allow PyTorch to establish OpenMP threads safely
             from chromadb.utils import embedding_functions
             emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="intfloat/multilingual-e5-large", device=device)
             self._emb_fn = emb_fn
+
+            # Instantiate PersistentClient SECOND to link safely against the active thread pool
+            CHROMA_DIR.mkdir(parents=True, exist_ok=True)
+            self._client = chromadb.PersistentClient(path=str(CHROMA_DIR))
 
             # Load madhab rules collection
             try:

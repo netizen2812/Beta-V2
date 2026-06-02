@@ -12,8 +12,8 @@ services:
       - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - INTERNAL_API_KEY=${INTERNAL_API_KEY}
-      # FIX: Pass ALLOWED_ORIGINS so AI Bridge CORS allows production domains
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://www.imamapp.co,https://imamapp.co,http://localhost:3000}
+      # FIX: Pass ALLOWED_ORIGINS including production Vercel domain (Symptom N3)
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://imamv2.vercel.app,https://www.imamapp.co,https://imamapp.co,http://localhost:3000}
       - TAFSIR_FAST_START=${TAFSIR_FAST_START:-1}
       - PYTHONUNBUFFERED=1
     volumes:
@@ -50,14 +50,15 @@ services:
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
       - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID}
-      - FRONTEND_URL=${FRONTEND_URL:-https://www.imamapp.co}
+      - FRONTEND_URL=${FRONTEND_URL:-https://imamv2.vercel.app}
     depends_on:
-      - ai-bridge
+      ai-bridge:
+        condition: service_healthy
     networks:
       - quran-net
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/"]
+      test: ["CMD", "node", "src/healthcheck.js"]
       interval: 15s
       timeout: 5s
       retries: 3

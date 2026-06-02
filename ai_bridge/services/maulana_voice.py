@@ -359,7 +359,7 @@ async def get_maulana_advice(
     import asyncio
     from services.smart_rag import smart_rag
     from services.audio_cache import audio_cache_manager
-    from services.local_tts import tts_engine
+    from services.tts_router import tts_router
     
     VALID_MADHABS = {"hanafi", "shafi", "maliki", "hanbali"}
     madhab = madhab.lower().strip()
@@ -586,7 +586,7 @@ async def get_maulana_advice(
                 f"Quranic context retrieved from the knowledge base: {quran_context}\n\n"
                 f"Your task is to generate a very brief, custom, warm bridging sentence of spiritual comfort in {language.upper()} (using its native script: Urdu for Urdu, Arabic for Arabic) that:\n"
                 f"1. Directly addresses the student's emotional situation: '{rule}'.\n"
-                f"2. Quotes or references ONE specific, relevant Quranic Ayah (e.g. Surah Ash-Sharh 94:5-6, or Al-Baqarah 2:286) that is appropriate for their situation. Include the Ayah reference AND its meaning/translation in {language.upper()}.\n"
+                f"2. References the comfort or ease promised in the relevant Quranic Ayah. Do NOT quote or translate the Ayah text itself, as the correct Arabic audio recitation and its high-quality translation will be played automatically by the audio player.\n"
                 f"3. Ends with a word of gentle encouragement and trust in Allah ('tawakkul').\n\n"
                 f"It MUST NOT exceed {max_dynamic_words} words under any circumstances. Do NOT mention Tajweed, Makhraj, or recitation corrections.\n"
                 f"Return ONLY a JSON object with a single field 'dynamic_advice'."
@@ -598,7 +598,8 @@ async def get_maulana_advice(
                 f"  - Student's Selected School (Madhab): {madhab.upper()}\n"
                 f"  - Madhab Fiqh Rulings: {madhab_context}\n"
                 f"  - Quranic Meaning / Tafsir of this Ayah: {quran_context}\n\n"
-                f"Your task is to generate a custom, warm scholarly advisory sentence in {language.upper()} (using its native script: Urdu script for Urdu, Arabic script for Arabic) that briefly warns the student about the theological/Fiqh implications of their specific Tajweed mistake '{rule}' on the word '{word}' according to the {madhab.upper()} school, and/or references the Quranic meaning.\n\n"
+                f"Your task is to generate a custom, warm scholarly advisory sentence in {language.upper()} (using its native script: Urdu script for Urdu, Arabic script for Arabic) that briefly warns the student about the theological/Fiqh implications of their specific Tajweed mistake '{rule}' on the word '{word}' according to the {madhab.upper()} school.\n\n"
+                f"Do NOT quote or translate the Ayah text itself, as the correct Arabic audio recitation and its high-quality translation will be played automatically by the audio player.\n"
                 f"It MUST be extremely concise, and MUST NOT exceed {max_dynamic_words} words under any circumstances.\n"
                 f"Return ONLY a JSON object with a single field 'dynamic_advice'."
             )
@@ -617,22 +618,29 @@ async def get_maulana_advice(
             
             logger.info(f"[MaulanaVoice] Gemini raw response: {response.text}")
             text_to_parse = response.text.strip() if response.text else ""
-            if text_to_parse.startswith("```"):
-                import re
-                text_to_parse = re.sub(r"^```(?:json)?\n", "", text_to_parse)
-                text_to_parse = re.sub(r"\n```$", "", text_to_parse)
             
-            try:
-                data = json.loads(text_to_parse.strip())
-                da = data.get("dynamic_advice", "").strip()
-            except Exception as parse_err:
-                logger.warning(f"[MaulanaVoice] JSON parsing failed. Trying to extract plain text: {parse_err}")
-                da = text_to_parse.strip()
-                if da.startswith("{") and "dynamic_advice" in da:
-                    import re
-                    match = re.search(r'"dynamic_advice"\s*:\s*"([^"]+)"', da)
-                    if match:
-                        da = match.group(1)
+            import re
+            da = ""
+            # Extract JSON block using regex to strip preambles/postambles
+            json_match = re.search(r"(\{.*\})", text_to_parse, re.DOTALL)
+            if json_match:
+                json_candidate = json_match.group(1)
+                try:
+                    data = json.loads(json_candidate)
+                    da = data.get("dynamic_advice", "").strip()
+                except Exception as parse_err:
+                    logger.warning(f"[MaulanaVoice] JSON candidate parsing failed: {parse_err}")
+
+            # Fallback regex search on the entire raw text if direct JSON parse didn't yield advice
+            if not da:
+                match = re.search(r'"dynamic_advice"\s*:\s*"([^"]+)"', text_to_parse)
+                if match:
+                    da = match.group(1).strip()
+                else:
+                    # Clean up any potential JSON brackets or preamble if we fall back to raw text
+                    da = text_to_parse.strip()
+                    da = re.sub(r'(?i)^.*?Here is the JSON requested:\s*', '', da)
+                    da = re.sub(r'[\{\}\[\]"“”\']', '', da).strip()
 
             # Enforce mathematical 20% limit on dynamic word count
             dynamic_words = da.split()
@@ -660,32 +668,36 @@ async def get_maulana_advice(
     logger.info(f"[MaulanaVoice] Word count metrics -> Premade: {total_premade_words}, Dynamic: {len(da.split())}, Ratio: {len(da.split()) / (total_premade_words + len(da.split())):.2%}")
 
     # 6. Audio Generation Pipeline (Pre-synthesized templates + live dynamic segment stitching)
+    import asyncio
+    loop = asyncio.get_running_loop()
     temp_files_to_clean = []
     try:
-        # Pre-load engine models
-        if not tts_engine.is_loaded:
-            tts_engine.load_models(lang_code)
+        # Pre-load engine models if router prefers local XTTSv2
+        if tts_router.active_stage == "local-xtts":
+            from services.local_tts import tts_engine
+            if not tts_engine.is_loaded:
+                await loop.run_in_executor(None, tts_engine.load_models, lang_code)
 
         # Get/Synthesize Greeting
         greeting_wav = _get_premade_audio_path(lang_code, greeting_key, greeting_idx, tg)
         if not greeting_wav.exists():
             logger.info(f"Premade greeting audio not found at {greeting_wav}. Synthesizing live...")
             greeting_wav.parent.mkdir(parents=True, exist_ok=True)
-            tts_engine.synthesize(tg, lang_code, greeting_wav)
+            await loop.run_in_executor(None, tts_router.synthesize, tg, lang_code, greeting_wav)
 
         # Get/Synthesize Correction
         correction_wav = _get_premade_audio_path(lang_code, pedagogical_key, correction_idx, tc)
         if not correction_wav.exists():
             logger.info(f"Premade correction audio not found at {correction_wav}. Synthesizing live...")
             correction_wav.parent.mkdir(parents=True, exist_ok=True)
-            tts_engine.synthesize(tc, lang_code, correction_wav)
+            await loop.run_in_executor(None, tts_router.synthesize, tc, lang_code, correction_wav)
 
         # Get/Synthesize Closure
         closure_wav = _get_premade_audio_path(lang_code, closure_key, closure_idx, tcl)
         if not closure_wav.exists():
             logger.info(f"Premade closure audio not found at {closure_wav}. Synthesizing live...")
             closure_wav.parent.mkdir(parents=True, exist_ok=True)
-            tts_engine.synthesize(tcl, lang_code, closure_wav)
+            await loop.run_in_executor(None, tts_router.synthesize, tcl, lang_code, closure_wav)
 
         # Synthesize Dynamic advice live to a temp file
         dynamic_wav = None
@@ -695,35 +707,36 @@ async def get_maulana_advice(
             temp_files_to_clean.append(dynamic_wav)
             
             logger.info(f"[MaulanaVoice] Synthesizing live dynamic advice ({lang_code}): '{da}'")
-            success = tts_engine.synthesize(da, lang_code, dynamic_wav)
+            success = await loop.run_in_executor(None, tts_router.synthesize, da, lang_code, dynamic_wav)
             if not success or not dynamic_wav.exists():
                 logger.error("Live dynamic audio synthesis failed.")
                 dynamic_wav = None
 
-        # Fetch pre-recorded Quran recitation and translation if emotional
+        # Fetch pre-recorded Quran recitation and translation from api.alquran.cloud static sources if ayah_id is present
         arabic_wav = None
         translation_wav = None
-        if is_emotional and ayah_id and ayah_id != "1:1":
-            arabic_wav = _get_ayah_audio_segment(ayah_id, "ar.alafasy")
+        if ayah_id and ayah_id != "1:1":
+            arabic_wav = await loop.run_in_executor(None, _get_ayah_audio_segment, ayah_id, "ar.alafasy")
             if lang_code == "en":
-                translation_wav = _get_ayah_audio_segment(ayah_id, "en.walk")
+                translation_wav = await loop.run_in_executor(None, _get_ayah_audio_segment, ayah_id, "en.walk")
             elif lang_code == "ur":
-                translation_wav = _get_ayah_audio_segment(ayah_id, "ur.khan")
+                translation_wav = await loop.run_in_executor(None, _get_ayah_audio_segment, ayah_id, "ur.khan")
 
         # ── 80/20 Audio Budget Enforcement ───────────────────────────────────────
         # Enforce the ratio at the WAV level (not just word count). This guarantees
         # that even if TTS synthesis runs longer than predicted, the dynamic segment
         # is hard-capped to ≤ 20% of the total audio duration before stitching.
         premade_audio_paths = [greeting_wav, correction_wav, closure_wav]
-        if is_emotional:
-            if arabic_wav:
-                premade_audio_paths.append(arabic_wav)
-            if translation_wav:
-                premade_audio_paths.append(translation_wav)
+        if arabic_wav:
+            premade_audio_paths.append(arabic_wav)
+        if translation_wav:
+            premade_audio_paths.append(translation_wav)
 
-        dynamic_wav = _enforce_80_20_audio_ratio(
-            premade_paths=premade_audio_paths,
-            dynamic_wav=dynamic_wav,
+        dynamic_wav = await loop.run_in_executor(
+            None,
+            _enforce_80_20_audio_ratio,
+            premade_audio_paths,
+            dynamic_wav
         )
 
         # Stitch all segments
@@ -732,21 +745,37 @@ async def get_maulana_advice(
         temp_files_to_clean.append(stitched_temp)
 
         audio_parts = [greeting_wav, correction_wav]
-        if is_emotional:
-            if arabic_wav:
-                audio_parts.append(arabic_wav)
-            if translation_wav:
-                audio_parts.append(translation_wav)
+        if arabic_wav:
+            audio_parts.append(arabic_wav)
+        if translation_wav:
+            audio_parts.append(translation_wav)
         if dynamic_wav:
             audio_parts.append(dynamic_wav)
         audio_parts.append(closure_wav)
 
         logger.info(f"[MaulanaVoice] Stitching {len(audio_parts)} audio files...")
-        stitch_success = stitch_audio_files(audio_parts, stitched_temp, silence_duration=0.12)
+        stitch_success = await loop.run_in_executor(
+            None,
+            stitch_audio_files,
+            audio_parts,
+            stitched_temp,
+            24000,
+            0.12
+        )
 
         if stitch_success and stitched_temp.exists() and stitched_temp.stat().st_size > 1024:
             # Cache the stitched WAV
-            final_path = audio_cache_manager.save_to_cache(rule, word, lang_code, advice_text, stitched_temp, madhab, guidance=guidance if is_emotional else "")
+            final_path = await loop.run_in_executor(
+                None,
+                audio_cache_manager.save_to_cache,
+                rule,
+                word,
+                lang_code,
+                advice_text,
+                stitched_temp,
+                madhab,
+                guidance if is_emotional else ""
+            )
             audio_stream = _stream_audio_file(final_path)
             return {
                 "text": advice_text,
@@ -765,9 +794,19 @@ async def get_maulana_advice(
         temp_files_to_clean.append(fallback_temp)
 
         try:
-            success = tts_engine.synthesize(advice_text, lang_code, fallback_temp)
+            success = await loop.run_in_executor(None, tts_router.synthesize, advice_text, lang_code, fallback_temp)
             if success and fallback_temp.exists():
-                final_path = audio_cache_manager.save_to_cache(rule, word, lang_code, advice_text, fallback_temp, madhab, guidance=guidance if is_emotional else "")
+                final_path = await loop.run_in_executor(
+                    None,
+                    audio_cache_manager.save_to_cache,
+                    rule,
+                    word,
+                    lang_code,
+                    advice_text,
+                    fallback_temp,
+                    madhab,
+                    guidance if is_emotional else ""
+                )
                 audio_stream = _stream_audio_file(final_path)
                 return {
                     "text": advice_text,

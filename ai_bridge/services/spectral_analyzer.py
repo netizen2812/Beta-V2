@@ -10,19 +10,23 @@ QALQALAH_LETTERS_AR = {'ق', 'ط', 'ب', 'ج', 'د'}  # Arabic
 
 class SpectralAnalyzer:
     @staticmethod
-    def detect_qalqalah(audio_path, segment_times):
+    def detect_qalqalah(audio_data, segment_times):
         """
         Detect Qalqalah energy spikes using STFT.
         
         Args:
-            audio_path: Path to the audio file
+            audio_data: Path to the audio file OR numpy array of pre-decoded audio samples
             segment_times: list of {"word_index": i, "start": float, "end": float, "is_qalqalah": bool}
         """
-        try:
-            y, sr = librosa.load(audio_path, sr=16000)
-        except Exception as e:
-            logger.error(f"Failed to load audio for spectral analysis: {e}")
-            return []
+        sr = 16000
+        if isinstance(audio_data, np.ndarray):
+            y = audio_data
+        else:
+            try:
+                y, sr = librosa.load(audio_data, sr=16000)
+            except Exception as e:
+                logger.error(f"Failed to load audio for spectral analysis: {e}")
+                return []
 
         feedback = []
         for segment in segment_times:

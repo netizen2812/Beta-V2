@@ -49,7 +49,8 @@ def synthesize(text: str, language: str, output_path: Path) -> bool:
     log.info(f"[EdgeTTS] Synthesizing [{language.upper()}] via {voice} (~1.5s latency)...")
 
     try:
-        # edge-tts is async — run it in a new event loop from this sync context
+        import threading
+        # edge-tts is async — run it in a new event loop in a background thread to prevent nested event loop issues in ASGI
         async def _synthesize_async():
             import edge_tts
             communicate = edge_tts.Communicate(text, voice)
@@ -60,7 +61,25 @@ def synthesize(text: str, language: str, output_path: Path) -> bool:
             await communicate.save(str(mp3_path))
             return mp3_path
 
-        mp3_path = asyncio.run(_synthesize_async())
+        def run_async_in_thread(coro):
+            res, exc = [None], [None]
+            def worker():
+                try:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    res[0] = loop.run_until_complete(coro)
+                except Exception as e:
+                    exc[0] = e
+                finally:
+                    loop.close()
+            t = threading.Thread(target=worker)
+            t.start()
+            t.join()
+            if exc[0]:
+                raise exc[0]
+            return res[0]
+
+        mp3_path = run_async_in_thread(_synthesize_async())
 
         # Convert MP3 → WAV using pydub (already installed via TTS deps) or scipy
         try:

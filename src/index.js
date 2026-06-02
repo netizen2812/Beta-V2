@@ -6,15 +6,26 @@ import quranLearningRoutes from "./routes/quranLearningRoutes.js";
 import { checkAiBridgeHealth } from "./services/tajweedService.js";
 
 dotenv.config();
-// Fallback to parent dir if needed (for user's env)
-dotenv.config({ path: '../FaithTech/FaithTech/backend/.env' });
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
 app.set('trust proxy', true);
 
-app.use(cors());
+// Configure strict CORS with trusted origins including the canonical production domain
+const originsStr = process.env.ALLOWED_ORIGINS || "https://imamapp.co,https://www.imamapp.co,https://imamv2.vercel.app,http://localhost:3000";
+const origins = originsStr.split(",").map(o => o.trim()).filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || origins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static('public'));
 

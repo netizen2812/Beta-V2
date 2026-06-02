@@ -26,13 +26,17 @@ COPY . .
 ENV HF_HOME=/root/.cache/huggingface
 ENV COQUI_TOS_AGREED=1
 
-# Models are downloaded at container startup (not build time) to avoid
-# long SSH timeouts during 'docker-compose up'. The /usr/src/app/models
-# directory is volume-mounted, so downloads persist across restarts.
-# See: docker-compose.yml volumes: ./ai_bridge/models:/usr/src/app/models
-
+# Pre-download the heavy HuggingFace models during the image build phase
+# This ensures 0-second cold start times upon preemptive VM restarts
+RUN python -c '\
+from transformers import AutoProcessor, AutoModelForSpeechSeq2Seq, Wav2Vec2Processor, Wav2Vec2ForCTC;\
+AutoProcessor.from_pretrained("tarteel-ai/whisper-base-ar-quran");\
+AutoModelForSpeechSeq2Seq.from_pretrained("tarteel-ai/whisper-base-ar-quran");\
+Wav2Vec2Processor.from_pretrained("TBOGamer22/wav2vec2-quran-phonetics");\
+Wav2Vec2ForCTC.from_pretrained("TBOGamer22/wav2vec2-quran-phonetics")\
+'
 
 EXPOSE 8000
 
-# Entrypoint: download models on first boot (persisted in volume), then start server
-CMD ["bash", "-c", "python scripts/download_models.py && uvicorn main:app --host 0.0.0.0 --port 8000"]
+# Entrypoint: start server directly since heavy models are already baked in
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
