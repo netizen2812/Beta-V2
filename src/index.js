@@ -35,6 +35,7 @@ app.get("/api/quran/ip-debug", (req, res) => {
   res.json({
     ip: req.ip,
     ips: req.ips,
+    socketRemoteAddress: req.socket.remoteAddress,
     headers: req.headers,
   });
 });
