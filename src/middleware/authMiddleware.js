@@ -37,9 +37,17 @@ export const requireAuth = async (req, res, next) => {
   }
 
   try {
-    // Reconstruct the full absolute URL for the Clerk SDK since Express req.url/req.originalUrl is relative
-    const protocol = req.protocol || 'http';
-    const host = req.get('host') || 'localhost:5001';
+    // Reconstruct the full absolute URL for the Clerk SDK.
+    // Respect x-forwarded-proto and x-forwarded-host from Vercel edge proxy.
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    let host = req.headers['x-forwarded-host'] || req.get('host') || 'imamv2.vercel.app';
+    
+    // In production, override IP/localhost hosts with the canonical domain to prevent Clerk SDK validation failures
+    const isIpOrLocal = host.includes('127.0.0.1') || host.includes('localhost') || /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(host);
+    if (isIpOrLocal) {
+      host = 'imamv2.vercel.app';
+    }
+
     const fullUrl = `${protocol}://${host}${req.originalUrl || req.url}`;
 
     // Create a request-like object that Clerk authenticateRequest can parse correctly
