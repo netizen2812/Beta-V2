@@ -55,7 +55,7 @@ export const askImam = async (req, res) => {
   } catch (error) {
     console.error("❌ askImam error:", error.message);
     // Warm offline Maulana fallback — gives a genuine answer to any question type
-    const text = user_question.toLowerCase();
+    const text = (user_question || "").toLowerCase();
     let fallbackText;
     if (text.includes("qalqalah")) {
       fallbackText = "Qalqalah refers to the echoing or bouncing sound produced when one of the five Qalqalah letters (ق، ط، ب، ج، د) carries a sukoon or is stopped upon. The level of echo is stronger at the end of a verse (Kubra) and subtler in the middle of a word (Sughra). Practice these letters slowly and let the sound naturally resonate.";
