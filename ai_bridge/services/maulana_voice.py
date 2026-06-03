@@ -301,17 +301,19 @@ def _get_ayah_audio_segment(ayah_id: str, edition: str) -> Optional[Path]:
         
     try:
         wav_path.parent.mkdir(parents=True, exist_ok=True)
-        # Fetch the direct audio URL from Al Quran Cloud API
-        api_url = f"http://api.alquran.cloud/v1/ayah/{ayah_id}/{edition}"
-        req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
         audio_url = None
-        with urllib.request.urlopen(req, timeout=10) as response:
-            data = json.loads(response.read())
-            if data['code'] == 200:
-                audio_url = data['data']['audio']
-                
+        if edition in ["en.walk", "ur.khan"]:
+            audio_url = f"https://storage.googleapis.com/imam-ai-seed-data/recitations/{edition}/{safe_ayah}.mp3"
+        else:
+            api_url = f"http://api.alquran.cloud/v1/ayah/{ayah_id}/{edition}"
+            req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=10) as response:
+                data = json.loads(response.read())
+                if data['code'] == 200:
+                    audio_url = data['data']['audio']
+                    
         if not audio_url:
-            logger.error(f"Could not resolve audio url from api for {ayah_id} ({edition})")
+            logger.error(f"Could not resolve audio url for {ayah_id} ({edition})")
             return None
             
         # Download the MP3 file

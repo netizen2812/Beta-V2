@@ -15,12 +15,15 @@ EDITIONS = {
 
 def get_alquran_audio_url(surah: int, verse: int, language: str) -> Optional[str]:
     """
-    Fetches the pre-recorded audio URL from Al Quran Cloud for a specific Ayah.
+    Fetches the pre-recorded audio URL from Al Quran Cloud or GCS for a specific Ayah.
     """
     edition = EDITIONS.get(language)
     if not edition:
         log.error(f"Unsupported language requested: {language}")
         return None
+
+    if language in ["en", "ur"]:
+        return f"https://storage.googleapis.com/imam-ai-seed-data/recitations/{edition}/{surah}_{verse}.mp3"
 
     url = f"http://api.alquran.cloud/v1/ayah/{surah}:{verse}/{edition}"
     
