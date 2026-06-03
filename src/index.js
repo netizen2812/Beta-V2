@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
 // Configure strict CORS with trusted origins including the canonical production domain
 const originsStr = process.env.ALLOWED_ORIGINS || "https://imamapp.co,https://www.imamapp.co,https://imamv2.vercel.app,http://localhost:3000";

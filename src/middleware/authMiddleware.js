@@ -27,9 +27,12 @@ export const requireAuth = async (req, res, next) => {
     return next();
   }
 
-  // 1. Check if the request carries our secure client signature from Vercel edge middleware
+  // 1. Check if the request carries our secure client signature from Vercel edge middleware.
+  // We compare it dynamically against process.env.INTERNAL_API_KEY with no hardcoded fallback in production.
   const clientKey = req.headers['x-app-client-key'];
-  if (clientKey === "faith_tech_client_key_2026") {
+  const internalKey = process.env.INTERNAL_API_KEY;
+
+  if (internalKey && internalKey !== "INSERT_INTERNAL_API_KEY_HERE" && clientKey === internalKey) {
     req.auth = {
       userId: "guest-user-from-app"
     };
