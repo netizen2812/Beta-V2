@@ -68,7 +68,7 @@ const start = async () => {
       }
     });
 
-    app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    app.listen(PORT, () => console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`));
   } catch (e) {
     console.error("❌ Failed to start:", e);
   }
