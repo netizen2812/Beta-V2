@@ -1,7 +1,10 @@
 import os
 import sys
+import shutil
 import urllib.request
 import concurrent.futures
+
+import time
 
 SURAH_VERSES = [
     7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135,
@@ -13,7 +16,7 @@ SURAH_VERSES = [
 ]
 
 BUCKET = "gs://imam-ai-seed-data/recitations"
-LOCAL_DIR = "/tmp/recitations"
+LOCAL_DIR = "./tmp_recitations"
 
 # Setup configuration
 EDITIONS = {
@@ -37,14 +40,19 @@ def generate_tasks():
 def download_file(url, dest_path):
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as response:
-            with open(dest_path, "wb") as f:
-                f.write(response.read())
-        return True
-    except Exception as e:
-        print(f"Error downloading {url} to {dest_path}: {e}")
-        return False
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            with urllib.request.urlopen(req, timeout=15) as response:
+                with open(dest_path, "wb") as f:
+                    f.write(response.read())
+            return True
+        except Exception as e:
+            if attempt == max_retries - 1:
+                print(f"Error downloading {url} to {dest_path}: {e}")
+                return False
+            time.sleep(1.5 ** attempt)
+    return False
 
 def main():
     print("Generating download tasks...")
@@ -61,16 +69,22 @@ def main():
             futures = {executor.submit(download_file, task[0], task[1]): task for task in batch}
             for future in concurrent.futures.as_completed(futures):
                 task = futures[future]
-                # Optional output on failures
                 if not future.result():
                     print(f"Failed: {task[0]}")
 
         # Upload the batch to GCS
         print("Uploading batch to GCS...")
-        os.system(f"gcloud storage cp -r {LOCAL_DIR}/* {BUCKET}/")
+        # Uploading individual edition folders directly
+        for edition in EDITIONS.keys():
+            edition_dir = os.path.abspath(f"{LOCAL_DIR}/{edition}")
+            if os.path.exists(edition_dir) and os.listdir(edition_dir):
+                # Upload all files in directory
+                cmd = f'gcloud storage cp -r "{edition_dir}" "{BUCKET}/"'
+                print(f"Running command: {cmd}")
+                os.system(cmd)
         
         # Clean up local directory to save disk space
-        os.system(f"rm -rf {LOCAL_DIR}/*")
+        shutil.rmtree(LOCAL_DIR, ignore_errors=True)
 
     print("Download and upload complete!")
 

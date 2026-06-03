@@ -60,3 +60,5 @@ quran_dataset.json
 .DS_Store
 .gemini/
 scratch/
+
+.vercel
