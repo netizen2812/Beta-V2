@@ -31,15 +31,6 @@ app.use(express.static('public'));
 
 app.use("/api/quran", quranLearningRoutes);
 
-app.get("/api/quran/ip-debug", (req, res) => {
-  res.json({
-    ip: req.ip,
-    ips: req.ips,
-    socketRemoteAddress: req.socket.remoteAddress,
-    headers: req.headers,
-  });
-});
-
 app.get("/health", async (req, res) => {
   const aiBridge = await checkAiBridgeHealth();
   res.json({
