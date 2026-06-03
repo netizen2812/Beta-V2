@@ -19,9 +19,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --no-deps openvoice-cli==0.0.5
 
 
-# Copy source code and config files
-COPY . .
-
 # Environment variables for caching
 ENV HF_HOME=/root/.cache/huggingface
 ENV COQUI_TOS_AGREED=1
@@ -36,7 +33,11 @@ Wav2Vec2Processor.from_pretrained("TBOGamer22/wav2vec2-quran-phonetics");\
 Wav2Vec2ForCTC.from_pretrained("TBOGamer22/wav2vec2-quran-phonetics")\
 '
 
+# Copy source code and config files
+COPY . .
+
 EXPOSE 8000
 
 # Entrypoint: start server directly since heavy models are already baked in
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
