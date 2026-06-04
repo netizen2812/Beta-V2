@@ -31,7 +31,7 @@ export default function RAGDrawer({
         <>
           {/* Backdrop */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={onClose} className="fixed inset-0 z-40" style={{ background: "rgba(6,17,31,0.7)", backdropFilter: "blur(8px)" }} />
+            onClick={onClose} className="fixed inset-0 z-40" style={{ background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)" }} />
 
           {/* Drawer */}
           <motion.div
@@ -52,7 +52,7 @@ export default function RAGDrawer({
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: "#10b981" }}>{surahName}</p>
                   <h3 className="text-xl font-black" style={{ color: "var(--text)" }}>Ayah {ayahRef}</h3>
                 </div>
-                <button onClick={onClose} className="p-2 rounded-full" style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-dim)" }}>
+                <button onClick={onClose} className="p-2 rounded-full" style={{ background: "rgba(13,68,51,0.05)", color: "var(--text-dim)" }}>
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -63,8 +63,8 @@ export default function RAGDrawer({
                   <button key={code} onClick={() => setActiveLocale(code)}
                     className="px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all"
                     style={activeLocale === code
-                      ? { background: "rgba(212,175,55,0.2)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.4)" }
-                      : { background: "rgba(255,255,255,0.04)", color: "var(--text-dim)", border: "1px solid var(--border)" }}
+                      ? { background: "rgba(16, 185, 129, 0.08)", color: "#0d4433", border: "1px solid rgba(16, 185, 129, 0.18)" }
+                      : { background: "rgba(13, 68, 51, 0.04)", color: "var(--text-dim)", border: "1px solid var(--border)" }}
                   >
                     {label}
                   </button>
@@ -72,7 +72,7 @@ export default function RAGDrawer({
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1 mb-6 p-1 rounded-2xl" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <div className="flex gap-1 mb-6 p-1 rounded-2xl" style={{ background: "rgba(13, 68, 51, 0.04)" }}>
                 {([
                   { key: "tarjumah", label: "Tarjumah",  Icon: Languages },
                   { key: "tafsir",   label: "Live Tafsir", Icon: Sparkles },
@@ -81,7 +81,7 @@ export default function RAGDrawer({
                   <button key={key} onClick={() => setActiveTab(key)}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all"
                     style={activeTab === key
-                      ? { background: "rgba(6,64,43,0.6)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)" }
+                      ? { background: "rgba(16, 185, 129, 0.08)", color: "#0D4433", border: "1px solid rgba(16, 185, 129, 0.18)" }
                       : { color: "var(--text-dim)" }}
                   >
                     <Icon className="w-4 h-4" /> {label}

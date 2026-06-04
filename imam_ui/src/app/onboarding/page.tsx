@@ -116,7 +116,7 @@ export default function OnboardingPage() {
             key={i}
             animate={{
               width: i === step ? 24 : 8,
-              background: i < step ? "#10b981" : i === step ? "#D4AF37" : "rgba(255,255,255,0.12)",
+              background: i < step ? "#10b981" : i === step ? "#0D4433" : "rgba(13,68,51,0.12)",
             }}
             className="h-2 rounded-full"
             transition={{ duration: 0.3 }}
@@ -144,7 +144,7 @@ export default function OnboardingPage() {
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.1 }}
                   className="w-24 h-24 rounded-full mx-auto flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg, #06402B, #0a5c3d)", boxShadow: "0 0 60px rgba(6,64,43,0.6)" }}
+                  style={{ background: "linear-gradient(135deg, #06402B, #0a5c3d)", boxShadow: "0 0 40px rgba(6,64,43,0.15)" }}
                 >
                   <span className="text-white font-black text-4xl">I</span>
                 </motion.div>
@@ -195,12 +195,12 @@ export default function OnboardingPage() {
                       onClick={() => setMadhab(m.id)}
                       className="w-full text-left p-4 rounded-2xl transition-all"
                       style={madhab === m.id
-                        ? { background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.4)", boxShadow: "0 0 20px rgba(212,175,55,0.1)" }
-                        : { background: "rgba(255,255,255,0.025)", border: "1px solid var(--border)" }}
+                        ? { background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)", boxShadow: "0 0 20px rgba(16,185,129,0.05)" }
+                        : { background: "rgba(13,68,51,0.035)", border: "1px solid var(--border)" }}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <p className="font-arabic text-2xl" style={{ color: madhab === m.id ? "#D4AF37" : "var(--text-dim)" }}>
+                          <p className="font-arabic text-2xl" style={{ color: madhab === m.id ? "#0D4433" : "var(--text-dim)" }}>
                             {m.arabic}
                           </p>
                           <div>
@@ -210,8 +210,8 @@ export default function OnboardingPage() {
                         </div>
                         {madhab === m.id && (
                           <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{ background: "#D4AF37" }}>
-                            <Check className="w-3.5 h-3.5 text-black" />
+                            style={{ background: "#10b981" }}>
+                            <Check className="w-3.5 h-3.5 text-white" />
                           </div>
                         )}
                       </div>
@@ -241,8 +241,8 @@ export default function OnboardingPage() {
                       onClick={() => setLevel(l.id)}
                       className="w-full text-left p-5 rounded-2xl transition-all flex items-center gap-5"
                       style={level === l.id
-                        ? { background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.35)", boxShadow: "0 0 20px rgba(16,185,129,0.08)" }
-                        : { background: "rgba(255,255,255,0.025)", border: "1px solid var(--border)" }}
+                        ? { background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)", boxShadow: "0 0 20px rgba(16,185,129,0.05)" }
+                        : { background: "rgba(13,68,51,0.035)", border: "1px solid var(--border)" }}
                     >
                       <span className="text-3xl">{l.icon}</span>
                       <div className="flex-1">
@@ -280,13 +280,13 @@ export default function OnboardingPage() {
                       onClick={() => setGoal(g.mins)}
                       className="p-5 rounded-2xl transition-all text-center"
                       style={goal === g.mins
-                        ? { background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.4)" }
-                        : { background: "rgba(255,255,255,0.025)", border: "1px solid var(--border)" }}
+                        ? { background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)" }
+                        : { background: "rgba(13,68,51,0.035)", border: "1px solid var(--border)" }}
                     >
-                      <p className="text-2xl font-black mb-1" style={{ color: goal === g.mins ? "#D4AF37" : "var(--text)" }}>
+                      <p className="text-2xl font-black mb-1" style={{ color: goal === g.mins ? "#0D4433" : "var(--text)" }}>
                         {g.mins}
                       </p>
-                      <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: goal === g.mins ? "#D4AF37" : "var(--text-dim)" }}>
+                      <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: goal === g.mins ? "#0D4433" : "var(--text-dim)" }}>
                         min / day
                       </p>
                       <p className="text-[11px] mt-1.5" style={{ color: "var(--text-muted)" }}>{g.desc}</p>
@@ -330,12 +330,12 @@ export default function OnboardingPage() {
           style={canProceed()
             ? {
                 background: leaving
-                  ? "linear-gradient(135deg, #D4AF37, #f59e0b)"
+                  ? "linear-gradient(135deg, #10b981, #0d4433)"
                   : "linear-gradient(135deg, #06402B, #0a5c3d)",
-                boxShadow: leaving ? "0 8px 32px rgba(212,175,55,0.4)" : "0 8px 32px rgba(6,64,43,0.5)",
+                boxShadow: leaving ? "0 8px 32px rgba(16,185,129,0.15)" : "0 8px 32px rgba(6,64,43,0.15)",
               }
             : {
-                background: "rgba(255,255,255,0.06)",
+                background: "rgba(13,68,51,0.06)",
                 color: "var(--text-muted)",
               }}
         >

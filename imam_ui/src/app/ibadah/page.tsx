@@ -193,28 +193,28 @@ const TasbihView = ({ onBack }: { onBack: () => void }) => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-100 py-12 px-4 sm:px-6 flex flex-col items-center animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 flex flex-col items-center animate-in fade-in duration-500">
       <div className="max-w-xl w-full">
         <div className="flex items-center gap-4 mb-10">
-          <button onClick={onBack} className="p-3 bg-slate-900/60 hover:bg-emerald-950/30 rounded-full transition-all text-slate-300 shadow-md border border-emerald-950/40">
+          <button onClick={onBack} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
             <ArrowLeft size={20} />
           </button>
-          <h2 className="text-3xl font-serif font-bold text-[#D4AF37]">{t('ibadah.digitalTasbih')}</h2>
+          <h2 className="text-3xl font-serif font-bold text-[#0D4433]">{t('ibadah.digitalTasbih')}</h2>
         </div>
 
-        <div className="glass p-10 md:p-12 rounded-[3.5rem] shadow-2xl flex flex-col items-center space-y-10">
+        <div className="bg-white p-10 md:p-12 rounded-[3.5rem] border border-emerald-50 shadow-2xl flex flex-col items-center space-y-10">
           <div
             onClick={increment}
-            className="w-64 h-64 rounded-full bg-emerald-950/20 border-[8px] border-[#0D4433]/30 shadow-2xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all hover:bg-emerald-950/40 hover:border-emerald-800/30 select-none relative"
+            className="w-64 h-64 rounded-full bg-emerald-50 border-[10px] border-white shadow-inner flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all hover:bg-emerald-100 select-none relative"
           >
             {cycles > 0 && (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-[#06402B] to-[#0a5c3d] text-white rounded-full shadow-lg border border-emerald-800/30 animate-bounce">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-4 py-1.5 bg-[#0D4433] text-white rounded-full shadow-xl border-[2px] border-emerald-50 animate-bounce">
                 <span className="text-sm font-black">{cycles}</span>
                 <span className="text-[10px] uppercase tracking-widest font-bold text-emerald-200">{t('ibadah.cycles')}</span>
               </div>
             )}
-            <span className="text-6xl font-black text-[#D4AF37]">{count}</span>
-            <span className="text-[9px] font-black text-emerald-500/60 mt-1 tracking-[0.2em]">{t('ibadah.tapToCount')}</span>
+            <span className="text-6xl font-black text-[#0D4433]">{count}</span>
+            <span className="text-[9px] font-black text-emerald-600/40 mt-1 tracking-[0.2em]">{t('ibadah.tapToCount')}</span>
           </div>
 
           <div className="flex gap-2">
@@ -222,7 +222,7 @@ const TasbihView = ({ onBack }: { onBack: () => void }) => {
               <button
                 key={g}
                 onClick={() => { setGoal(g); setCount(0); }}
-                className={`px-6 py-3 rounded-2xl text-xs font-black transition-all ${goal === g ? 'bg-gradient-to-r from-[#06402B] to-[#0a5c3d] text-white shadow-lg' : 'glass text-slate-300 border-slate-800/40 hover:bg-emerald-950/20'}`}
+                className={`px-6 py-3 rounded-2xl text-xs font-black transition-all ${goal === g ? 'bg-[#0D4433] text-white shadow-lg' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}
               >
                 {g}
               </button>
@@ -230,11 +230,11 @@ const TasbihView = ({ onBack }: { onBack: () => void }) => {
           </div>
 
           <div className="w-full space-y-2">
-            <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">
+            <div className="flex justify-between text-[10px] font-black text-gray-300 uppercase tracking-widest px-2">
               <span>{t('ibadah.progress')}</span>
               <span>{t('ibadah.goal')}: {goal}</span>
             </div>
-            <div className="w-full bg-slate-900/40 h-3 rounded-full overflow-hidden border border-emerald-950/30">
+            <div className="w-full bg-gray-50 h-3 rounded-full overflow-hidden border border-gray-100">
               <div
                 className="bg-emerald-500 h-full transition-all duration-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
                 style={{ width: `${Math.min((count / goal) * 100, 100)}%` }}
@@ -244,7 +244,7 @@ const TasbihView = ({ onBack }: { onBack: () => void }) => {
 
           <button
             onClick={reset}
-            className="w-full py-5 bg-rose-950/20 text-rose-400/80 rounded-3xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-rose-950/40 hover:text-rose-300 transition-all border border-rose-900/20 shadow-md"
+            className="w-full py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-rose-50 hover:text-rose-400 transition-all border border-gray-100"
           >
             {t('ibadah.resetCounter')}
           </button>
@@ -280,26 +280,26 @@ const HadithView = ({ onBack }: { onBack: () => void }) => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-100 py-12 px-4 sm:px-6 animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 animate-in fade-in duration-500">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-4 mb-10">
-          <button onClick={onBack} className="p-3 bg-slate-900/60 hover:bg-emerald-950/30 rounded-full transition-all text-slate-300 shadow-md border border-emerald-950/40">
+          <button onClick={onBack} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
             <ArrowLeft size={20} />
           </button>
-          <h2 className="text-3xl font-serif font-bold text-[#D4AF37]">{t('ibadah.hadithOfDay')}</h2>
+          <h2 className="text-3xl font-serif font-bold text-[#0D4433]">{t('ibadah.hadithOfDay')}</h2>
         </div>
 
         {loading ? (
-          <div className="glass rounded-[3.5rem] p-20 shadow-lg animate-pulse flex flex-col items-center space-y-6">
-            <div className="w-16 h-16 bg-emerald-950/20 border border-emerald-900/20 rounded-full" />
-            <div className="w-full h-8 bg-slate-900/40 rounded-xl" />
-            <div className="w-2/3 h-8 bg-slate-900/40 rounded-xl" />
+          <div className="bg-white rounded-[3.5rem] p-20 border border-emerald-50 shadow-sm animate-pulse flex flex-col items-center space-y-6">
+            <div className="w-16 h-16 bg-emerald-50 rounded-full" />
+            <div className="w-full h-8 bg-gray-50 rounded-xl" />
+            <div className="w-2/3 h-8 bg-gray-50 rounded-xl" />
           </div>
         ) : (
-          <div className="bg-gradient-to-br from-[#06402B] via-[#094d34] to-[#0d1b2a] rounded-[3.5rem] p-10 md:p-16 text-white shadow-2xl border border-emerald-800/30 relative overflow-hidden group">
+          <div className="bg-[#0D4433] rounded-[3.5rem] p-10 md:p-16 text-white shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-12 opacity-5"><Sparkles size={150} /></div>
             <div className="relative z-10 space-y-10">
-              <p className="text-3xl md:text-5xl font-arabic text-right leading-[1.8] text-[#D4AF37]" dir="rtl">{hadith?.arab}</p>
+              <p className="text-3xl md:text-5xl font-arabic text-right leading-[1.8]" dir="rtl">{hadith?.arab}</p>
               <div className="h-px bg-white/10 w-24" />
               <p className="text-xl md:text-2xl text-emerald-100/90 font-medium leading-relaxed italic">
                 "{hadith?.text}"
@@ -308,7 +308,7 @@ const HadithView = ({ onBack }: { onBack: () => void }) => {
                 <div className="text-xs font-black uppercase tracking-[0.3em] text-emerald-400/60">
                   Sahih Bukhari • No. {hadith?.number || 1}
                 </div>
-                <button onClick={fetchHadith} className="p-4 bg-emerald-950/40 hover:bg-emerald-900/40 border border-emerald-800/30 rounded-2xl transition-all">
+                <button onClick={fetchHadith} className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/10">
                   <Sparkles size={20} className="text-emerald-300 animate-spin [animation-duration:8s]" />
                 </button>
               </div>
@@ -350,19 +350,19 @@ const ZakatCalcView = ({ onResult, onBack }: { onResult: (res: any) => void; onB
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-100 py-12 px-4 sm:px-6 flex flex-col items-center animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 flex flex-col items-center animate-in fade-in duration-500">
       <div className="max-w-xl w-full">
         <div className="flex items-center gap-4 mb-10">
-          <button onClick={onBack} className="p-3 bg-slate-900/60 hover:bg-emerald-950/30 rounded-full transition-all text-slate-300 shadow-md border border-emerald-950/40">
+          <button onClick={onBack} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
             <ArrowLeft size={20} />
           </button>
-          <h2 className="text-3xl font-serif font-bold text-[#D4AF37]">{t('ibadah.zakatCalculator')}</h2>
-          <div className="ml-auto px-4 py-1.5 bg-emerald-950/40 text-emerald-400 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-800/30 flex items-center gap-2">
+          <h2 className="text-3xl font-serif font-bold text-[#0D4433]">{t('ibadah.zakatCalculator')}</h2>
+          <div className="ml-auto px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100 flex items-center gap-2">
             <Sparkles size={12} className="animate-pulse" /> {t('ibadah.liveMarketPrices')}
           </div>
         </div>
 
-        <div className="glass p-8 rounded-[3rem] shadow-xl space-y-6">
+        <div className="bg-white p-8 rounded-[3rem] border border-emerald-50 shadow-xl space-y-6">
           {[
             { label: t('ibadah.cashInHand'), value: cash, setter: setCash, placeholder: '₹ 0' },
             { label: t('ibadah.goldGrams'), value: gold, setter: setGold, placeholder: 'Grams' },
@@ -371,12 +371,12 @@ const ZakatCalcView = ({ onResult, onBack }: { onResult: (res: any) => void; onB
             { label: t('ibadah.liabilitiesDebts'), value: liabilities, setter: setLiabilities, placeholder: '₹ 0' },
           ].map(({ label, value, setter, placeholder }) => (
             <div key={label} className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">{label}</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-300 ml-4">{label}</label>
               <input
                 type="number"
                 value={value}
                 onChange={e => setter(e.target.value)}
-                className="w-full p-5 bg-slate-950/40 border border-slate-900 rounded-2xl outline-none font-bold text-slate-100 placeholder:text-slate-600 focus:border-emerald-800/60 focus:bg-slate-950/70 transition-all"
+                className="w-full p-5 bg-slate-50 border-none rounded-2xl outline-none font-bold text-[#0D4433]"
                 placeholder={placeholder}
               />
             </div>
@@ -385,14 +385,14 @@ const ZakatCalcView = ({ onResult, onBack }: { onResult: (res: any) => void; onB
           <div className="flex gap-4 pt-4">
             <button
               onClick={() => { setCash(''); setGold(''); setSilver(''); setInvestments(''); setLiabilities(''); }}
-              className="flex-1 py-5 bg-slate-900/40 text-slate-400 border border-slate-950/40 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] hover:bg-slate-900/80 hover:text-slate-200 transition-all shadow-md"
+              className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] hover:bg-gray-100 transition-all border border-gray-100"
             >
               {t('ibadah.reset')}
             </button>
             <button
               onClick={calculate}
               disabled={loading}
-              className="flex-[2] py-5 bg-gradient-to-r from-[#06402B] to-[#0a5c3d] text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-xl hover:brightness-110 transition-all disabled:opacity-60"
+              className="flex-[2] py-5 bg-[#0D4433] text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] shadow-xl hover:bg-emerald-900 transition-all disabled:opacity-60"
             >
               {loading ? t('ibadah.calculating') : t('ibadah.calculateZakat')}
             </button>
@@ -412,27 +412,27 @@ const FeatureCard = ({
   <div
     onClick={onClick}
     className={`group relative rounded-[2.5rem] p-8 border transition-all cursor-pointer overflow-hidden flex flex-col h-full min-h-[160px] ${variant === 'dark'
-      ? 'bg-gradient-to-br from-[#06402B] to-[#0a5c3d] border-emerald-800/40 shadow-2xl hover:-translate-y-2'
-      : 'glass hover:border-emerald-800/50 hover:bg-[#0D4433]/10 hover:-translate-y-2'
+      ? 'bg-[#0D4433] border-white/10 shadow-2xl hover:-translate-y-2'
+      : 'bg-white border-emerald-100 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.05)] hover:border-emerald-300 hover:-translate-y-2'
       }`}
   >
-    <div className={`absolute -bottom-6 -right-6 opacity-[0.05] transition-transform duration-1000 group-hover:scale-125 group-hover:rotate-12 ${variant === 'dark' ? 'text-white' : 'text-emerald-500'}`}>
+    <div className={`absolute -bottom-6 -right-6 opacity-[0.05] transition-transform duration-1000 group-hover:scale-125 group-hover:rotate-12 ${variant === 'dark' ? 'text-white' : 'text-[#0D4433]'}`}>
       <Icon size={120} />
     </div>
 
     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 border transition-all shadow-sm ${variant === 'dark'
       ? 'bg-white/10 border-white/20 text-white group-hover:bg-emerald-500'
-      : 'bg-slate-900/60 border-slate-800/40 text-emerald-400 group-hover:bg-[#0D4433] group-hover:text-white group-hover:border-transparent'
+      : 'bg-[#FDFCF8] border-emerald-50 text-[#0D4433] group-hover:bg-[#0D4433] group-hover:text-white'
       }`}>
       <Icon className="w-6 h-6" />
     </div>
 
     <div className="mt-auto relative z-10 space-y-1">
       <div className="flex items-center gap-2">
-        <h3 className={`text-lg font-black leading-tight ${variant === 'dark' ? 'text-white' : 'text-slate-200 group-hover:text-emerald-400'}`}>{title}</h3>
+        <h3 className={`text-lg font-black leading-tight ${variant === 'dark' ? 'text-white' : 'text-slate-800'}`}>{title}</h3>
         {badge && <span className="px-2 py-0.5 bg-emerald-500 text-white text-[8px] font-black uppercase tracking-widest rounded-md animate-pulse">{badge}</span>}
       </div>
-      <p className={`text-xs font-medium leading-relaxed ${variant === 'dark' ? 'text-emerald-100/60' : 'text-slate-400'}`}>{desc}</p>
+      <p className={`text-xs font-medium leading-relaxed ${variant === 'dark' ? 'text-emerald-100/60' : 'text-gray-400'}`}>{desc}</p>
     </div>
   </div>
 );
@@ -556,16 +556,16 @@ export default function IbadahPage() {
 
   // A. Steps guide
   const PrayerGuideView = () => (
-    <div className="min-h-screen bg-transparent text-slate-100 py-12 px-4 sm:px-6 animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 animate-in fade-in duration-500">
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="flex items-center gap-4 mb-8">
-          <button onClick={goBack} className="p-3 bg-slate-900/60 hover:bg-emerald-950/30 rounded-full transition-all text-slate-300 shadow-md border border-emerald-950/40">
+          <button onClick={goBack} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
             <ArrowLeft size={20} />
           </button>
-          <h2 className="text-3xl font-serif font-bold text-[#D4AF37]">{t('ibadah.prayerGuide')}: {selectedPrayer?.name}</h2>
+          <h2 className="text-3xl font-serif font-bold text-[#0D4433]">{t('ibadah.prayerGuide')}: {selectedPrayer?.name}</h2>
         </div>
 
-        <div className="bg-gradient-to-br from-[#06402B] to-[#094d34] rounded-[3rem] p-10 text-white shadow-2xl border border-emerald-800/30 relative overflow-hidden">
+        <div className="bg-[#0D4433] rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 p-10 opacity-5"><Sparkles size={120} /></div>
           <div className="relative z-10 grid grid-cols-2 gap-8 text-center">
             <div>
@@ -580,7 +580,7 @@ export default function IbadahPage() {
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-4">{t('ibadah.stepsOfWorship')}</h3>
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 ml-4">{t('ibadah.stepsOfWorship')}</h3>
           {[
             { title: t('ibadah.niyyah'), desc: t('ibadah.niyyahDesc') },
             { title: t('ibadah.takbiratulIhram'), desc: t('ibadah.takbiratulIhramDesc') },
@@ -591,11 +591,11 @@ export default function IbadahPage() {
             const stepTitle = step.title;
             const stepDesc = step.desc;
             return (
-              <div key={i} className="glass p-6 rounded-[2.5rem] flex items-start gap-6 group hover:border-emerald-700/40 transition-all">
-                <div className="w-12 h-12 bg-emerald-950/30 border border-emerald-900/30 rounded-2xl flex items-center justify-center shrink-0 font-black text-emerald-400 group-hover:bg-[#0D4433] group-hover:text-white group-hover:border-transparent transition-colors">{i + 1}</div>
+              <div key={i} className="bg-white p-6 rounded-[2.5rem] border border-emerald-50 shadow-sm flex items-start gap-6 group hover:border-emerald-200 transition-all">
+                <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center shrink-0 font-black text-[#0D4433] group-hover:bg-[#0D4433] group-hover:text-white transition-colors">{i + 1}</div>
                 <div>
-                  <h4 className="text-lg font-bold text-[#D4AF37] mb-1">{stepTitle}</h4>
-                  <p className="text-slate-300 text-sm font-medium leading-relaxed">{stepDesc}</p>
+                  <h4 className="text-lg font-bold text-[#0D4433] mb-1">{stepTitle}</h4>
+                  <p className="text-gray-500 text-sm font-medium leading-relaxed">{stepDesc}</p>
                 </div>
               </div>
             );
@@ -612,21 +612,21 @@ export default function IbadahPage() {
     const monthLabel = "Dhul Qa'dah 1447";
 
     return (
-      <div className="min-h-screen bg-transparent text-slate-100 py-12 px-4 sm:px-6 animate-in fade-in duration-500">
+      <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 animate-in fade-in duration-500">
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="flex items-center gap-4 mb-8">
-            <button onClick={goBack} className="p-3 bg-slate-900/60 hover:bg-emerald-950/30 rounded-full transition-all text-slate-300 shadow-md border border-emerald-950/40">
+            <button onClick={goBack} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
               <ArrowLeft size={20} />
             </button>
-            <h2 className="text-3xl font-serif font-bold text-[#D4AF37]">{t('ibadah.hijriCalendar')}</h2>
+            <h2 className="text-3xl font-serif font-bold text-[#0D4433]">{t('ibadah.hijriCalendar')}</h2>
           </div>
 
-          <div className="bg-gradient-to-br from-[#06402B] to-[#094d34] rounded-[3rem] p-8 text-white shadow-2xl border border-emerald-800/30 relative overflow-hidden">
+          <div className="bg-[#0D4433] rounded-[3rem] p-8 text-white shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-5 text-emerald-300"><Moon size={120} /></div>
             <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
               <div className="text-center md:text-left space-y-1">
                 <div className="text-[10px] font-black uppercase tracking-[0.4em] opacity-50 mb-1">{t('ibadah.todayInHijri')}</div>
-                <div className="text-4xl font-serif font-bold text-[#D4AF37]">22 {monthLabel}</div>
+                <div className="text-4xl font-serif font-bold">22 {monthLabel}</div>
                 <div className="text-xs font-bold text-emerald-400/80 uppercase tracking-widest">
                   Gregorian: {new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
@@ -637,21 +637,21 @@ export default function IbadahPage() {
             </div>
           </div>
 
-          <div className="glass p-8 rounded-[3.5rem] shadow-xl">
+          <div className="bg-white p-8 rounded-[3.5rem] border border-emerald-100 shadow-xl">
             <div className="flex justify-between items-center mb-8">
               <div className="space-y-1">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('ibadah.activeMonth')}</div>
-                <h3 className="text-xl font-serif font-bold text-[#D4AF37]">{monthLabel}</h3>
+                <div className="text-[10px] font-black text-gray-300 uppercase tracking-widest">{t('ibadah.activeMonth')}</div>
+                <h3 className="text-xl font-serif font-bold text-[#0D4433]">{monthLabel}</h3>
               </div>
               <div className="flex gap-2">
-                <button className="p-3 bg-emerald-950/20 rounded-xl text-emerald-400 hover:bg-[#0D4433]/30 border border-emerald-900/30 shadow-md active:scale-95 transition-all"><ChevronLeft size={16} /></button>
-                <button className="p-3 bg-emerald-950/20 rounded-xl text-emerald-400 hover:bg-[#0D4433]/30 border border-emerald-900/30 shadow-md active:scale-95 transition-all"><ChevronRight size={16} /></button>
+                <button className="p-3 bg-gray-50 rounded-xl text-[#0D4433] hover:bg-emerald-50 border border-gray-100 shadow-sm active:scale-95"><ChevronLeft size={16} /></button>
+                <button className="p-3 bg-gray-50 rounded-xl text-[#0D4433] hover:bg-emerald-50 border border-gray-100 shadow-sm active:scale-95"><ChevronRight size={16} /></button>
               </div>
             </div>
 
             <div className="grid grid-cols-7 gap-3 mb-6">
               {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => (
-                <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">{d}</div>
+                <div key={d} className="text-center text-[10px] font-black text-gray-300 uppercase tracking-widest">{d}</div>
               ))}
 
               {Array.from({ length: startDayOffset }).map((_, i) => <div key={`pad-${i}`} />)}
@@ -666,25 +666,25 @@ export default function IbadahPage() {
                     key={i}
                     onClick={() => navigateTo('calendar-detail', dayNum)}
                     className={`aspect-square rounded-2xl flex items-center justify-center text-sm font-bold border transition-all cursor-pointer relative group ${isToday
-                      ? 'bg-gradient-to-br from-[#06402B] to-[#0a5c3d] text-white shadow-lg border-emerald-800/30 scale-105 z-10'
+                      ? 'bg-[#0D4433] text-white shadow-[0_12px_24px_rgba(13,68,51,0.3)] border-[#0D4433] scale-105 z-10'
                       : isSignificant
-                        ? 'bg-emerald-950/30 text-emerald-400 border-emerald-900/30'
-                        : 'bg-slate-900/30 text-slate-400 border-slate-950/40 hover:border-emerald-900/50 hover:text-emerald-300 hover:bg-[#0D4433]/10'
+                        ? 'bg-emerald-50 text-[#0D4433] border-emerald-200'
+                        : 'bg-white text-gray-400 border-gray-50 hover:border-emerald-100 hover:text-[#0D4433]'
                       }`}
                   >
                     {dayNum}
-                    {isSignificant && !isToday && <div className="absolute bottom-1.5 w-1.5 h-1.5 bg-[#D4AF37] rounded-full" />}
+                    {isSignificant && !isToday && <div className="absolute bottom-1.5 w-1 h-1 bg-[#0D4433] rounded-full" />}
                   </div>
                 );
               })}
             </div>
 
-            <div className="flex justify-center gap-6 pt-4 border-t border-slate-800/60">
-              <div className="flex items-center gap-2 text-[9px] font-black uppercase text-slate-400 tracking-widest">
-                <div className="w-3 h-3 bg-emerald-900/80 rounded-md shadow-sm border border-emerald-700/50" /> {t('ibadah.today')}
+            <div className="flex justify-center gap-6 pt-4 border-t border-gray-50">
+              <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400 tracking-widest">
+                <div className="w-3 h-3 bg-[#0D4433] rounded-md shadow-sm" /> {t('ibadah.today')}
               </div>
-              <div className="flex items-center gap-2 text-[9px] font-black uppercase text-slate-400 tracking-widest">
-                <div className="w-3 h-3 bg-emerald-950/30 border border-emerald-900/30 rounded-md" /> {t('ibadah.significant')}
+              <div className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400 tracking-widest">
+                <div className="w-3 h-3 bg-emerald-50 border border-emerald-200 rounded-md" /> {t('ibadah.significant')}
               </div>
             </div>
           </div>
@@ -695,35 +695,35 @@ export default function IbadahPage() {
 
   // C. Calendar Detail
   const CalendarDetailView = () => (
-    <div className="min-h-screen bg-transparent text-slate-100 py-12 px-4 sm:px-6 animate-in slide-in-from-right-8 duration-500">
+    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 animate-in slide-in-from-right-8 duration-500">
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => setSubView('calendar')} className="p-3 bg-slate-900/60 hover:bg-emerald-950/30 rounded-full transition-all text-slate-300 shadow-md border border-emerald-950/40">
+          <button onClick={() => setSubView('calendar')} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
             <ArrowLeft size={20} />
           </button>
-          <h2 className="text-3xl font-serif font-bold text-[#D4AF37]">{t('ibadah.significantWorship')}</h2>
+          <h2 className="text-3xl font-serif font-bold text-[#0D4433]">{t('ibadah.significantWorship')}</h2>
         </div>
 
-        <div className="glass p-10 rounded-[3.5rem] text-center space-y-6">
+        <div className="bg-white p-10 rounded-[3.5rem] border border-emerald-100 shadow-2xl text-center space-y-6">
           <div className="space-y-1">
-            <div className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em]">Dhul Qa'dah 1447</div>
-            <h1 className="text-7xl font-black text-[#D4AF37] tracking-tighter">Sacred Fasting Days</h1>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Ayyām al-Bīḍ (The White Days)</p>
+            <div className="text-xs font-black text-emerald-600 uppercase tracking-[0.3em]">Dhul Qa'dah 1447</div>
+            <h1 className="text-7xl font-black text-[#0D4433] tracking-tighter">Sacred Fasting Days</h1>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Ayyām al-Bīḍ (The White Days)</p>
           </div>
-          <div className="h-px bg-emerald-800/30 w-24 mx-auto" />
-          <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-xl mx-auto">
+          <div className="h-px bg-emerald-50 w-24 mx-auto" />
+          <p className="text-lg text-gray-500 font-medium leading-relaxed max-w-xl mx-auto">
             Fasting on the 13th, 14th, and 15th of each Hijri month is highly recommended in the Sunnah. The Prophet (PBUH) compared it to fasting the entire lifetime.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gradient-to-br from-[#06402B] to-[#0a5c3d] p-8 rounded-[2.5rem] text-white shadow-xl border border-emerald-800/30 space-y-4">
+          <div className="bg-[#0D4433] p-8 rounded-[2.5rem] text-white space-y-4 shadow-xl">
             <h3 className="text-xs font-black uppercase tracking-[0.3em] opacity-60">{t('ibadah.recommendedIbadah')}</h3>
             <p className="text-sm font-medium leading-relaxed">{t('ibadah.recommendedIbadahDesc')}</p>
           </div>
-          <div className="bg-emerald-950/20 p-8 rounded-[2.5rem] border border-emerald-900/30 space-y-4">
-            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-emerald-400">{t('ibadah.historicalContext')}</h3>
-            <p className="text-xs text-slate-300 font-medium leading-relaxed">{t('ibadah.historicalContextDesc')}</p>
+          <div className="bg-emerald-50 p-8 rounded-[2.5rem] border border-emerald-100 space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-emerald-600">{t('ibadah.historicalContext')}</h3>
+            <p className="text-xs text-gray-600 font-medium leading-relaxed">{t('ibadah.historicalContextDesc')}</p>
           </div>
         </div>
       </div>
@@ -735,25 +735,25 @@ export default function IbadahPage() {
     if (!zakatResult) return null;
     const fmt = (n: number) => '₹\u00a0' + Math.round(n).toLocaleString('en-IN');
     return (
-      <div className="min-h-screen bg-transparent text-slate-100 flex items-center justify-center p-4 text-center animate-in zoom-in-95 duration-500">
+      <div className="min-h-screen bg-white text-[#2D2D2D] flex items-center justify-center p-4 text-center animate-in zoom-in-95 duration-500">
         <div className="max-w-md space-y-8">
-          <div className="w-24 h-24 bg-emerald-950/40 border border-emerald-900/30 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-inner">
-            <Calculator size={48} className="text-emerald-400" />
+          <div className="w-24 h-24 bg-emerald-50 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-inner">
+            <Calculator size={48} className="text-emerald-500" />
           </div>
           <div className="space-y-3">
-            <h2 className="text-3xl font-serif font-bold text-[#D4AF37]">{t('ibadah.calculationResult')}</h2>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{t('ibadah.estimatedZakat')}</p>
-            <div className="text-5xl font-black text-emerald-400 tracking-tighter">{fmt(zakatResult.zakatDue)}</div>
-            <p className="text-xs text-slate-500 font-medium">
+            <h2 className="text-3xl font-serif font-bold text-[#0D4433]">{t('ibadah.calculationResult')}</h2>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{t('ibadah.estimatedZakat')}</p>
+            <div className="text-5xl font-black text-[#0D4433] tracking-tighter">{fmt(zakatResult.zakatDue)}</div>
+            <p className="text-xs text-slate-400 font-medium">
               {t('ibadah.netAssets')}: {fmt(zakatResult.netAssets)} &nbsp;|&nbsp; {t('ibadah.nisabThreshold')}: {fmt(zakatResult.nisabThreshold)}
             </p>
             {zakatResult.zakatDue === 0 && (
-              <p className="text-xs text-rose-400 font-black uppercase tracking-widest mt-2">{t('ibadah.belowNisab')}</p>
+              <p className="text-xs text-rose-500 font-black uppercase tracking-widest mt-2">{t('ibadah.belowNisab')}</p>
             )}
           </div>
           <div className="grid grid-cols-1 gap-3 pt-6">
-            <button onClick={() => setSubView('landing')} className="w-full py-4.5 bg-gradient-to-r from-[#06402B] to-[#0a5c3d] text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg hover:brightness-110">{t('ibadah.completeAssessment')}</button>
-            <button onClick={() => setSubView('zakat-calc')} className="w-full py-4.5 bg-slate-900/40 text-slate-300 border border-slate-800/40 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-[#0D4433]/20">{t('ibadah.recalculate')}</button>
+            <button onClick={() => setSubView('landing')} className="w-full py-4.5 bg-[#0D4433] text-white rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-xl">{t('ibadah.completeAssessment')}</button>
+            <button onClick={() => setSubView('zakat-calc')} className="w-full py-4.5 bg-gray-50 text-gray-500 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px]">{t('ibadah.recalculate')}</button>
           </div>
         </div>
       </div>
@@ -772,7 +772,7 @@ export default function IbadahPage() {
   const theme = HERO_THEMES[activeHeroTheme];
 
   return (
-    <div className="min-h-screen bg-transparent text-[#eef2f7] pb-32 overflow-x-hidden">
+    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] pb-32 overflow-x-hidden">
       {/* ── HERO TIMINGS SECTION ── */}
       <section className={`relative min-h-[45vh] flex flex-col items-center justify-center px-6 pb-28 overflow-visible transition-all duration-[2000ms] ${theme.bg}`}>
         <div className="absolute inset-0 opacity-15 pointer-events-none">
@@ -789,7 +789,7 @@ export default function IbadahPage() {
           </h1>
           <div className="inline-flex flex-col items-center gap-1.5">
             <div className="inline-flex items-center gap-3 px-6 py-3 bg-[#0D4433]/40 backdrop-blur-2xl rounded-full border border-white/20 text-[9px] font-black uppercase tracking-[0.3em] shadow-2xl">
-              {t('ibadah.next')}: <span className="text-[#D4AF37]">{nextPrayer}</span> <span className="opacity-30">•</span> <span className="text-white">{t('ibadah.guidance')}</span>
+              {t('ibadah.next')}: <span className="text-emerald-300">{nextPrayer}</span> <span className="opacity-30">•</span> <span className="text-white">{t('ibadah.guidance')}</span>
             </div>
             <div className="text-[8px] font-black uppercase tracking-[0.3em] opacity-40 mt-1 flex items-center gap-1.5">
               <MapPin size={10} /> {t('ibadah.location')}: {locationMethod}
@@ -800,7 +800,7 @@ export default function IbadahPage() {
         {/* Floating checklist grid bar */}
         <div className="absolute bottom-0 left-0 w-full px-4 sm:px-6 lg:px-8 z-20">
           <div className="relative max-w-2xl mx-auto -mb-14 group/tracker">
-            <div className="glass rounded-[2rem] p-3 shadow-lg flex items-center justify-between gap-3">
+            <div className="bg-white rounded-[2rem] p-3 shadow-[0_15px_40px_rgba(0,0,0,0.12)] flex items-center justify-between gap-3 border border-emerald-50">
               {prayerTimes.map((p) => {
                 const isCompleted = completedPrayers.includes(p.name);
                 const isActive = nextPrayer === p.name;
@@ -808,16 +808,16 @@ export default function IbadahPage() {
                   <div
                     key={p.id}
                     onClick={() => navigateTo('prayer-guide', p)}
-                    className={`flex-1 flex flex-col items-center justify-center rounded-[1.25rem] py-3.5 transition-all duration-500 cursor-pointer relative overflow-hidden ${isCompleted ? 'bg-emerald-950/30 border border-emerald-800/30 text-emerald-400 opacity-80' : isActive ? 'bg-[#0a5c3d] text-white shadow-lg scale-105 border border-emerald-700 z-10' : 'bg-transparent text-slate-400 hover:bg-emerald-950/30'}`}
+                    className={`flex-1 flex flex-col items-center justify-center rounded-[1.25rem] py-3.5 transition-all duration-500 cursor-pointer relative overflow-hidden ${isCompleted ? 'bg-emerald-50 text-emerald-600 opacity-75' : isActive ? 'bg-[#0D4433] text-white shadow-lg scale-105 z-10' : 'bg-transparent text-slate-400 hover:bg-emerald-50/40'}`}
                   >
                     <div
                       onClick={(e) => { e.stopPropagation(); togglePrayerCompletion(p.name); }}
-                      className={`absolute top-1.5 right-1.5 w-4 h-4 rounded-full border flex items-center justify-center transition-all ${isCompleted ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-800/40 text-transparent'}`}
+                      className={`absolute top-1.5 right-1.5 w-4 h-4 rounded-full border flex items-center justify-center transition-all ${isCompleted ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200 text-transparent'}`}
                     >
                       ✓
                     </div>
                     <span className="text-[8px] font-black uppercase tracking-wider mb-1">{p.name}</span>
-                    <span className={`text-sm font-black ${isActive ? 'text-white' : 'text-slate-200 opacity-60'}`}>{p.time}</span>
+                    <span className={`text-sm font-black ${isActive ? 'text-white' : 'text-slate-800 opacity-60'}`}>{p.time}</span>
                   </div>
                 );
               })}
@@ -863,9 +863,9 @@ export default function IbadahPage() {
           />
         </div>
 
-        <div className="glass-emerald rounded-[2.5rem] p-7 flex gap-5 items-start border border-emerald-900/30 shadow-md">
-          <ShieldCheck className="w-10 h-10 text-emerald-400 shrink-0 mt-0.5" />
-          <p className="text-[10px] text-emerald-300/80 font-medium leading-relaxed uppercase tracking-wider">
+        <div className="bg-[#FDFCF8] rounded-[2.5rem] p-7 flex gap-5 items-start border border-emerald-100 shadow-sm">
+          <ShieldCheck className="w-10 h-10 text-emerald-600 shrink-0 mt-0.5" />
+          <p className="text-[10px] text-emerald-900/60 font-medium leading-relaxed uppercase tracking-wider">
             {t('ibadah.disclaimer')}
           </p>
         </div>

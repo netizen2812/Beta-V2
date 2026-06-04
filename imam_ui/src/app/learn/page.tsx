@@ -195,12 +195,12 @@ const RULES: Rule[] = [
 // ─── Category config ───────────────────────────────────────────────────────────
 const CATEGORIES: { id: Category; label: string; color: string }[] = [
   { id: "all",      label: "All",      color: "#10b981" },
-  { id: "madd",     label: "Madd",     color: "#D4AF37" },
-  { id: "qalqalah", label: "Qalqalah", color: "#ef4444" },
-  { id: "ghunnah",  label: "Ghunnah",  color: "#8b5cf6" },
-  { id: "idgham",   label: "Idgham",   color: "#06b6d4" },
-  { id: "ikhfa",    label: "Ikhfa'",   color: "#f59e0b" },
-  { id: "other",    label: "Other",    color: "#7b9e87" },
+  { id: "madd",     label: "Madd",     color: "#059669" },
+  { id: "qalqalah", label: "Qalqalah", color: "#10b981" },
+  { id: "ghunnah",  label: "Ghunnah",  color: "#0d4433" },
+  { id: "idgham",   label: "Idgham",   color: "#047857" },
+  { id: "ikhfa",    label: "Ikhfa'",   color: "#34d399" },
+  { id: "other",    label: "Other",    color: "#688775" },
 ];
 
 const DIFFICULTY_COLOR = { beginner: "#10b981", intermediate: "#f59e0b", advanced: "#ef4444" };
@@ -223,18 +223,18 @@ export default function LearnPage() {
       {/* Header */}
       <header
         className="sticky top-0 z-50 px-4 py-4 flex justify-between items-center gap-3"
-        style={{ background: "rgba(6,17,31,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)" }}
+        style={{ background: "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)" }}
       >
         <Link href="/">
           <button className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold flex-shrink-0"
-            style={{ color: "var(--text-dim)", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
+            style={{ color: "var(--text-dim)", background: "rgba(13, 68, 51, 0.04)", border: "1px solid var(--border)" }}>
             <ArrowLeft className="w-4 h-4" />
           </button>
         </Link>
 
         {/* Search */}
         <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl"
-          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
+          style={{ background: "rgba(13, 68, 51, 0.04)", border: "1px solid var(--border)" }}>
           <Search className="w-4 h-4 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
           <input
             value={search}
@@ -263,7 +263,7 @@ export default function LearnPage() {
               className="flex-shrink-0 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all"
               style={activeCategory === cat.id
                 ? { background: `${cat.color}18`, color: cat.color, border: `1px solid ${cat.color}45` }
-                : { color: "var(--text-muted)", border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}
+                : { color: "var(--text-muted)", border: "1px solid var(--border)", background: "rgba(13, 68, 51, 0.02)" }}
             >
               {cat.label}
             </button>
@@ -308,7 +308,7 @@ export default function LearnPage() {
                           </span>
                           {rule.counts && (
                             <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold"
-                              style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-muted)" }}>
+                              style={{ background: "rgba(13, 68, 51, 0.04)", color: "var(--text-muted)" }}>
                               {rule.counts} counts
                             </span>
                           )}
@@ -324,7 +324,7 @@ export default function LearnPage() {
 
                     {/* Example word — always visible */}
                     <div className="mt-3 flex items-center gap-3 p-3 rounded-xl"
-                      style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                      style={{ background: "rgba(13, 68, 51, 0.02)", border: "1px solid rgba(16, 185, 129, 0.08)" }}>
                       <span className="font-arabic text-2xl" style={{ color: "var(--text)", direction: "rtl" }}>
                         {rule.exampleAr.split("").map((ch, ci) => (
                           <span key={ci} style={{ color: rule.exampleHighlight.includes(ch) ? catColor : "var(--text)" }}>
@@ -359,15 +359,15 @@ export default function LearnPage() {
                           </p>
 
                           {/* Example explanation */}
-                          <div className="p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                          <div className="p-3 rounded-xl" style={{ background: "rgba(13, 68, 51, 0.02)", border: "1px solid rgba(16, 185, 129, 0.08)" }}>
                             <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: catColor }}>Example</p>
                             <p className="text-sm" style={{ color: "var(--text-dim)" }}>{rule.exampleEn}</p>
                           </div>
 
                           {/* Madhab note */}
                           {rule.madhab && (
-                            <div className="p-3 rounded-xl" style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.15)" }}>
-                              <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: "#D4AF37" }}>Madhab Note</p>
+                            <div className="p-3 rounded-xl" style={{ background: "rgba(16, 185, 129, 0.06)", border: "1px solid rgba(16, 185, 129, 0.15)" }}>
+                              <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: "var(--emerald)" }}>Madhab Note</p>
                               <p className="text-sm" style={{ color: "var(--text-dim)" }}>{rule.madhab}</p>
                             </div>
                           )}
@@ -375,7 +375,7 @@ export default function LearnPage() {
                           {/* Practice CTA */}
                           <Link href="/mushaf" onClick={e => e.stopPropagation()}>
                             <button className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm text-white"
-                              style={{ background: "linear-gradient(135deg, #06402B, #0a5c3d)", boxShadow: "0 4px 16px rgba(6,64,43,0.4)" }}>
+                              style={{ background: "linear-gradient(135deg, #06402B, #0a5c3d)", boxShadow: "0 4px 16px rgba(6,64,43,0.15)" }}>
                               <BookOpen className="w-4 h-4" />
                               Practice This Rule
                             </button>

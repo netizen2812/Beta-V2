@@ -192,11 +192,11 @@ export default function ChatPage() {
       {/* Header */}
       <header
         className="sticky top-0 z-50 px-4 py-4 flex justify-between items-center"
-        style={{ background: "rgba(6,17,31,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)" }}
+        style={{ background: "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)" }}
       >
         <Link href="/">
           <button className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold"
-            style={{ color: "var(--text-dim)", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
+            style={{ color: "var(--text-dim)", background: "rgba(13,68,51,0.04)", border: "1px solid var(--border)" }}>
             <ArrowLeft className="w-4 h-4" />
           </button>
         </Link>
@@ -211,7 +211,7 @@ export default function ChatPage() {
           <button
             onClick={() => setShowMadhabMenu(v => !v)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold"
-            style={{ background: "rgba(212,175,55,0.1)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.25)" }}
+            style={{ background: "rgba(16, 185, 129, 0.08)", color: "#0d4433", border: "1px solid rgba(16, 185, 129, 0.18)" }}
           >
             {activeMadhab.label}
             <ChevronDown className="w-3.5 h-3.5" />
@@ -224,7 +224,7 @@ export default function ChatPage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.95 }}
                 className="absolute right-0 top-12 glass rounded-2xl p-2 w-40 z-50"
-                style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}
+                style={{ boxShadow: "0 10px 40px rgba(13,68,51,0.08)" }}
               >
                 {MADHABS.map(m => (
                   <button
@@ -232,8 +232,8 @@ export default function ChatPage() {
                     onClick={() => { setMadhab(m.id); setShowMadhabMenu(false); }}
                     className="w-full text-left px-4 py-3 rounded-xl text-sm font-bold transition-all"
                     style={{
-                      color: madhab === m.id ? "#D4AF37" : "var(--text-dim)",
-                      background: madhab === m.id ? "rgba(212,175,55,0.1)" : "transparent",
+                      color: madhab === m.id ? "#0d4433" : "var(--text-dim)",
+                      background: madhab === m.id ? "rgba(16, 185, 129, 0.08)" : "transparent",
                     }}
                   >
                     {m.label}
@@ -251,7 +251,7 @@ export default function ChatPage() {
         {/* Madhab context badge */}
         <div className="flex justify-center">
           <span className="px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest"
-            style={{ background: "rgba(212,175,55,0.08)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.2)" }}>
+            style={{ background: "rgba(16, 185, 129, 0.08)", color: "#0d4433", border: "1px solid rgba(16, 185, 129, 0.18)" }}>
             Responding per {activeMadhab.label} School
           </span>
         </div>
@@ -279,7 +279,7 @@ export default function ChatPage() {
                 style={
                   msg.role === "user"
                     ? { background: "linear-gradient(135deg, #06402B, #0a5c3d)", color: "var(--text)", borderBottomRightRadius: "6px" }
-                    : { background: "rgba(15,27,50,0.85)", border: "1px solid var(--border)", color: "var(--text)", borderBottomLeftRadius: "6px", backdropFilter: "blur(20px)" }
+                    : { background: "var(--bg-card)", border: "1px solid var(--border)", color: "var(--text)", borderBottomLeftRadius: "6px", backdropFilter: "blur(20px)" }
                 }
               >
                 {msg.text.split("\n\n").map((para, pi) => (
@@ -294,8 +294,8 @@ export default function ChatPage() {
                 {msg.role === "maulana" && (
                   <button 
                     onClick={() => handlePlayVoice(msg.text)}
-                    className="flex items-center gap-1.5 mt-3 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all hover:bg-[rgba(212,175,55,0.15)]"
-                    style={{ background: "rgba(212,175,55,0.1)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.2)" }}
+                    className="flex items-center gap-1.5 mt-3 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all hover:bg-[rgba(16,185,129,0.15)]"
+                    style={{ background: "rgba(16, 185, 129, 0.08)", color: "#0d4433", border: "1px solid rgba(16, 185, 129, 0.18)" }}
                   >
                     <Volume2 className="w-3.5 h-3.5" />
                     Listen
@@ -313,9 +313,9 @@ export default function ChatPage() {
                   style={{ maxWidth: "320px" }}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="w-3.5 h-3.5" style={{ color: "#D4AF37" }} />
-                      <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: "#D4AF37" }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <BookOpen className="w-3.5 h-3.5" style={{ color: "#0d4433" }} />
+                      <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: "#0d4433" }}>
                         {msg.ayah.ref}
                       </span>
                     </div>
@@ -390,7 +390,7 @@ export default function ChatPage() {
                   onClick={() => sendMessage(q)}
                   className="text-left px-4 py-3 rounded-xl text-sm font-medium transition-all hover:border-opacity-60"
                   style={{
-                    background: "rgba(255,255,255,0.025)",
+                    background: "rgba(13, 68, 51, 0.03)",
                     border: "1px solid var(--border)",
                     color: "var(--text-dim)",
                   }}
@@ -410,7 +410,7 @@ export default function ChatPage() {
         className="fixed left-0 right-0 z-40 px-4 py-3 max-w-2xl mx-auto"
         style={{
           bottom: "4rem",
-          background: "rgba(6,17,31,0.94)",
+          background: "rgba(255, 255, 255, 0.95)",
           backdropFilter: "blur(20px)",
           borderTop: "1px solid var(--border)",
         }}
@@ -424,7 +424,7 @@ export default function ChatPage() {
             style={
               isListening
                 ? { background: "linear-gradient(135deg, #7f1d1d, #dc2626)", boxShadow: "0 0 16px rgba(239,68,68,0.4)" }
-                : { background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)" }
+                : { background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.18)" }
             }
           >
             <Mic className="w-4.5 h-4.5" style={{ color: isListening ? "white" : "#10b981" }} />
@@ -438,7 +438,7 @@ export default function ChatPage() {
             placeholder="Ask about Tajweed, recitation, or any ayah…"
             className="flex-1 px-4 py-3 rounded-xl text-sm outline-none"
             style={{
-              background: "rgba(255,255,255,0.04)",
+              background: "rgba(13, 68, 51, 0.03)",
               border: "1px solid var(--border)",
               color: "var(--text)",
             }}
@@ -450,9 +450,9 @@ export default function ChatPage() {
             disabled={!input.trim()}
             className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{
-              background: input.trim() ? "linear-gradient(135deg, #06402B, #0a5c3d)" : "rgba(255,255,255,0.04)",
+              background: input.trim() ? "linear-gradient(135deg, #06402B, #0a5c3d)" : "rgba(13, 68, 51, 0.03)",
               border: input.trim() ? "none" : "1px solid var(--border)",
-              boxShadow: input.trim() ? "0 4px 16px rgba(6,64,43,0.5)" : "none",
+              boxShadow: input.trim() ? "0 4px 16px rgba(6,64,43,0.15)" : "none",
             }}
           >
             <Send className="w-4 h-4" style={{ color: input.trim() ? "white" : "var(--text-muted)" }} />

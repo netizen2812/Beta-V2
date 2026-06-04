@@ -48,12 +48,12 @@ export default function ProgressMandala({ stats }: { stats: StatProps[] }) {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-bold text-gold-metallic">{stat.value}</span>
+              <span className="text-2xl font-bold text-[#0D4433]">{stat.value}</span>
             </div>
           </div>
           
           <div className="text-center z-10">
-            <p className="text-xs uppercase tracking-[0.2em] text-sage">{stat.label}</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#0D4433]/70">{stat.label}</p>
           </div>
         </div>
       ))}

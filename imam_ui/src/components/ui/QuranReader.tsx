@@ -25,7 +25,7 @@ export default function QuranReader({ words }: { words: Word[] }) {
             y: 0,
             scale: word.status === "pending" ? 1 : 1.05,
             color: word.status === "correct" 
-              ? "#D4AF37" // Gold
+              ? "#10b981" // Emerald Green
               : word.status === "error"
                 ? "#b91c1c" // Deep Red
                 : "#1f2937" // Slate 800 for better readability
@@ -39,7 +39,7 @@ export default function QuranReader({ words }: { words: Word[] }) {
           {word.status === "correct" && (
             <motion.div
               layoutId="highlight"
-              className="absolute -bottom-2 left-0 right-0 h-1 bg-amber-600/30 rounded-full"
+              className="absolute -bottom-2 left-0 right-0 h-1 bg-emerald-500/30 rounded-full"
             />
           )}
         </motion.span>

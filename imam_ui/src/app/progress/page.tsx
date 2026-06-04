@@ -45,7 +45,7 @@ const RECENT_SESSIONS = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const heatColor = (v: number) =>
-  v === 0 ? "rgba(255,255,255,0.04)"
+  v === 0 ? "rgba(13,68,51,0.04)"
   : v === 1 ? "rgba(16,185,129,0.2)"
   : v === 2 ? "rgba(16,185,129,0.5)"
   :            "#10b981";
@@ -66,11 +66,11 @@ export default function ProgressPage() {
       {/* Header */}
       <header
         className="sticky top-0 z-50 px-4 py-4 flex justify-between items-center"
-        style={{ background: "rgba(6,17,31,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)" }}
+        style={{ background: "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)" }}
       >
         <Link href="/">
           <button className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold"
-            style={{ color: "var(--text-dim)", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
+            style={{ color: "var(--text-dim)", background: "rgba(13,68,51,0.04)", border: "1px solid var(--border)" }}>
             <ArrowLeft className="w-4 h-4" />
           </button>
         </Link>
@@ -79,9 +79,9 @@ export default function ProgressPage() {
           <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#10b981" }}>Your Journey</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl"
-          style={{ background: "rgba(212,175,55,0.1)", border: "1px solid rgba(212,175,55,0.2)" }}>
-          <Star className="w-3.5 h-3.5" style={{ color: "#D4AF37" }} />
-          <span className="font-black text-sm" style={{ color: "#D4AF37" }}>Lv {XP_LEVEL}</span>
+          style={{ background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.18)" }}>
+          <Star className="w-3.5 h-3.5" style={{ color: "#0D4433" }} />
+          <span className="font-black text-sm" style={{ color: "#0D4433" }}>Lv {XP_LEVEL}</span>
         </div>
       </header>
 
@@ -112,13 +112,13 @@ export default function ProgressPage() {
               <span className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "#D4AF37" }}>XP</span>
             </div>
             <p className="text-4xl font-black" style={{ color: "var(--text)" }}>{XP_CURRENT}<span className="text-sm ml-1" style={{ color: "var(--text-dim)" }}>/{XP_NEXT}</span></p>
-            <div className="mt-3 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
+            <div className="mt-3 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(13,68,51,0.07)" }}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${(XP_CURRENT / XP_NEXT) * 100}%` }}
                 transition={{ duration: 1.2, delay: 0.3, ease: "easeOut" }}
                 className="h-full rounded-full"
-                style={{ background: "linear-gradient(90deg, #D4AF37, #f59e0b)" }}
+                style={{ background: "linear-gradient(90deg, #10b981, #0d4433)" }}
               />
             </div>
             <p className="text-[11px] mt-1.5" style={{ color: "var(--text-muted)" }}>{XP_NEXT - XP_CURRENT} XP to Level {XP_LEVEL + 1}</p>
@@ -164,7 +164,7 @@ export default function ProgressPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: (wi * 7 + di) * 0.012 }}
                     className="aspect-square rounded-md"
-                    style={{ background: heatColor(val), border: `1px solid ${val > 0 ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.04)"}` }}
+                    style={{ background: heatColor(val), border: `1px solid ${val > 0 ? "rgba(16,185,129,0.2)" : "rgba(13,68,51,0.04)"}` }}
                   />
                 ))}
               </div>
@@ -203,7 +203,7 @@ export default function ProgressPage() {
                     style={{
                       background: isToday
                         ? "linear-gradient(180deg, #D4AF37, #f59e0b)"
-                        : val >= 90 ? "rgba(16,185,129,0.6)" : val >= 75 ? "rgba(16,185,129,0.35)" : "rgba(255,255,255,0.1)",
+                        : val >= 90 ? "rgba(16,185,129,0.6)" : val >= 75 ? "rgba(16,185,129,0.35)" : "rgba(13,68,51,0.1)",
                     }}
                   />
                 </div>
@@ -231,7 +231,7 @@ export default function ProgressPage() {
                   <span className="text-sm font-bold" style={{ color: "var(--text)" }}>{r.rule}</span>
                   <span className="text-sm font-black" style={{ color: r.color }}>{r.pct}%</span>
                 </div>
-                <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(13,68,51,0.06)" }}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${r.pct}%` }}
@@ -260,10 +260,10 @@ export default function ProgressPage() {
               <motion.div key={b.label} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.35 + i * 0.06 }}
                 className="flex flex-col items-center gap-2 p-3 rounded-2xl"
                 style={b.earned
-                  ? { background: "rgba(212,175,55,0.08)", border: "1px solid rgba(212,175,55,0.2)" }
-                  : { background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", opacity: 0.4 }}>
+                  ? { background: "rgba(16, 185, 129, 0.08)", border: "1px solid rgba(16, 185, 129, 0.18)" }
+                  : { background: "rgba(13,68,51,0.02)", border: "1px solid rgba(13,68,51,0.05)", opacity: 0.4 }}>
                 <span className="text-2xl" style={{ filter: b.earned ? "none" : "grayscale(1)" }}>{b.icon}</span>
-                <span className="text-[10px] font-bold text-center" style={{ color: b.earned ? "#D4AF37" : "var(--text-muted)" }}>
+                <span className="text-[10px] font-bold text-center" style={{ color: b.earned ? "#0D4433" : "var(--text-muted)" }}>
                   {b.label}
                 </span>
               </motion.div>
@@ -282,7 +282,7 @@ export default function ProgressPage() {
             {RECENT_SESSIONS.map((s, i) => (
               <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 + i * 0.07 }}
                 className="flex items-center justify-between p-4 rounded-xl"
-                style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                style={{ background: "rgba(13,68,51,0.025)", border: "1px solid rgba(13,68,51,0.06)" }}>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center"
                     style={{ background: `${gradeColor(s.grade)}18` }}>

@@ -29,7 +29,7 @@ export default function WelcomeCard({
         className="glass rounded-3xl p-7 relative overflow-hidden"
       >
         <div className="absolute inset-0 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at top left, rgba(6,64,43,0.3), transparent 60%)" }} />
+          style={{ background: "radial-gradient(ellipse at top left, rgba(16,185,129,0.08), transparent 60%)" }} />
         <p className="text-[11px] font-bold uppercase tracking-[0.3em] mb-2" style={{ color: "#10b981" }}>
           Assalamu Alaikum ✦
         </p>
@@ -53,8 +53,8 @@ export default function WelcomeCard({
                   ? "text-white"
                   : "border text-sm"}`}
               style={primary
-                ? { background: "linear-gradient(135deg, #06402B, #0a5c3d)", boxShadow: "0 4px 20px rgba(6,64,43,0.5)" }
-                : { borderColor: "var(--border)", color: "var(--text-dim)", background: "rgba(255,255,255,0.03)" }}
+                ? { background: "linear-gradient(135deg, #06402B, #0a5c3d)", boxShadow: "0 4px 20px rgba(6,64,43,0.15)" }
+                : { borderColor: "var(--border)", color: "var(--text-dim)", background: "rgba(13,68,51,0.03)" }}
             >
               <Icon className="w-4 h-4" />
               {label}
@@ -70,7 +70,7 @@ export default function WelcomeCard({
       >
         <div className="flex items-center gap-2 mb-5">
           <div className="w-2 h-2 rounded-full" style={{ background: "#D4AF37", boxShadow: "0 0 8px #D4AF37" }} />
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "#D4AF37" }}>Recent Sessions</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: "#0D4433" }}>Recent Sessions</p>
         </div>
         <div className="space-y-3">
           {sessions.map((s, i) => {
@@ -79,7 +79,7 @@ export default function WelcomeCard({
             return (
               <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.08 }}
                 className="flex items-center justify-between p-4 rounded-xl cursor-pointer transition-all hover:border-opacity-50"
-                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                style={{ background: "rgba(13,68,51,0.02)", border: "1px solid rgba(13,68,51,0.06)" }}>
                 <div className="flex items-center gap-4">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${color}15` }}>
                     <BookOpen className="w-4 h-4" style={{ color }} />

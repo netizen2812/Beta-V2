@@ -132,10 +132,10 @@ export default function MushafulScreen() {
     <main className="min-h-screen custom-scroll overflow-y-auto" style={{ paddingBottom: "7rem" }}>
       {/* Top Nav */}
       <header className="sticky top-0 z-50 px-6 py-5 flex justify-between items-center"
-        style={{ background: "rgba(6,17,31,0.85)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)" }}>
+        style={{ background: "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)" }}>
         <Link href="/">
           <button className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all"
-            style={{ color: "var(--text-dim)", background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
+            style={{ color: "var(--text-dim)", background: "rgba(13,68,51,0.04)", border: "1px solid var(--border)" }}>
             <ArrowLeft className="w-4 h-4" /> Home
           </button>
         </Link>
@@ -145,7 +145,7 @@ export default function MushafulScreen() {
         </div>
         <button onClick={() => setShowRAG(true)}
           className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold"
-          style={{ background: "rgba(212,175,55,0.1)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.25)" }}>
+          style={{ background: "rgba(16, 185, 129, 0.08)", color: "#0d4433", border: "1px solid rgba(16, 185, 129, 0.18)" }}>
           <Info className="w-4 h-4" /> Tafsir
         </button>
       </header>
@@ -165,7 +165,7 @@ export default function MushafulScreen() {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className="flex items-center gap-3 px-6 py-4 glass rounded-2xl w-full justify-center">
               <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" />
-              <p className="text-sm font-bold text-slate-300">Maulana is checking your Tajweed...</p>
+              <p className="text-sm font-bold text-[#0D4433]">Maulana is checking your Tajweed...</p>
             </motion.div>
           )}
 
@@ -175,14 +175,14 @@ export default function MushafulScreen() {
               <p className="font-black text-lg gradient-text-gold mb-1">
                 Score: {maulanaFeedback.score}/100
               </p>
-              <p className="text-sm font-bold text-slate-200 mb-3">
+              <p className="text-sm font-bold text-[#0D4433] mb-3">
                 {maulanaFeedback.summary}
               </p>
-              <p className="text-xs leading-relaxed text-slate-400 bg-slate-950/30 p-4 rounded-xl text-left border border-slate-900">
+              <p className="text-xs leading-relaxed text-slate-700 bg-slate-50 p-4 rounded-xl text-left border border-slate-200">
                 {maulanaFeedback.feedback}
               </p>
               <button onClick={() => setShowRAG(true)} className="mt-4 px-6 py-2.5 rounded-xl font-bold text-white text-sm"
-                style={{ background: "linear-gradient(135deg, #06402B, #0a5c3d)", boxShadow: "0 4px 16px rgba(6,64,43,0.5)" }}>
+                style={{ background: "linear-gradient(135deg, #06402B, #0a5c3d)", boxShadow: "0 4px 16px rgba(6,64,43,0.15)" }}>
                 Get Maulana's Guidance →
               </button>
             </motion.div>
@@ -195,7 +195,7 @@ export default function MushafulScreen() {
             animate={{
               boxShadow: isRecording
                 ? ["0 0 0 0 rgba(239,68,68,0.5)", "0 0 0 20px rgba(239,68,68,0)", "0 0 0 0 rgba(239,68,68,0.5)"]
-                : "0 4px 30px rgba(6,64,43,0.5)",
+                : "0 4px 30px rgba(6,64,43,0.15)",
               scale: isRecording ? [1, 1.03, 1] : 1,
             }}
             transition={{ repeat: isRecording ? Infinity : 0, duration: 1.5 }}

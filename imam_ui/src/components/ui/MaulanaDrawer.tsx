@@ -35,26 +35,26 @@ export default function MaulanaDrawer({ isOpen, onClose, advice, language, isStr
           >
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-deep flex items-center justify-center border border-gold-metallic/30">
-                  <MessageSquare className="text-gold-metallic w-6 h-6" />
+                <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100/50">
+                  <MessageSquare className="text-[#0D4433] w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-gold-metallic font-semibold text-lg">Maulana's Advice</h3>
-                  <p className="text-sage text-sm uppercase tracking-widest">{language}</p>
+                  <h3 className="text-[#0D4433] font-semibold text-lg">Maulana's Advice</h3>
+                  <p className="text-emerald-700 text-sm uppercase tracking-widest">{language}</p>
                 </div>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-                <X className="w-6 h-6 text-sage" />
+                <X className="w-6 h-6 text-[#0D4433]" />
               </button>
             </div>
 
             <div className="space-y-6">
-              <p className="text-xl leading-relaxed text-slate-200 italic font-light">
+              <p className="text-xl leading-relaxed text-[#0D4433] italic font-light">
                 "{advice}"
               </p>
 
               <div className="flex items-center gap-4">
-                <button className="flex items-center gap-2 px-6 py-3 bg-gold-metallic text-midnight rounded-full font-bold hover:scale-105 transition-transform">
+                <button className="flex items-center gap-2 px-6 py-3 bg-[#0D4433] text-white rounded-full font-bold hover:scale-105 transition-transform">
                   <Volume2 className="w-5 h-5" />
                   Listen to Maulana
                 </button>
@@ -65,7 +65,7 @@ export default function MaulanaDrawer({ isOpen, onClose, advice, language, isStr
                         key={i}
                         animate={{ opacity: [0.2, 1, 0.2] }}
                         transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
-                        className="w-1.5 h-1.5 bg-gold-metallic rounded-full"
+                        className="w-1.5 h-1.5 bg-[#0D4433] rounded-full"
                       />
                     ))}
                   </div>

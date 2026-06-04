@@ -161,14 +161,14 @@ function JourneyScrollSection() {
   };
 
   return (
-    <section className="w-full pb-3 overflow-hidden glass rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-5 shadow-lg">
+    <section className="w-full pb-3 overflow-hidden bg-white/70 border border-emerald-50/50 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-5 shadow-sm">
       {/* Section Header */}
       <div className="flex items-end justify-between px-2 mb-4">
         <div>
-          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-0.5">Curated for You</p>
-          <h2 className="text-base font-black text-slate-100 leading-tight">Spiritual Journeys</h2>
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-600 mb-0.5">Curated for You</p>
+          <h2 className="text-base font-black text-[#0D4433] leading-tight">Spiritual Journeys</h2>
         </div>
-        <p className="font-arabic text-lg text-emerald-500 opacity-60" style={{ fontFamily: "'Amiri', serif", direction: 'rtl' }}>رحلات روحية</p>
+        <p className="font-arabic text-lg text-emerald-700 opacity-60" style={{ fontFamily: "'Amiri', serif", direction: 'rtl' }}>رحلات روحية</p>
       </div>
 
       {/* Horizontal Scroll Cards */}
@@ -1127,24 +1127,24 @@ export default function FullscreenAiPage() {
   // No longer use DEMO_WORDS for display — we use the live `words` state everywhere
 
   return (
-    <div className="min-h-screen bg-transparent text-[#eef2f7] pb-32 overflow-x-hidden flex flex-col relative">
+    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] pb-32 overflow-x-hidden flex flex-col relative">
       {/* Dynamic CSS Pattern Background (FaithTech moving background) */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.06] moving-pattern z-0" />
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] moving-pattern z-0" />
 
       {/* Background ambient lighting from FaithTech */}
       <div
         className="fixed inset-0 pointer-events-none transition-opacity duration-1000 z-0"
         style={{
-          background: `radial-gradient(circle at 50% ${Math.max(0, 50 - scrolled * 0.05)}%, rgba(16, 185, 129, 0.12) 0%, transparent 70%)`
+          background: `radial-gradient(circle at 50% ${Math.max(0, 50 - scrolled * 0.05)}%, rgba(16, 185, 129, 0.08) 0%, transparent 70%)`
         }}
       />
 
       {/* ── ATMOSPHERIC BACKGROUND BLOB GLOWS ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden h-full w-full z-0" aria-hidden="true">
-        <div className="absolute top-[-10%] left-[20%] w-[80vw] h-[80vw] rounded-full mix-blend-screen filter blur-[120px] opacity-20"
-          style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, rgba(0,0,0,0) 70%)' }} />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[70vw] h-[70vw] rounded-full mix-blend-screen filter blur-[120px] opacity-25"
-          style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, rgba(0,0,0,0) 70%)' }} />
+        <div className="absolute top-[-10%] left-[20%] w-[80vw] h-[80vw] rounded-full mix-blend-multiply filter blur-[100px] opacity-40"
+          style={{ background: 'radial-gradient(circle, rgba(255,253,240,0.8) 0%, rgba(255,255,255,0) 70%)' }} />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[70vw] h-[70vw] rounded-full mix-blend-multiply filter blur-[120px] opacity-30"
+          style={{ background: 'radial-gradient(circle, rgba(167,243,208,0.4) 0%, rgba(255,255,255,0) 70%)' }} />
       </div>
 
       {/* ── TOP HEADER PILL (FULL SCREEN STRETCHED) ── */}
@@ -1154,24 +1154,24 @@ export default function FullscreenAiPage() {
           <select
             value={globalLanguage}
             onChange={e => setGlobalLanguage(e.target.value as Language)}
-            className="appearance-none pl-4 pr-10 py-2.5 bg-emerald-950/40 border border-emerald-800/40 rounded-full text-xs font-black uppercase tracking-wider text-emerald-400 outline-none shadow-sm cursor-pointer hover:border-emerald-700/60 hover:bg-emerald-950/60 transition-all"
+            className="appearance-none pl-4 pr-10 py-2.5 bg-white border border-emerald-100 rounded-full text-xs font-black uppercase tracking-wider text-[#0D4433] outline-none shadow-sm cursor-pointer hover:border-emerald-300 transition-all"
           >
             <option value="en">English</option>
             <option value="ar">العربية</option>
             <option value="ur">اردو</option>
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-emerald-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <ChevronDown className="w-3.5 h-3.5 text-[#0D4433] absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
 
         <div className="text-center">
-          <h1 className="text-xl font-serif font-black text-[#D4AF37] drop-shadow-[0_0_10px_rgba(212,175,55,0.3)]">IMAM AI</h1>
-          <p className="text-[8px] font-black uppercase tracking-widest text-[#D4AF37] mt-0.5">Digital Maulana</p>
+          <h1 className="text-xl font-serif font-black text-[#0D4433]">IMAM AI</h1>
+          <p className="text-[8px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">Digital Maulana</p>
         </div>
 
         {/* Profile Avatar Button */}
         <button
           onClick={() => setIsStatsOpen(true)}
-          className="w-10 h-10 bg-[#0D4433]/20 border border-emerald-800/30 rounded-full flex items-center justify-center text-[#eef2f7] shadow-sm hover:border-emerald-700 hover:bg-[#0D4433]/40 transition-all"
+          className="w-10 h-10 bg-white border border-emerald-100 rounded-full flex items-center justify-center text-[#0D4433] shadow-sm hover:border-emerald-300 transition-all"
         >
           <User className="w-5 h-5" />
         </button>
@@ -1182,16 +1182,16 @@ export default function FullscreenAiPage() {
         <div className="flex-1 flex flex-col justify-between w-full">
           
           {/* Top Mode Sliding Toggle - Elegantly Centered */}
-          <div className="relative z-10 glass rounded-2xl p-1.5 flex gap-1.5 shrink-0 max-w-xl w-full mx-auto mb-8 shadow-lg">
+          <div className="relative z-10 bg-white border border-emerald-50 rounded-2xl p-1.5 flex gap-1.5 shrink-0 max-w-xl w-full mx-auto mb-8 shadow-sm">
             <button
               onClick={() => { setActiveMode('recitation'); setChatMessage(null); }}
-              className={`flex-1 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${activeMode === 'recitation' ? 'bg-gradient-to-r from-[#06402B] to-[#0a5c3d] text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`flex-1 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${activeMode === 'recitation' ? 'bg-[#0D4433] text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
             >
               🎙️ Recitation Mode
             </button>
             <button
               onClick={() => { setActiveMode('chat'); setChatMessage(null); }}
-              className={`flex-1 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${activeMode === 'chat' ? 'bg-gradient-to-r from-[#06402B] to-[#0a5c3d] text-white shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`flex-1 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${activeMode === 'chat' ? 'bg-[#0D4433] text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
             >
               💬 Ask Imam
             </button>
@@ -1204,11 +1204,11 @@ export default function FullscreenAiPage() {
               {activeMode === 'recitation' && (
                 <div className="flex-1 flex flex-col w-full space-y-6">
                   {/* Surah/Ayah Selector Header Row */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:p-5 glass rounded-2xl sm:rounded-[2rem] shadow-lg relative z-40">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:p-5 bg-white border border-emerald-50 rounded-2xl sm:rounded-[2rem] shadow-sm relative z-40">
                     <div className="flex items-center gap-4">
                       <AyahSelector selectedAyah={selectedAyah} onSelect={setSelectedAyah} />
                       <div className="hidden sm:block text-left">
-                        <h4 className="text-xs font-black text-emerald-400 uppercase tracking-wider">Pronunciation Target</h4>
+                        <h4 className="text-xs font-black text-[#0D4433] uppercase tracking-wider">Pronunciation Target</h4>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Recite correctly to unlock the next verse</p>
                       </div>
                     </div>
@@ -1221,8 +1221,8 @@ export default function FullscreenAiPage() {
                         onClick={handleGoAhead}
                         className={`px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider shadow-md transition-all flex items-center gap-2 ${
                           (tajweedScore !== null && tajweedScore >= 75)
-                            ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white animate-bounce'
-                            : 'glass text-emerald-400 border-emerald-800/30 hover:bg-[#0D4433]/20 hover:text-emerald-300'
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white animate-bounce'
+                            : 'bg-white hover:bg-emerald-50 border border-emerald-100 text-[#0D4433]'
                         }`}
                       >
                         {(tajweedScore !== null && tajweedScore >= 75) ? (
@@ -1240,18 +1240,18 @@ export default function FullscreenAiPage() {
                     className="flex-1 flex flex-col md:flex-row gap-8 items-center justify-between w-full min-h-[300px]"
                   >
                     {/* Left Column: Recording controller (1/3rd width on desktop) */}
-                    <div className="w-full md:w-1/3 flex flex-col items-center justify-center space-y-6 md:border-r md:border-emerald-950/40 md:pr-10 shrink-0">
+                    <div className="w-full md:w-1/3 flex flex-col items-center justify-center space-y-6 md:border-r md:border-emerald-100/30 md:pr-10 shrink-0">
                       <div className="relative">
                         <motion.button
                           onClick={handleRecitationTrigger}
                           animate={{
                             boxShadow: isRecording
                               ? ["0 0 0 0 rgba(16,185,129,0.35)", "0 0 0 35px rgba(16,185,129,0)", "0 0 0 0 rgba(16,185,129,0.35)"]
-                              : "0 10px 30px rgba(6,64,43,0.35)",
+                              : "0 10px 30px rgba(13,68,51,0.12)",
                             scale: isRecording ? [1, 1.05, 1] : 1
                           }}
                           transition={{ repeat: isRecording ? Infinity : 0, duration: 1.6 }}
-                          className={`w-32 h-32 rounded-full flex items-center justify-center text-white relative z-10 transition-colors ${isRecording ? 'bg-[#ef4444]' : 'bg-[#0D4433] hover:bg-[#0a5c3d]'}`}
+                          className={`w-32 h-32 rounded-full flex items-center justify-center text-white relative z-10 transition-colors ${isRecording ? 'bg-[#ef4444]' : 'bg-[#0D4433] hover:bg-[#093527]'}`}
                         >
                           {isRecording ? <Square className="w-8 h-8" fill="white" /> : <Mic className="w-10 h-10" />}
                         </motion.button>
@@ -1261,7 +1261,7 @@ export default function FullscreenAiPage() {
                       </div>
 
                       <div className="text-center">
-                        <h3 className="text-lg font-black text-emerald-400">
+                        <h3 className="text-lg font-black text-[#0D4433]">
                           {isRecording ? 'Listening...' : recitationPhase === 'done' ? 'Session Logged' : 'Ready to Recite'}
                         </h3>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1.5">
@@ -1286,10 +1286,10 @@ export default function FullscreenAiPage() {
                         />
                         
                         {recitationPhase === 'done' && (
-                          <div className="flex justify-between items-center glass-emerald rounded-3xl px-6 py-5 border border-emerald-800/30 shadow-lg animate-in slide-in-from-bottom-3">
+                          <div className="flex justify-between items-center bg-emerald-50/50 rounded-3xl px-6 py-5 border border-emerald-100/50 shadow-sm animate-in slide-in-from-bottom-3">
                             <div>
-                              <p className="text-[8px] font-black uppercase tracking-widest text-emerald-400/70">Tajweed advisory</p>
-                              <p className="text-xs font-black text-[#eef2f7] mt-0.5">
+                              <p className="text-[8px] font-black uppercase tracking-widest text-[#0D4433]/50">Tajweed advisory</p>
+                              <p className="text-xs font-black text-[#0D4433] mt-0.5">
                                 {tajweedFeedback || "MashaAllah, recitation parsed successfully."}
                               </p>
                             </div>
@@ -1297,11 +1297,11 @@ export default function FullscreenAiPage() {
                               <button
                                 disabled={isAdvisoryLoading}
                                 onClick={() => playMaulanaVoiceAdvisory("Advisory", "Recitation", tajweedFeedback || "MashaAllah, recitation parsed successfully.")}
-                                className={`flex items-center gap-1.5 px-4 py-2.5 bg-[#0D4433]/20 text-emerald-300 border border-emerald-800/30 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#0D4433]/40 transition-all shadow-sm ${isAdvisoryLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                className={`flex items-center gap-1.5 px-4 py-2.5 bg-white text-[#0D4433] border border-emerald-100 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-emerald-50 transition-all shadow-sm ${isAdvisoryLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
                               >
                                 {isAdvisoryLoading ? (
                                   <>
-                                    <div className="w-3.5 h-3.5 border-2 border-emerald-300 border-t-transparent rounded-full animate-spin" />
+                                    <div className="w-3.5 h-3.5 border-2 border-[#0D4433] border-t-transparent rounded-full animate-spin" />
                                     Generating...
                                   </>
                                 ) : (
@@ -1312,7 +1312,7 @@ export default function FullscreenAiPage() {
                               </button>
                               <button
                                 onClick={() => setShowTafsirDrawer(true)}
-                                className="flex items-center gap-1.5 px-4 py-2.5 bg-[#0D4433]/20 text-emerald-300 border border-emerald-800/30 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-[#0D4433]/40 transition-all shadow-sm"
+                                className="flex items-center gap-1.5 px-4 py-2.5 bg-white text-[#0D4433] border border-emerald-100 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-emerald-50 transition-all shadow-sm"
                               >
                                 Tafsir <ChevronRight className="w-4 h-4" />
                               </button>
@@ -1348,7 +1348,7 @@ export default function FullscreenAiPage() {
                           {/* User question */}
                           {chatMessage.role === 'user' && (
                             <div className="flex justify-end">
-                              <div className="p-4 bg-gradient-to-r from-[#06402B] to-[#0a5c3d] text-white rounded-2xl rounded-tr-sm text-xs font-semibold shadow-md max-w-[85%]">
+                              <div className="p-4 bg-[#0D4433] text-white/95 rounded-2xl rounded-tr-sm text-xs font-semibold shadow-sm max-w-[85%]">
                                 {chatMessage.text}
                               </div>
                             </div>
@@ -1359,13 +1359,13 @@ export default function FullscreenAiPage() {
                             <div className="flex justify-start gap-3">
                               <div className="w-9 h-9 rounded-full bg-[#0D4433] text-white flex items-center justify-center font-serif text-xs shrink-0 shadow-sm">M</div>
                               <div className="flex-1 space-y-3">
-                                <div className="p-5 glass-emerald border border-emerald-800/30 text-emerald-100 rounded-2xl rounded-tl-sm text-xs font-medium leading-relaxed shadow-lg">
+                                <div className="p-5 bg-white border border-emerald-50 text-slate-800 rounded-2xl rounded-tl-sm text-xs font-medium leading-relaxed shadow-sm">
                                   {chatMessage.text}
                                 </div>
                                 {chatMessage.audioUrl && (
                                   <button
                                     onClick={() => handlePlayVoice(chatMessage.audioUrl!)}
-                                    className="flex items-center gap-1.5 px-4 py-2 bg-[#0D4433]/20 text-emerald-300 rounded-xl border border-emerald-800/30 text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-[#0D4433]/40"
+                                    className="flex items-center gap-1.5 px-4 py-2 bg-white text-[#0D4433] rounded-xl border border-emerald-100 text-[10px] font-black uppercase tracking-widest shadow-sm"
                                   >
                                     <Volume2 className="w-3.5 h-3.5" /> Repeat Voice
                                   </button>
@@ -1382,9 +1382,9 @@ export default function FullscreenAiPage() {
                         </div>
                       ) : (
                         <div className="text-center py-6 space-y-4">
-                          <Sparkles className="w-10 h-10 text-[#D4AF37]/50 mx-auto animate-pulse" />
+                          <Sparkles className="w-10 h-10 text-emerald-600/30 mx-auto animate-pulse" />
                           <div>
-                            <h4 className="text-sm font-black text-[#D4AF37]">Ask Digital Maulana</h4>
+                            <h4 className="text-sm font-black text-[#0D4433]">Ask Digital Maulana</h4>
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1.5">Grounded in authentic jurisprudence</p>
                           </div>
                         </div>
@@ -1392,26 +1392,26 @@ export default function FullscreenAiPage() {
                     </div>
 
                     {/* Input bar at bottom of left column */}
-                    <div className="flex items-center gap-2.5 bg-slate-900/60 border border-emerald-950/40 p-2 rounded-full shadow-lg mt-2">
+                    <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-100 p-2 rounded-full shadow-inner mt-2">
                       <input
                         type="text"
                         placeholder="Write your question..."
                         value={chatInput}
                         onChange={e => setChatInput(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') sendChatMessage(chatInput); }}
-                        className="flex-1 bg-transparent px-4 py-2.5 text-xs outline-none text-slate-100 font-semibold placeholder:text-slate-500 w-0 min-w-0"
+                        className="flex-1 bg-transparent px-4 py-2.5 text-xs outline-none text-slate-700 font-semibold w-0 min-w-0"
                       />
 
                       <button
                         onClick={handleChatVoiceTrigger}
-                        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 border transition-all ${chatIsRecording ? 'bg-red-500 border-red-500 text-white animate-pulse' : 'bg-emerald-950/40 border-emerald-900/40 text-emerald-400 hover:text-white hover:bg-emerald-900/60'}`}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 border transition-all ${chatIsRecording ? 'bg-red-500 border-red-500 text-white animate-pulse' : 'bg-white border-slate-200 text-slate-400 hover:text-[#0D4433]'}`}
                       >
                         <Mic className="w-4 h-4" />
                       </button>
 
                       <button
                         onClick={() => sendChatMessage(chatInput)}
-                        className="w-10 h-10 bg-gradient-to-r from-[#06402B] to-[#0a5c3d] hover:brightness-110 text-white rounded-full flex items-center justify-center shrink-0 shadow-md transition-all"
+                        className="w-10 h-10 bg-[#0D4433] hover:bg-[#093527] text-white rounded-full flex items-center justify-center shrink-0 shadow-sm transition-all"
                       >
                         <Send className="w-4.5 h-4.5" />
                       </button>
@@ -1419,16 +1419,16 @@ export default function FullscreenAiPage() {
                   </div>
 
                   {/* Right Column: Settings & Presets (1/3rd width on desktop) */}
-                  <div className="w-full md:w-1/3 flex flex-col gap-3 md:gap-5 md:border-l md:border-emerald-950/40 md:pl-8 shrink-0 justify-center">
+                  <div className="w-full md:w-1/3 flex flex-col gap-3 md:gap-5 md:border-l md:border-emerald-100/30 md:pl-8 shrink-0 justify-center">
                     {/* Madhab Selector */}
                     <div className="space-y-2">
                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Madhab School</span>
-                      <div className="grid grid-cols-2 gap-2 bg-slate-900/60 border border-emerald-950/40 p-1.5 rounded-xl">
+                      <div className="grid grid-cols-2 gap-2 bg-slate-50 border border-slate-100 p-1.5 rounded-xl">
                         {(['Hanafi', 'Shafi\'i', 'Maliki', 'Hanbali'] as Madhab[]).map(m => (
                           <button
                             key={m}
                             onClick={() => setMadhab(m)}
-                            className={`py-2.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${madhab === m ? 'bg-emerald-900/40 text-emerald-300 shadow-md border border-emerald-800/40 font-black' : 'text-slate-400 hover:text-slate-200'}`}
+                            className={`py-2.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${madhab === m ? 'bg-white text-[#0D4433] shadow-sm border border-emerald-50 font-black' : 'text-slate-400 hover:text-slate-600'}`}
                           >
                             {m.slice(0, 3)}
                           </button>
@@ -1437,7 +1437,7 @@ export default function FullscreenAiPage() {
                     </div>
 
                     {/* Speech response switch & Presets list */}
-                    <div className="flex items-center justify-between px-4 py-3 bg-slate-900/60 border border-emerald-950/40 rounded-xl select-none">
+                    <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl select-none">
                       <label htmlFor="voiceResponse" className="text-[10px] font-black uppercase tracking-wider text-slate-400 cursor-pointer">
                         Voice Response 🔊
                       </label>
@@ -1458,7 +1458,7 @@ export default function FullscreenAiPage() {
                           <button
                             key={idx}
                             onClick={() => sendChatMessage(q)}
-                            className="w-full text-left px-3.5 py-2.5 bg-emerald-950/20 hover:bg-[#0D4433]/20 border border-emerald-900/20 rounded-xl text-[10px] font-bold text-slate-300 hover:text-emerald-300 truncate transition-all shadow-sm"
+                            className="w-full text-left px-3.5 py-2.5 bg-white hover:bg-emerald-50 border border-emerald-100/30 rounded-xl text-[10px] font-bold text-slate-600 truncate transition-all shadow-sm"
                           >
                             {q}
                           </button>
@@ -1488,16 +1488,16 @@ export default function FullscreenAiPage() {
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="relative w-full sm:w-[380px] h-full bg-[#06111F] shadow-2xl border-l border-emerald-950 flex flex-col p-6 overflow-y-auto no-scrollbar"
+              className="relative w-full sm:w-[380px] h-full bg-[#FDFCF8] shadow-2xl border-l border-emerald-100 flex flex-col p-6 overflow-y-auto no-scrollbar"
             >
               <div className="flex justify-between items-center mb-8 shrink-0">
                 <div>
-                  <h3 className="text-sm font-black uppercase tracking-widest text-[#D4AF37]">Learning Stats</h3>
+                  <h3 className="text-sm font-black uppercase tracking-widest text-[#0D4433]">Learning Stats</h3>
                   <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Recitation & Activity logs</p>
                 </div>
                 <button
                   onClick={() => setIsStatsOpen(false)}
-                  className="p-2.5 bg-slate-900/60 border border-emerald-950/40 hover:bg-emerald-950/30 rounded-full text-slate-400 hover:text-emerald-400 transition-colors shadow-sm"
+                  className="p-2.5 bg-white border border-emerald-50 hover:bg-emerald-50 rounded-full text-slate-400 hover:text-[#0D4433] transition-colors shadow-sm"
                 >
                   <X size={18} />
                 </button>
@@ -1505,42 +1505,42 @@ export default function FullscreenAiPage() {
 
               <div className="space-y-5">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="glass p-5 rounded-[2rem] shadow-md relative overflow-hidden">
+                  <div className="bg-white p-5 rounded-[2rem] border border-emerald-50 shadow-sm relative overflow-hidden">
                     <Flame className="w-4 h-4 text-orange-500 mb-1" />
-                    <h4 className="text-2xl font-black text-slate-100">7<span className="text-xs font-bold text-slate-400 ml-1">days</span></h4>
+                    <h4 className="text-2xl font-black text-slate-800">7<span className="text-xs font-bold text-slate-400 ml-1">days</span></h4>
                     <p className="text-[8px] text-slate-400 font-black tracking-widest uppercase mt-0.5">Streak</p>
                   </div>
-                  <div className="glass p-5 rounded-[2rem] shadow-md relative overflow-hidden">
+                  <div className="bg-white p-5 rounded-[2rem] border border-emerald-50 shadow-sm relative overflow-hidden">
                     <Trophy className="w-4 h-4 text-amber-500 mb-1" />
-                    <h4 className="text-2xl font-black text-slate-100">680<span className="text-[10px] font-bold text-slate-400 ml-1">XP</span></h4>
+                    <h4 className="text-2xl font-black text-slate-800">680<span className="text-[10px] font-bold text-slate-400 ml-1">XP</span></h4>
                     <p className="text-[8px] text-slate-400 font-black tracking-widest uppercase mt-0.5">Level 5</p>
                   </div>
                 </div>
 
-                <div className="glass p-5 rounded-[2rem] shadow-md">
+                <div className="bg-white p-5 rounded-[2rem] border border-emerald-50 shadow-sm">
                   <div className="flex justify-between items-center mb-3">
                     <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                      <Calendar className="w-3.5 h-3.5 text-[#0D4433]" />
                       <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Activity Grid</span>
                     </div>
                   </div>
                   <div className="grid grid-cols-7 gap-1.5">
                     {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(d => (
-                      <span key={d} className="text-center text-[8px] font-black text-slate-400">{d}</span>
+                      <span key={d} className="text-center text-[8px] font-black text-slate-300">{d}</span>
                     ))}
                     {Array.from({ length: 28 }).map((_, i) => {
                       const isActive = i === 1 || i === 2 || i === 11 || i === 12 || i === 21 || i === 22 || i === 23;
                       return (
                         <div
                           key={i}
-                          className={`aspect-square rounded-md border ${isActive ? 'bg-emerald-500 border-emerald-500 shadow-sm' : 'bg-slate-900/40 border-slate-950/40'}`}
+                          className={`aspect-square rounded-md border ${isActive ? 'bg-emerald-500 border-emerald-500 shadow-sm' : 'bg-slate-50 border-slate-100'}`}
                         />
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="glass p-5 rounded-[2rem] shadow-md space-y-3.5">
+                <div className="bg-white p-5 rounded-[2rem] border border-emerald-50 shadow-sm space-y-3.5">
                   <div className="flex items-center gap-1.5 mb-1">
                     <TrendingUp className="w-3.5 h-3.5 text-rose-500" />
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Recitation Slippage</span>
@@ -1551,11 +1551,11 @@ export default function FullscreenAiPage() {
                     { label: 'Ghunnah Nasal', val: 18, color: 'bg-purple-500' }
                   ].map((r, i) => (
                     <div key={i} className="space-y-1">
-                      <div className="flex justify-between text-[11px] font-bold text-slate-300">
+                      <div className="flex justify-between text-[11px] font-bold text-slate-700">
                         <span>{r.label}</span>
                         <span>{r.val}%</span>
                       </div>
-                      <div className="h-1.5 w-full bg-slate-900/40 rounded-full overflow-hidden border border-slate-950/30">
+                      <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                         <div className={`h-full ${r.color}`} style={{ width: `${r.val}%` }} />
                       </div>
                     </div>
@@ -1564,18 +1564,18 @@ export default function FullscreenAiPage() {
 
                 <div className="space-y-3">
                   <div className="flex items-center gap-1.5 px-2">
-                    <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
+                    <BookOpen className="w-3.5 h-3.5 text-[#0D4433]" />
                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Recent logs</span>
                   </div>
                   <div className="space-y-2">
                     {RECENT_SESSIONS.map((s, i) => (
-                      <div key={i} className="glass p-4 rounded-2xl flex items-center justify-between shadow-md">
+                      <div key={i} className="bg-white border border-emerald-50 p-4 rounded-2xl flex items-center justify-between shadow-sm">
                         <div>
-                          <p className="font-bold text-xs text-slate-200">{s.surah}</p>
+                          <p className="font-bold text-xs text-slate-800">{s.surah}</p>
                           <p className="text-[10px] text-slate-400 font-semibold">{s.ref} · {s.date}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-black text-xs text-[#D4AF37]">{s.score}%</p>
+                          <p className="font-black text-xs text-emerald-600">{s.score}%</p>
                           <p className="text-[9px] font-black text-slate-300 uppercase mt-0.5">{s.grade}</p>
                         </div>
                       </div>

@@ -36,7 +36,7 @@ export default function VibeOrb({ isActive, onClick }: { isActive: boolean; onCl
               exit={{ opacity: 0 }}
               transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 0.5 }}
               className="absolute rounded-full pointer-events-none"
-              style={{ inset: "-20%", background: "radial-gradient(circle, rgba(6,64,43,0.6) 0%, transparent 65%)", filter: "blur(60px)" }}
+              style={{ inset: "-20%", background: "radial-gradient(circle, rgba(16,185,129,0.3) 0%, transparent 65%)", filter: "blur(60px)" }}
             />
           </>
         )}
@@ -60,7 +60,7 @@ export default function VibeOrb({ isActive, onClick }: { isActive: boolean; onCl
           borderRadius: isActive ? [randomBR(), randomBR(), randomBR()] : "50%",
           boxShadow: isActive
             ? "0 0 0 0 rgba(16,185,129,0), 0 0 80px rgba(16,185,129,0.45)"
-            : "0 0 40px rgba(6,64,43,0.4), inset 0 1px 0 rgba(255,255,255,0.06)",
+            : "0 0 40px rgba(16,185,129,0.1), inset 0 1px 0 rgba(255,255,255,0.6)",
           scale: isActive ? [1, 1.03, 1] : 1,
         }}
         transition={{
@@ -97,12 +97,12 @@ export default function VibeOrb({ isActive, onClick }: { isActive: boolean; onCl
             <motion.div key="idle" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
               className="flex flex-col items-center gap-2">
               <div style={{ width: 24, height: 24 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#0D4433" strokeWidth="1.5">
                   <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
                 </svg>
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#D4AF37" }}>Tap to Recite</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#0D4433" }}>Tap to Recite</p>
             </motion.div>
           )}
         </AnimatePresence>

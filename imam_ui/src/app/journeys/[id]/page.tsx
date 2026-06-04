@@ -38,7 +38,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "sanctuary-of-calm", title: "The Sanctuary of Calm", title_arabic: "ملاذ السكينة",
     tagline: "Find peace within the storms of life through Sabr and Quranic healing.",
     category: "Peace", icon: "🌅", difficulty: "Beginner", duration_min: 12,
-    palette: { from: "#2D1B5E", via: "#1a2a4a", to: "#06111F", accent: "#a78bfa", glow: "rgba(167,139,250,0.3)" },
+    palette: { from: "#E8F5E9", via: "#C8E6C9", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "calm-s1", index: 0, type: "listen", title: "Maulana on Sabr", description: "Listen as our Maulana opens your heart to the wisdom of patience — the anchor of every believer.", asset_key: "bridge_emotional_stress_general_stress", duration_sec: 90, locked: false },
       { id: "calm-s2", index: 1, type: "recite", title: "Recite Surah Ash-Sharh", description: "The Surah of Relief. Recite slowly, letting each verse settle in your chest. After hardship comes ease.", asset_key: null, duration_sec: 120, surah: { number: 94, name: "Ash-Sharh", arabic: "الشرح", verses: 8 }, locked: true },
@@ -49,7 +49,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "foundation-of-prayer", title: "The Foundation of Prayer", title_arabic: "أساس الصلاة",
     tagline: "Master the short Surahs with precision — every letter, every breath, perfected.",
     category: "Prayer", icon: "🕌", difficulty: "Intermediate", duration_min: 15,
-    palette: { from: "#064E3B", via: "#065F46", to: "#06111F", accent: "#D4AF37", glow: "rgba(212,175,55,0.3)" },
+    palette: { from: "#E0F2F1", via: "#B2DFDB", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "prayer-s1", index: 0, type: "listen", title: "Makharij of Al-Fatiha", description: "Listen to the precise articulation points of Surah Al-Fatiha — isolating the difficult ق vs ك distinction.", asset_key: "maulana_feedback_tajweed_precision", duration_sec: 100, surah: { number: 1, name: "Al-Fatiha", arabic: "الفاتحة", verses: 7 }, locked: false },
       { id: "prayer-s2", index: 1, type: "listen", title: "Word-by-Word Tarjummah", description: "Immersive literal translation playback — each word of Al-Fatiha spoken by Maulana's voice with meaning.", asset_key: "translation_tarjummah_fatiha", duration_sec: 120, surah: { number: 1, name: "Al-Fatiha", arabic: "الفاتحة", verses: 7 }, locked: true },
@@ -60,7 +60,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "morning-light", title: "The Morning Light", title_arabic: "نور الصباح",
     tagline: "Seize the barakah of Fajr — a proactive dawn routine for the focused believer.",
     category: "Growth", icon: "☀️", difficulty: "Beginner", duration_min: 10,
-    palette: { from: "#92400E", via: "#78350F", to: "#06111F", accent: "#FCD34D", glow: "rgba(252,211,77,0.3)" },
+    palette: { from: "#FFF3E0", via: "#FFE0B2", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "morning-s1", index: 0, type: "listen", title: "Morning Greeting", description: "A time-sensitive Maulana greeting, warm and energising — tailored to the sacred hour of dawn.", asset_key: "reception_greetings_time_based_morning", duration_sec: 45, locked: false },
       { id: "morning-s2", index: 1, type: "recite", title: "Surah Al-Alaq — First 5 Verses", description: "The first revelation. Recite with flow analysis — feel the weight of the first divine command: Iqra.", asset_key: null, duration_sec: 90, surah: { number: 96, name: "Al-Alaq", arabic: "العلق", verses: 5 }, locked: true, leads_to_imam: true },
@@ -70,7 +70,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "night-vigil", title: "The Night Vigil", title_arabic: "قيام الليل",
     tagline: "Enter the sacred stillness of Tahajjud — surrender to the One who never sleeps.",
     category: "Spirituality", icon: "🌙", difficulty: "Advanced", duration_min: 18,
-    palette: { from: "#1E1B4B", via: "#312E81", to: "#06111F", accent: "#C7D2FE", glow: "rgba(199,210,254,0.25)" },
+    palette: { from: "#E8EAF6", via: "#C5CAE9", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "vigil-s1", index: 0, type: "listen", title: "The Virtue of Night Prayer", description: "Maulana speaks on Surah Al-Muzammil and the spiritual rewards of rising in the night's last third.", asset_key: "bridge_emotional_personal_grief_loneliness", duration_sec: 110, surah: { number: 73, name: "Al-Muzzammil", arabic: "المزمل", verses: 20 }, locked: false },
       { id: "vigil-s2", index: 1, type: "recite", title: "Recite Surah Al-Ikhlas × 3", description: "Three repetitions, each worth a third of the Quran. Measured, deliberate, heartfelt.", asset_key: null, duration_sec: 60, surah: { number: 112, name: "Al-Ikhlas", arabic: "الإخلاص", verses: 4 }, locked: true },
@@ -81,7 +81,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "grateful-heart", title: "The Grateful Heart", title_arabic: "قلب الشاكر",
     tagline: "Transform your perspective — Shukr is not just gratitude, it is abundance itself.",
     category: "Peace", icon: "💛", difficulty: "Beginner", duration_min: 11,
-    palette: { from: "#7C2D12", via: "#9A3412", to: "#06111F", accent: "#FCA5A5", glow: "rgba(252,165,165,0.25)" },
+    palette: { from: "#FFEBEE", via: "#FFCDD2", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "grateful-s1", index: 0, type: "listen", title: "The Ayah of Gratitude", description: "Maulana recites and explains Ibrahim 14:7 — 'If you are grateful, I will surely increase you.'", asset_key: "bridge_emotional_stress_general_stress", duration_sec: 85, surah: { number: 14, name: "Ibrahim", arabic: "إبراهيم", verses: 7 }, locked: false },
       { id: "grateful-s2", index: 1, type: "recite", title: "Surah Ar-Rahman — Opening", description: "Recite the opening verses of the Surah of Divine Mercy. With each 'Fabiayyi ala'i' — feel the gift.", asset_key: null, duration_sec: 90, surah: { number: 55, name: "Ar-Rahman", arabic: "الرحمن", verses: 13 }, locked: true },
@@ -92,7 +92,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "seal-of-surahs", title: "The Seal of Surahs", title_arabic: "خواتيم السور",
     tagline: "Master the last 10 Surahs — the treasury every Muslim carries in their chest.",
     category: "Learning", icon: "📖", difficulty: "Intermediate", duration_min: 20,
-    palette: { from: "#134E4A", via: "#0F766E", to: "#06111F", accent: "#99F6E4", glow: "rgba(153,246,228,0.25)" },
+    palette: { from: "#E0F2F1", via: "#B2DFDB", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "seal-s1", index: 0, type: "listen", title: "Why the Last 10 Matter", description: "Maulana explains the status of the Mufassal Surahs in Salah and daily life.", asset_key: "maulana_feedback_tajweed_precision", duration_sec: 95, locked: false },
       { id: "seal-s2", index: 1, type: "recite", title: "Surah Al-Kawthar", description: "The shortest Surah. Three verses that contain the ocean. Recite with full tajweed precision.", asset_key: null, duration_sec: 45, surah: { number: 108, name: "Al-Kawthar", arabic: "الكوثر", verses: 3 }, locked: true },
@@ -103,7 +103,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "stories-of-prophets", title: "Stories of the Prophets", title_arabic: "قصص الأنبياء",
     tagline: "Walk with Ibrahim, Musa, and Isa — their stories are your map through every trial.",
     category: "Learning", icon: "⭐", difficulty: "Intermediate", duration_min: 16,
-    palette: { from: "#7C2D12", via: "#92400E", to: "#06111F", accent: "#FDE68A", glow: "rgba(253,230,138,0.25)" },
+    palette: { from: "#FFFDE7", via: "#FFF9C4", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "prophets-s1", index: 0, type: "listen", title: "Ibrahim & the Fire", description: "Maulana narrates Ibrahim's trial — the fire that became cool. A story of absolute tawakkul.", asset_key: "bridge_emotional_personal_grief_loneliness", duration_sec: 130, surah: { number: 21, name: "Al-Anbiya", arabic: "الأنبياء", verses: 69 }, locked: false },
       { id: "prophets-s2", index: 1, type: "recite", title: "Ayat of Ibrahim's Prayer", description: "Recite Ibrahim's du'a from Surah Ibrahim — the prayer of a man who lost everything.", asset_key: null, duration_sec: 75, surah: { number: 14, name: "Ibrahim", arabic: "إبراهيم", verses: 41 }, locked: true },
@@ -114,7 +114,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "gate-of-tawbah", title: "The Gate of Tawbah", title_arabic: "باب التوبة",
     tagline: "Every door is open to the one who returns — your sincere repentance is never too late.",
     category: "Spirituality", icon: "🌹", difficulty: "Beginner", duration_min: 13,
-    palette: { from: "#881337", via: "#9F1239", to: "#06111F", accent: "#FBCFE8", glow: "rgba(251,207,232,0.25)" },
+    palette: { from: "#FCE4EC", via: "#F8BBD0", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "tawbah-s1", index: 0, type: "listen", title: "Allah's Door Is Always Open", description: "Maulana recites Az-Zumar 39:53 and speaks on the infinite mercy of Tawbah.", asset_key: "reception_greetings_context_based_post_hardship", duration_sec: 100, surah: { number: 39, name: "Az-Zumar", arabic: "الزمر", verses: 53 }, locked: false },
       { id: "tawbah-s2", index: 1, type: "recite", title: "Sayyid Al-Istighfar", description: "The Master of Repentance. Recite this supplication three times with presence and sincerity.", asset_key: null, duration_sec: 60, locked: true },
@@ -125,7 +125,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "knowledge-seeker", title: "The Knowledge Seeker", title_arabic: "طالب العلم",
     tagline: "Seeking knowledge is an act of worship — each lesson a step closer to Allah.",
     category: "Learning", icon: "🔭", difficulty: "Advanced", duration_min: 17,
-    palette: { from: "#1E3A5F", via: "#1E40AF", to: "#06111F", accent: "#BAE6FD", glow: "rgba(186,230,253,0.25)" },
+    palette: { from: "#E1F5FE", via: "#B3E5FC", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "knowledge-s1", index: 0, type: "listen", title: "Iqra — The Command to Read", description: "Maulana meditates on the first revelation and the Islamic tradition of 'Ilm.", asset_key: "bridge_emotional_stress_academic_stress", duration_sec: 115, surah: { number: 96, name: "Al-Alaq", arabic: "العلق", verses: 5 }, locked: false },
       { id: "knowledge-s2", index: 1, type: "recite", title: "Surah Al-Alaq — Full", description: "Recite all 19 verses of the Surah of the Clinging Clot — the very genesis of the Quran.", asset_key: null, duration_sec: 110, surah: { number: 96, name: "Al-Alaq", arabic: "العلق", verses: 19 }, locked: true },
@@ -136,7 +136,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "family-covenant", title: "The Family Covenant", title_arabic: "ميثاق الأسرة",
     tagline: "The family is a mercy from Allah — nurture it with patience, love, and Quranic wisdom.",
     category: "Growth", icon: "🏡", difficulty: "Beginner", duration_min: 12,
-    palette: { from: "#78350F", via: "#92400E", to: "#06111F", accent: "#FED7AA", glow: "rgba(254,215,170,0.25)" },
+    palette: { from: "#EFEBE9", via: "#D7CCC8", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "family-s1", index: 0, type: "listen", title: "Marriage, Mercy & Tranquility", description: "Maulana explains Ar-Rum 30:21 — the Quranic vision of a home filled with mawaddah and rahmah.", asset_key: "bridge_emotional_personal_family_issues", duration_sec: 105, surah: { number: 30, name: "Ar-Rum", arabic: "الروم", verses: 21 }, locked: false },
       { id: "family-s2", index: 1, type: "recite", title: "The Family Du'a", description: "Recite the Quranic du'a: 'Our Lord, grant us from among our wives and offspring comfort to our eyes.'", asset_key: null, duration_sec: 50, surah: { number: 25, name: "Al-Furqan", arabic: "الفرقان", verses: 74 }, locked: true },
@@ -186,20 +186,20 @@ function AudioBar({ duration, accent, onComplete }: { duration: number; accent: 
 
   return (
     <div className="flex items-center gap-4 p-4 rounded-2xl mt-4"
-      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      style={{ background: "rgba(13,68,51,0.03)", border: "1px solid rgba(16,185,129,0.12)" }}>
       <button onClick={togglePlay}
         className="w-11 h-11 flex items-center justify-center rounded-full flex-shrink-0 transition-all duration-200 hover:scale-110"
-        style={{ background: accent, color: "#0a0a0a" }}>
+        style={{ background: accent, color: "white" }}>
         {playing
           ? <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
           : <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         }
       </button>
       <div className="flex-1">
-        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(13,68,51,0.07)" }}>
           <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${accent}, ${accent}99)` }} />
         </div>
-        <div className="flex justify-between mt-1.5 text-xs opacity-50" style={{ color: "#94a3b8" }}>
+        <div className="flex justify-between mt-1.5 text-xs opacity-50" style={{ color: "var(--text-dim)" }}>
           <span>{Math.floor(progress / 100 * duration)}s</span>
           <span>{duration}s</span>
         </div>
@@ -222,16 +222,16 @@ function StageRail({ stages, currentIndex, completedIds, accent }: {
           <React.Fragment key={stage.id}>
             {i > 0 && (
               <div className="h-0.5 flex-1 max-w-12 rounded-full transition-all duration-500"
-                style={{ background: done || i <= currentIndex ? accent : "rgba(255,255,255,0.12)" }} />
+                style={{ background: done || i <= currentIndex ? accent : "rgba(13,68,51,0.1)" }} />
             )}
             <div className="relative flex flex-col items-center gap-1">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all duration-300"
                 style={{
-                  background: done ? accent : active ? `${accent}33` : "rgba(255,255,255,0.06)",
-                  border: `2px solid ${done || active ? accent : "rgba(255,255,255,0.12)"}`,
+                  background: done ? accent : active ? `${accent}33` : "rgba(13,68,51,0.04)",
+                  border: `2px solid ${done || active ? accent : "rgba(13,68,51,0.1)"}`,
                   boxShadow: active ? `0 0 16px ${accent}66` : "none",
                   transform: active ? "scale(1.15)" : "scale(1)",
-                  color: done ? "#0a0a0a" : active ? accent : "#64748b",
+                  color: done ? "white" : active ? accent : "var(--text-muted)",
                 }}>
                 {done
                   ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
@@ -240,7 +240,7 @@ function StageRail({ stages, currentIndex, completedIds, accent }: {
                   : <span className="text-xs font-bold">{i + 1}</span>
                 }
               </div>
-              <span className="text-xs opacity-50 max-w-16 text-center leading-tight hidden sm:block" style={{ color: "#94a3b8", fontSize: "0.6rem" }}>
+              <span className="text-xs opacity-50 max-w-16 text-center leading-tight hidden sm:block" style={{ color: "var(--text-muted)", fontSize: "0.6rem" }}>
                 {stage.type}
               </span>
             </div>
@@ -262,14 +262,14 @@ function JourneyComplete({ journey }: { journey: Journey }) {
       <p className="font-arabic text-2xl mb-2" style={{ color: journey.palette.accent, direction: "rtl", fontFamily: "'Amiri', serif" }}>
         بارك الله فيك
       </p>
-      <h2 className="text-2xl font-bold mb-2" style={{ color: "#f8fafc" }}>Journey Complete</h2>
-      <p className="text-base opacity-70 mb-2" style={{ color: "#94a3b8" }}>{journey.title}</p>
-      <p className="text-sm opacity-50 max-w-sm mb-8 leading-relaxed" style={{ color: "#64748b" }}>
+      <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--text)" }}>Journey Complete</h2>
+      <p className="text-base opacity-70 mb-2" style={{ color: "var(--text-dim)" }}>{journey.title}</p>
+      <p className="text-sm opacity-50 max-w-sm mb-8 leading-relaxed" style={{ color: "var(--text-muted)" }}>
         You have completed this curated experience. Continue your personal spiritual journey with the Imam.
       </p>
       <button onClick={() => router.push("/chat")}
         className="flex items-center gap-3 px-8 py-4 rounded-2xl font-semibold text-base transition-all duration-300 hover:scale-105 hover:shadow-2xl mb-4"
-        style={{ background: `linear-gradient(135deg, ${journey.palette.accent}, ${journey.palette.from})`, color: "#f8fafc", boxShadow: `0 0 40px ${journey.palette.glow}` }}>
+        style={{ background: "linear-gradient(135deg, var(--emerald), var(--emerald-mid))", color: "white", boxShadow: "0 4px 20px rgba(13,68,51,0.15)" }}>
         <span>✨</span>
         Begin Your Personal Dialogue — Ask Imam
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -277,7 +277,7 @@ function JourneyComplete({ journey }: { journey: Journey }) {
         </svg>
       </button>
       <button onClick={() => router.push("/?tab=journeys")}
-        className="text-sm opacity-50 hover:opacity-100 transition-opacity" style={{ color: "#94a3b8" }}>
+        className="text-sm opacity-50 hover:opacity-100 transition-opacity" style={{ color: "var(--text-muted)" }}>
         ← Back to all journeys
       </button>
     </div>
@@ -301,8 +301,8 @@ export default function JourneyPlayerPage() {
 
   if (!journey) {
     return (
-      <div className="flex items-center justify-center h-screen" style={{ color: "#94a3b8" }}>
-        Journey not found. <Link href="/?tab=journeys" style={{ color: "#D4AF37" }} className="ml-2">← Back</Link>
+      <div className="flex items-center justify-center h-screen" style={{ color: "var(--text-dim)" }}>
+        Journey not found. <Link href="/?tab=journeys" style={{ color: "var(--emerald)" }} className="ml-2">← Back</Link>
       </div>
     );
   }
@@ -365,7 +365,7 @@ export default function JourneyPlayerPage() {
         <div className="flex items-center justify-between mb-8">
           <Link href="/?tab=journeys"
             className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl transition-all duration-200 hover:scale-105"
-            style={{ background: "rgba(255,255,255,0.08)", color: "#94a3b8" }}>
+            style={{ background: "rgba(13,68,51,0.04)", border: "1px solid rgba(16,185,129,0.1)", color: "var(--text-dim)" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
@@ -374,7 +374,7 @@ export default function JourneyPlayerPage() {
           <div className="text-center">
             <span className="text-2xl">{journey.icon}</span>
           </div>
-          <div className="text-xs px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.08)", color: "#94a3b8" }}>
+          <div className="text-xs px-3 py-1.5 rounded-full" style={{ background: "rgba(13,68,51,0.04)", border: "1px solid rgba(16,185,129,0.1)", color: "var(--text-dim)" }}>
             {journey.duration_min} min
           </div>
         </div>
@@ -384,7 +384,7 @@ export default function JourneyPlayerPage() {
           <p className="font-arabic text-xl mb-1 opacity-60" style={{ color: journey.palette.accent, direction: "rtl", fontFamily: "'Amiri', serif" }}>
             {journey.title_arabic}
           </p>
-          <h1 className="text-2xl font-bold" style={{ color: "#f8fafc" }}>{journey.title}</h1>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>{journey.title}</h1>
         </div>
 
         {/* ── Main stage card ── */}
@@ -395,10 +395,10 @@ export default function JourneyPlayerPage() {
             <div
               className="flex-1 rounded-3xl p-7 flex flex-col"
               style={{
-                background: "rgba(6,17,31,0.6)",
+                background: "var(--bg-card)",
                 backdropFilter: "blur(24px)",
                 border: `1px solid ${journey.palette.accent}33`,
-                boxShadow: `0 0 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)`,
+                boxShadow: "0 10px 40px rgba(13,68,51,0.06), inset 0 1px 0 rgba(255,255,255,0.6)",
                 opacity: transitioning ? 0 : 1,
                 transform: transitioning ? "translateX(30px)" : "translateX(0)",
                 transition: "all 0.4s cubic-bezier(0.23, 1, 0.32, 1)",
@@ -411,13 +411,13 @@ export default function JourneyPlayerPage() {
                   style={{ background: `${stageMeta.color}22`, color: stageMeta.color, border: `1px solid ${stageMeta.color}44` }}>
                   {stageMeta.icon} {stageMeta.label}
                 </span>
-                <span className="text-xs opacity-40" style={{ color: "#94a3b8" }}>
+                <span className="text-xs opacity-40" style={{ color: "var(--text-muted)" }}>
                   Stage {currentIndex + 1} of {journey.stages.length}
                 </span>
               </div>
 
               {/* Stage title */}
-              <h2 className="text-2xl font-bold mb-3" style={{ color: "#f8fafc", lineHeight: 1.3 }}>
+              <h2 className="text-2xl font-bold mb-3" style={{ color: "var(--text)", lineHeight: 1.3 }}>
                 {currentStage.title}
               </h2>
 
@@ -428,14 +428,14 @@ export default function JourneyPlayerPage() {
                   <span className="font-arabic text-lg" style={{ color: journey.palette.accent, fontFamily: "'Amiri', serif" }}>
                     {currentStage.surah.arabic}
                   </span>
-                  <span className="text-xs" style={{ color: "#94a3b8" }}>
+                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>
                     Surah {currentStage.surah.name} · {currentStage.surah.verses} verses
                   </span>
                 </div>
               )}
 
               {/* Description */}
-              <p className="text-base leading-relaxed mb-auto" style={{ color: "#cbd5e1", opacity: 0.85 }}>
+              <p className="text-base leading-relaxed mb-auto" style={{ color: "var(--text)", opacity: 0.85 }}>
                 {currentStage.description}
               </p>
 
@@ -447,14 +447,14 @@ export default function JourneyPlayerPage() {
               {/* Recite mic prompt */}
               {currentStage.type === "recite" && (
                 <div className="mt-5 flex items-center gap-3 p-4 rounded-2xl"
-                  style={{ background: "rgba(52,211,153,0.06)", border: "1px solid rgba(52,211,153,0.15)" }}>
+                  style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
                   <div className="w-10 h-10 flex items-center justify-center rounded-full"
-                    style={{ background: "rgba(52,211,153,0.15)", color: "#34d399" }}>
+                    style={{ background: "rgba(16,185,129,0.15)", color: "var(--emerald)" }}>
                     🎙️
                   </div>
                   <div>
-                    <p className="text-sm font-semibold" style={{ color: "#34d399" }}>Ready to recite?</p>
-                    <p className="text-xs opacity-60 mt-0.5" style={{ color: "#94a3b8" }}>
+                    <p className="text-sm font-semibold" style={{ color: "var(--emerald)" }}>Ready to recite?</p>
+                    <p className="text-xs opacity-60 mt-0.5" style={{ color: "var(--text-muted)" }}>
                       Your recitation will be gently evaluated for tajweed and flow.
                     </p>
                   </div>
@@ -466,7 +466,7 @@ export default function JourneyPlayerPage() {
                 <div className="mt-5 flex flex-col items-center py-4">
                   <div className="text-5xl mb-3" style={{ filter: `drop-shadow(0 0 20px ${journey.palette.glow})` }}>🏆</div>
                   <p className="text-sm font-semibold" style={{ color: journey.palette.accent }}>Milestone Unlocked</p>
-                  <p className="text-xs opacity-50 mt-1 text-center" style={{ color: "#94a3b8" }}>
+                  <p className="text-xs opacity-50 mt-1 text-center" style={{ color: "var(--text-muted)" }}>
                     Your commitment is recorded. Return daily to build your streak.
                   </p>
                 </div>
@@ -476,9 +476,9 @@ export default function JourneyPlayerPage() {
               <button onClick={advanceStage}
                 className="mt-6 w-full py-4 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
                 style={{
-                  background: `linear-gradient(135deg, ${journey.palette.accent}, ${journey.palette.from}cc)`,
-                  color: "#f8fafc",
-                  boxShadow: `0 4px 24px ${journey.palette.glow}`,
+                  background: "linear-gradient(135deg, var(--emerald), var(--emerald-mid))",
+                  color: "white",
+                  boxShadow: "0 4px 20px rgba(13,68,51,0.15)",
                 }}>
                 {currentIndex + 1 < journey.stages.length ? (
                   <>

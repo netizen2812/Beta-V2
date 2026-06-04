@@ -31,7 +31,7 @@ export default function MushafulPage({
   };
 
   const statusColor = (s: Word["status"]) =>
-    s === "correct" ? "#10b981" : s === "error" ? "#ef4444" : "rgba(238,242,247,0.2)";
+    s === "correct" ? "#10b981" : s === "error" ? "#ef4444" : "rgba(13, 68, 51, 0.35)";
 
   const correctCount = words.filter(w => w.status === "correct").length;
   const errorCount   = words.filter(w => w.status === "error").length;
@@ -64,7 +64,7 @@ export default function MushafulPage({
       </div>
 
       {/* Mushaf text */}
-      <div className="glass rounded-3xl p-8 relative overflow-hidden" style={{ minHeight: 200 }}>
+      <div className="bg-white/90 border border-emerald-100/50 rounded-3xl p-8 relative overflow-hidden shadow-sm" style={{ minHeight: 200 }}>
         <div className="absolute inset-0 pointer-events-none"
           style={{ background: "radial-gradient(ellipse at 80% 50%, rgba(212,175,55,0.04), transparent 60%)" }} />
 
@@ -119,10 +119,10 @@ export default function MushafulPage({
         {activeWord && (
           <motion.div
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
-            className="glass-emerald rounded-2xl p-5 flex justify-between items-center"
+            className="bg-emerald-50 border border-emerald-100/80 rounded-2xl p-5 flex justify-between items-center shadow-sm"
           >
             <div>
-              <p className="font-arabic text-2xl mb-1" style={{ color: "#D4AF37" }}>{activeWord.text}</p>
+              <p className="font-arabic text-2xl mb-1" style={{ color: "#0D4433" }}>{activeWord.text}</p>
               {activeWord.phonetic && (
                 <p className="text-sm font-mono" style={{ color: "var(--text-dim)" }}>{activeWord.phonetic}</p>
               )}

@@ -23,7 +23,7 @@ export default function KPIRow({ tajweedScore, ragClarity, grade }: KPIRowProps)
         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#D4AF37" }}>Tajweed Score</p>
         <div className="relative" style={{ width: 120, height: 120 }}>
           <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: "rotate(-90deg)" }}>
-            <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="7" />
+            <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(16, 185, 129, 0.08)" strokeWidth="7" />
             <motion.circle
               cx="60" cy="60" r="54" fill="none"
               stroke="url(#tajGrad)" strokeWidth="7"
@@ -67,7 +67,7 @@ export default function KPIRow({ tajweedScore, ragClarity, grade }: KPIRowProps)
         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#10b981" }}>RAG Clarity</p>
         <div className="relative" style={{ width: 120, height: 120 }}>
           <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: "rotate(-90deg)" }}>
-            <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="7" />
+            <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(16, 185, 129, 0.08)" strokeWidth="7" />
             <motion.circle
               cx="60" cy="60" r="54" fill="none"
               stroke="#10b981" strokeWidth="7"
