@@ -1163,9 +1163,9 @@ export default function FullscreenAiPage() {
           <ChevronDown className="w-3.5 h-3.5 text-[#0D4433] absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
 
-        <div className="text-center">
-          <h1 className="text-xl font-serif font-black text-[#0D4433]">IMAM AI</h1>
-          <p className="text-[8px] font-black uppercase tracking-widest text-emerald-600 mt-0.5">Digital Maulana</p>
+        <div className="flex items-center justify-center gap-2.5">
+          <img src="/logo.png" alt="IMAM Logo" className="w-8 h-8 object-contain" />
+          <h1 className="text-xl font-serif font-black text-[#0D4433] leading-none">IMAM AI</h1>
         </div>
 
         {/* Profile Avatar Button */}
@@ -1357,7 +1357,9 @@ export default function FullscreenAiPage() {
                           {/* Maulana response */}
                           {chatMessage.role === 'maulana' && (
                             <div className="flex justify-start gap-3">
-                              <div className="w-9 h-9 rounded-full bg-[#0D4433] text-white flex items-center justify-center font-serif text-xs shrink-0 shadow-sm">M</div>
+                               <div className="w-9 h-9 shrink-0 shadow-sm rounded-full overflow-hidden flex items-center justify-center bg-white border border-emerald-100">
+                                 <img src="/logo.png" alt="IMAM Logo" className="w-6 h-6 object-contain" />
+                               </div>
                               <div className="flex-1 space-y-3">
                                 <div className="p-5 bg-white border border-emerald-50 text-slate-800 rounded-2xl rounded-tl-sm text-xs font-medium leading-relaxed shadow-sm">
                                   {chatMessage.text}
@@ -1384,7 +1386,7 @@ export default function FullscreenAiPage() {
                         <div className="text-center py-6 space-y-4">
                           <Sparkles className="w-10 h-10 text-emerald-600/30 mx-auto animate-pulse" />
                           <div>
-                            <h4 className="text-sm font-black text-[#0D4433]">Ask Digital Maulana</h4>
+                            <h4 className="text-sm font-black text-[#0D4433]">Ask Imam</h4>
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1.5">Grounded in authentic jurisprudence</p>
                           </div>
                         </div>

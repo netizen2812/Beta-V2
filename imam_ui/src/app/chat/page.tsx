@@ -73,7 +73,7 @@ export default function ChatPage() {
     {
       id: "welcome",
       role: "maulana",
-      text: "Assalamu Alaikum wa Rahmatullahi wa Barakatuh. I am your Digital Maulana, trained on classical Tajweed scholarship and the four schools of jurisprudence.\n\nAsk me anything about Tajweed rules, Quranic recitation, or seek clarification on a specific ayah — I will provide guidance grounded in authentic Islamic sources.",
+      text: "Assalamu Alaikum wa Rahmatullahi wa Barakatuh. I am IMAM, your AI guide trained on classical Tajweed scholarship and the four schools of jurisprudence.\n\nAsk me anything about Tajweed rules, Quranic recitation, or seek clarification on a specific ayah — I will provide guidance grounded in authentic Islamic sources.",
       timestamp: new Date(),
     },
   ]);
@@ -201,9 +201,12 @@ export default function ChatPage() {
           </button>
         </Link>
 
-        <div className="flex flex-col items-center">
-          <p className="font-black text-sm" style={{ color: "var(--text)" }}>Ask Maulana</p>
-          <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "#10b981" }}>Scholar-Grade AI</p>
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="IMAM Logo" className="w-6 h-6 object-contain" />
+          <div className="flex flex-col">
+            <p className="font-black text-sm leading-none" style={{ color: "var(--text)" }}>Ask Imam</p>
+            <p className="text-[8px] font-bold uppercase tracking-widest mt-0.5" style={{ color: "#10b981" }}>Scholar-Grade AI</p>
+          </div>
         </div>
 
         {/* Madhab selector */}
@@ -266,9 +269,8 @@ export default function ChatPage() {
           >
             {/* Avatar */}
             {msg.role === "maulana" && (
-              <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center mt-1"
-                style={{ background: "linear-gradient(135deg, #06402B, #0a5c3d)", boxShadow: "0 4px 16px rgba(6,64,43,0.5)" }}>
-                <span className="text-[10px] font-black text-white">M</span>
+              <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center mt-1 bg-white border border-emerald-100 overflow-hidden shadow-sm">
+                <img src="/logo.png" alt="IMAM Logo" className="w-6 h-6 object-contain" />
               </div>
             )}
 

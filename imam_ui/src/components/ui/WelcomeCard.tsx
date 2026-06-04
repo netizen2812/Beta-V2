@@ -44,7 +44,7 @@ export default function WelcomeCard({
         <div className="flex gap-3 flex-wrap">
           {[
             { label: "Continue Reciting", icon: BookOpen, primary: true },
-            { label: "Ask Maulana",       icon: MessageCircle },
+            { label: "Ask Imam",          icon: MessageCircle },
             { label: "Discover Ayahs",    icon: Sparkles },
           ].map(({ label, icon: Icon, primary }) => (
             <button key={label}

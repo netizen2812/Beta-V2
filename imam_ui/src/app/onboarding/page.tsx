@@ -143,10 +143,9 @@ export default function OnboardingPage() {
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="w-24 h-24 rounded-full mx-auto flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg, #06402B, #0a5c3d)", boxShadow: "0 0 40px rgba(6,64,43,0.15)" }}
+                  className="w-24 h-24 mx-auto flex items-center justify-center"
                 >
-                  <span className="text-white font-black text-4xl">I</span>
+                  <img src="/logo.png" alt="IMAM Logo" className="w-24 h-24 object-contain" />
                 </motion.div>
 
                 <div>
@@ -157,7 +156,7 @@ export default function OnboardingPage() {
                     Welcome to IMAM AI
                   </h1>
                   <p className="text-base leading-relaxed" style={{ color: "var(--text-dim)" }}>
-                    Your personal Digital Maulana — providing real-time Tajweed correction, scholarly guidance, and personalised Quranic learning.
+                    Your personal Imam — providing real-time Tajweed correction, scholarly guidance, and personalised Quranic learning.
                   </p>
                 </div>
 

@@ -39,7 +39,7 @@ export default function MaulanaDrawer({ isOpen, onClose, advice, language, isStr
                   <MessageSquare className="text-[#0D4433] w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-[#0D4433] font-semibold text-lg">Maulana's Advice</h3>
+                  <h3 className="text-[#0D4433] font-semibold text-lg">Imam's Advice</h3>
                   <p className="text-emerald-700 text-sm uppercase tracking-widest">{language}</p>
                 </div>
               </div>
@@ -56,7 +56,7 @@ export default function MaulanaDrawer({ isOpen, onClose, advice, language, isStr
               <div className="flex items-center gap-4">
                 <button className="flex items-center gap-2 px-6 py-3 bg-[#0D4433] text-white rounded-full font-bold hover:scale-105 transition-transform">
                   <Volume2 className="w-5 h-5" />
-                  Listen to Maulana
+                  Listen to Imam
                 </button>
                 {isStreaming && (
                   <div className="flex gap-1">
