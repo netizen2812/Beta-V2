@@ -16,35 +16,43 @@ class VoiceProcessor:
         3. LUFS Normalization (Consistency)
         4. High-Frequency Articulation Boost (Makharij focus)
         """
-        # 1. Load & Resample using ultra-fast native ffmpeg conversion (avoids slow pure-python audioread piping)
-        import tempfile
-        import os
-        import subprocess
-        
-        with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as in_tmp:
-            in_tmp.write(audio_bytes)
-            in_path = in_tmp.name
-            
-        out_path = in_path + ".wav"
-        
+        # 1. Load & Resample
         try:
-            subprocess.run([
-                "ffmpeg", "-y", "-i", in_path, 
-                "-ar", str(sample_rate), "-ac", "1", 
-                out_path
-            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            
-            audio, sr = sf.read(out_path)
+            audio, sr = sf.read(io.BytesIO(audio_bytes))
+            if len(audio.shape) > 1:
+                audio = np.mean(audio, axis=1)
+            if sr != sample_rate:
+                audio = librosa.resample(audio, orig_sr=sr, target_sr=sample_rate)
         except Exception:
-            # Fallback to librosa.load if ffmpeg fails
-            audio, sr = librosa.load(in_path, sr=sample_rate, mono=True)
-        finally:
-            for p in [in_path, out_path]:
-                if os.path.exists(p):
-                    try:
-                        os.remove(p)
-                    except Exception:
-                        pass
+            # Fallback to ffmpeg / librosa.load for other formats
+            import tempfile
+            import os
+            import subprocess
+            
+            with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as in_tmp:
+                in_tmp.write(audio_bytes)
+                in_path = in_tmp.name
+                
+            out_path = in_path + ".wav"
+            
+            try:
+                subprocess.run([
+                    "ffmpeg", "-y", "-i", in_path, 
+                    "-ar", str(sample_rate), "-ac", "1", 
+                    out_path
+                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                
+                audio, sr = sf.read(out_path)
+            except Exception:
+                # Fallback to librosa.load if ffmpeg fails
+                audio, sr = librosa.load(in_path, sr=sample_rate, mono=True)
+            finally:
+                for p in [in_path, out_path]:
+                    if os.path.exists(p):
+                        try:
+                            os.remove(p)
+                        except Exception:
+                            pass
         
         # 2. Stationary Noise Reduction (Bypassed to save 20+ seconds of CPU time and preserve high-frequency Makharij features)
         audio_denoised = audio

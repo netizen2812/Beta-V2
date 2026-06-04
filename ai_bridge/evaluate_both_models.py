@@ -33,6 +33,7 @@ from ai_bridge.services.alignment import AlignmentEngine
 # Evaluation constants
 MAULANA_GRADE = 0.55
 CONF_THRESHOLD = 0.85
+CHECKPOINT_PATH = Path("scratch/evaluation_checkpoint.json")
 
 def calculate_metrics(results):
     if not results:
@@ -82,7 +83,6 @@ def main():
         if len(audio_array) == 0:
             return {"text": "", "chunks": []}
         
-        # Override to 40 max tokens for massive ASR speedup (sufficient for single Quranic verses)
         result = we.pipe(
             audio_array,
             generate_kwargs={"max_new_tokens": 40},
@@ -105,47 +105,73 @@ def main():
     ref_words_qdat = db.get_ayah_phonetics(2, 32)
     exp_str_qdat = "".join([w['word_tr'] for w in ref_words_qdat]).lower()
     
-    # Initialize results buckets
-    m1_results = {
-        "Madd (Timing)": [],
-        "Ghunnah (Nasal)": [],
-        "Makharij (Articulation)": [],
-        "Vowel Drift": [],
-        "Global Mendeley": [],
-        "Global QDAT": []
+    # Initialize state from checkpoint if available
+    checkpoint = {
+        "m1_results": {
+            "Madd (Timing)": [], "Ghunnah (Nasal)": [], "Makharij (Articulation)": [],
+            "Vowel Drift": [], "Global Mendeley": [], "Global QDAT": []
+        },
+        "m2_results": {
+            "Madd (Timing)": [], "Ghunnah (Nasal)": [], "Makharij (Articulation)": [],
+            "Vowel Drift": [], "Global Mendeley": [], "Global QDAT": []
+        },
+        "m1_times": [],
+        "m2_times": [],
+        "processed_qdat_ids": [],
+        "processed_mendeley_names": [],
+        "whisper_empty_count": 0
     }
     
-    m2_results = {
-        "Madd (Timing)": [],
-        "Ghunnah (Nasal)": [],
-        "Makharij (Articulation)": [],
-        "Vowel Drift": [],
-        "Global Mendeley": [],
-        "Global QDAT": []
-    }
+    # Make sure scratch dir exists
+    Path("scratch").mkdir(exist_ok=True)
     
-    whisper_empty_count = 0
-    total_processed = 0
+    if CHECKPOINT_PATH.exists():
+        try:
+            with open(CHECKPOINT_PATH, "r") as f:
+                loaded = json.load(f)
+                # Merge loaded keys to handle any structural updates
+                for k in checkpoint.keys():
+                    if k in loaded:
+                        checkpoint[k] = loaded[k]
+            original_print(f"🔄 Resuming from checkpoint: {len(checkpoint['processed_qdat_ids'])} QDAT and {len(checkpoint['processed_mendeley_names'])} Mendeley processed.")
+        except Exception as e:
+            original_print(f"⚠️ Failed to load checkpoint ({e}). Starting fresh.")
+            
+    m1_results = checkpoint["m1_results"]
+    m2_results = checkpoint["m2_results"]
+    m1_times = checkpoint["m1_times"]
+    m2_times = checkpoint["m2_times"]
+    processed_qdat_ids = set(checkpoint["processed_qdat_ids"])
+    processed_mendeley_names = set(checkpoint["processed_mendeley_names"])
+    whisper_empty_count = checkpoint["whisper_empty_count"]
     
-    # Performance timing
-    m1_times = []
-    m2_times = []
+    total_processed = len(processed_qdat_ids) + len(processed_mendeley_names)
     
+    def save_checkpoint():
+        checkpoint["processed_qdat_ids"] = list(processed_qdat_ids)
+        checkpoint["processed_mendeley_names"] = list(processed_mendeley_names)
+        checkpoint["whisper_empty_count"] = whisper_empty_count
+        with open(CHECKPOINT_PATH, "w") as checkpoint_file:
+            json.dump(checkpoint, checkpoint_file)
+            
     original_print("\n[1/2] Evaluating QDAT Rules (Madd & Ghunnah)...")
     for idx, row in qdat_df.iterrows():
+        qdat_id = row['id']
+        if qdat_id in processed_qdat_ids:
+            continue
+            
         audio_bytes = row['audio']['bytes']
-        
         is_madd_error = (row['separate_tide'] == 0)
         is_ghunnah_error = (row['the_tight_noon'] == 0)
         is_global_qdat_error = (is_madd_error or is_ghunnah_error)
         
-        # --- Pre-process audio once (matching inference.py) ---
         audio_array = VoiceProcessor.process_audio(audio_bytes, 16000)
         if len(audio_array) == 0:
             for model_res in [m1_results, m2_results]:
                 model_res["Madd (Timing)"].append({"gt": is_madd_error, "det": True})
                 model_res["Ghunnah (Nasal)"].append({"gt": is_ghunnah_error, "det": True})
                 model_res["Global QDAT"].append({"gt": is_global_qdat_error, "det": True})
+            processed_qdat_ids.add(qdat_id)
             continue
             
         # =====================================================================
@@ -203,15 +229,21 @@ def main():
         m2_results["Ghunnah (Nasal)"].append({"gt": is_ghunnah_error, "det": m2_ghunnah_det})
         m2_results["Global QDAT"].append({"gt": is_global_qdat_error, "det": m2_global_det})
         
+        processed_qdat_ids.add(qdat_id)
         total_processed += 1
-        if total_processed % 100 == 0:
-            original_print(f"   Processed {total_processed}/753 QDAT files...")
+        if total_processed % 50 == 0:
+            original_print(f"   Processed {len(processed_qdat_ids)}/753 QDAT files...")
+            save_checkpoint()
             gc.collect()
             torch.cuda.empty_cache()
             
     original_print("\n[2/2] Evaluating Mendeley Articulation & Vowels (Makharij & Vowel Drift)...")
-    mendeley_start_count = total_processed
+    mendeley_start_count = len(processed_qdat_ids)
     for idx, f in enumerate(mendeley_files):
+        f_name = f.name
+        if f_name in processed_mendeley_names:
+            continue
+            
         is_error_gt = (f.name[-5] == 'F')
         verse_num = int(f.name.split('V')[1][0])
         ref_words = db.get_ayah_phonetics(112, verse_num)
@@ -223,6 +255,7 @@ def main():
             audio_array = VoiceProcessor.process_audio(audio_bytes, 16000)
         except Exception as e:
             original_print(f"Error loading {f.name}: {e}")
+            processed_mendeley_names.add(f_name)
             continue
             
         if len(audio_array) == 0:
@@ -232,6 +265,7 @@ def main():
                 else:
                     model_res["Vowel Drift"].append({"gt": is_error_gt, "det": True})
                 model_res["Global Mendeley"].append({"gt": is_error_gt, "det": True})
+            processed_mendeley_names.add(f_name)
             continue
             
         # =====================================================================
@@ -285,9 +319,11 @@ def main():
             m2_results["Vowel Drift"].append({"gt": is_error_gt, "det": m2_det})
         m2_results["Global Mendeley"].append({"gt": is_error_gt, "det": m2_det})
         
+        processed_mendeley_names.add(f_name)
         total_processed += 1
-        if (total_processed - mendeley_start_count) % 200 == 0:
-            original_print(f"   Processed {total_processed - mendeley_start_count}/{len(mendeley_files)} Mendeley files...")
+        if total_processed % 50 == 0:
+            original_print(f"   Processed {len(processed_mendeley_names)}/{len(mendeley_files)} Mendeley files...")
+            save_checkpoint()
             gc.collect()
             torch.cuda.empty_cache()
             
@@ -342,6 +378,14 @@ def main():
     with open(out_path, "w") as f:
         json.dump(report, f, indent=4)
     original_print(f"Saved evaluation results to {out_path}")
+    
+    # Delete checkpoint file on successful completion
+    if CHECKPOINT_PATH.exists():
+        try:
+            CHECKPOINT_PATH.unlink()
+            original_print("🧹 Checkpoint cleared.")
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     main()
