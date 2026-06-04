@@ -1011,17 +1011,24 @@ export default function FullscreenAiPage() {
         } else {
           throw new Error(payload.message || "Recitation parsing failed.");
         }
+      } else if (res.status === 429) {
+        // Previous recitation still being analysed on the CPU — tell user explicitly
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json?.detail || 'busy-429');
       } else {
         throw new Error("HTTP " + res.status);
       }
     } catch (e: any) {
       console.error('Tajweed endpoint error:', e);
       const msg: string = e?.message || '';
-      const isTimeout = msg.includes('timed out') || msg.includes('timeout');
-      const isDown = msg.includes('not loaded') || msg.includes('not running') || msg.includes('ECONNREFUSED') || msg.includes('503') || msg === 'Failed to fetch';
+      const isBusy    = msg.includes('429') || msg.includes('busy-429') || msg.includes('Analysis in progress');
+      const isTimeout = !isBusy && (msg.includes('timed out') || msg.includes('timeout'));
+      const isDown    = msg.includes('not loaded') || msg.includes('not running') || msg.includes('ECONNREFUSED') || msg.includes('503') || msg === 'Failed to fetch';
       let userMessage: string;
-      if (isTimeout) {
-        userMessage = '⏳ Analysis timed out — the AI models are loading (~30s on first call). Please try again in a moment.';
+      if (isBusy) {
+        userMessage = '⏳ Previous recitation is still being analysed. Please wait ~30 seconds and try again.';
+      } else if (isTimeout) {
+        userMessage = '⏳ Analysis is taking longer than usual on the server. Please try again in a moment.';
       } else if (isDown) {
         userMessage = '⚠️ AI Bridge is starting up. Please wait 30 seconds and try again.';
       } else if (msg) {

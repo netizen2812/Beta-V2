@@ -31,8 +31,8 @@ class WhisperEngine:
 
     def load(self):
         """Load the Whisper model and processor."""
-        self.device = torch.device("cpu")
-        torch_dtype = torch.float32
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        torch_dtype = torch.float16 if self.device.type == "cuda" else torch.float32
         logger.info(f"Loading Whisper on device: {self.device} with dtype: {torch_dtype}")
 
         self.processor = AutoProcessor.from_pretrained(MODEL_ID)

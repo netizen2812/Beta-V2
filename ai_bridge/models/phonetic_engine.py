@@ -27,7 +27,7 @@ class PhoneticEngine:
 
     def load(self):
         """Load the Wav2Vec2 phonetic model and processor."""
-        self.device = torch.device("cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.processor = Wav2Vec2Processor.from_pretrained(MODEL_ID)
         

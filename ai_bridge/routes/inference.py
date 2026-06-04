@@ -29,6 +29,15 @@ router = APIRouter()
 
 MAX_AUDIO_BYTES = 10 * 1024 * 1024  # 10 MB limit
 
+# ─── Concurrency Guard ────────────────────────────────────────────────────────
+# Whisper CPU inference takes 1-5 minutes on a 2-core VM. If a second request
+# arrives mid-inference it queues behind the first, doubling both their times
+# and guaranteeing both exceed the 90s node-backend timeout. Reject immediately
+# instead of silently piling up — the user gets a clear "try again" message
+# rather than a mysterious timeout 90 seconds later.
+import asyncio
+_tajweed_inference_lock = asyncio.Lock()
+
 
 # ─── Request / Response Models ────────────────────────────────────────────────
 
@@ -320,6 +329,18 @@ async def tajweed_check(
     Full Tajweed validation pipeline (non-blocking offloaded to thread pool):
     """
     import asyncio
+
+    # ── Concurrency guard: reject immediately if inference is already running ──
+    # Whisper on CPU takes 1-5 min; queuing a second job doubles both times and
+    # guarantees timeouts. Return 429 instantly so the frontend can tell the user
+    # to wait 30 seconds rather than hanging silently for 90s.
+    if _tajweed_inference_lock.locked():
+        logger.warning("[/api/tajweed-check] Rejecting concurrent request — inference already in progress.")
+        raise HTTPException(
+            status_code=429,
+            detail="Analysis in progress. Please wait ~30 seconds for the current recitation to finish, then try again."
+        )
+
     whisper = request.app.state.whisper
     phonetic_engine = request.app.state.phonetic
     phonetic_db = request.app.state.phonetic_db
@@ -338,25 +359,28 @@ async def tajweed_check(
     start = time.time()
     logger.info(f"[/api/tajweed-check] Received request for ayah_id: {ayah_id}, madhab: {madhab}")
 
-    # Offload the heavy synchronous CPU-bound pipeline to the uvicorn thread pool
+    # Offload the heavy synchronous CPU-bound pipeline to the uvicorn thread pool.
+    # Hold the concurrency lock for the full duration so any second request that
+    # arrives while we are running gets a fast 429 rather than queuing silently.
     loop = asyncio.get_running_loop()
-    try:
-        pipeline_result = await loop.run_in_executor(
-            None,
-            _run_tajweed_pipeline_sync,
-            whisper,
-            phonetic_engine,
-            phonetic_db,
-            request.app.state.temporal_engine,
-            request.app.state.spectral_analyzer,
-            audio_bytes,
-            audio_file.content_type or "audio/webm",
-            ayah_id,
-            madhab
-        )
-    except ValueError as val_err:
-        logger.warning(f"[/api/tajweed-check] Phonetic reference query failed: {val_err}")
-        raise HTTPException(404, str(val_err))
+    async with _tajweed_inference_lock:
+        try:
+            pipeline_result = await loop.run_in_executor(
+                None,
+                _run_tajweed_pipeline_sync,
+                whisper,
+                phonetic_engine,
+                phonetic_db,
+                request.app.state.temporal_engine,
+                request.app.state.spectral_analyzer,
+                audio_bytes,
+                audio_file.content_type or "audio/webm",
+                ayah_id,
+                madhab
+            )
+        except ValueError as val_err:
+            logger.warning(f"[/api/tajweed-check] Phonetic reference query failed: {val_err}")
+            raise HTTPException(404, str(val_err))
 
     elapsed = time.time() - start
 
