@@ -193,7 +193,7 @@ const TasbihView = ({ onBack }: { onBack: () => void }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 flex flex-col items-center animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text)] py-12 px-4 sm:px-6 flex flex-col items-center animate-in fade-in duration-500">
       <div className="max-w-xl w-full">
         <div className="flex items-center gap-4 mb-10">
           <button onClick={onBack} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
@@ -280,7 +280,7 @@ const HadithView = ({ onBack }: { onBack: () => void }) => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text)] py-12 px-4 sm:px-6 animate-in fade-in duration-500">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-4 mb-10">
           <button onClick={onBack} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
@@ -350,7 +350,7 @@ const ZakatCalcView = ({ onResult, onBack }: { onResult: (res: any) => void; onB
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 flex flex-col items-center animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text)] py-12 px-4 sm:px-6 flex flex-col items-center animate-in fade-in duration-500">
       <div className="max-w-xl w-full">
         <div className="flex items-center gap-4 mb-10">
           <button onClick={onBack} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
@@ -422,7 +422,7 @@ const FeatureCard = ({
 
     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 border transition-all shadow-sm ${variant === 'dark'
       ? 'bg-white/10 border-white/20 text-white group-hover:bg-emerald-500'
-      : 'bg-[#FDFCF8] border-emerald-50 text-[#0D4433] group-hover:bg-[#0D4433] group-hover:text-white'
+      : 'bg-[var(--bg-deep)] border-emerald-50 text-[#0D4433] group-hover:bg-[#0D4433] group-hover:text-white'
       }`}>
       <Icon className="w-6 h-6" />
     </div>
@@ -556,7 +556,7 @@ export default function IbadahPage() {
 
   // A. Steps guide
   const PrayerGuideView = () => (
-    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 animate-in fade-in duration-500">
+    <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text)] py-12 px-4 sm:px-6 animate-in fade-in duration-500">
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="flex items-center gap-4 mb-8">
           <button onClick={goBack} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
@@ -612,7 +612,7 @@ export default function IbadahPage() {
     const monthLabel = "Dhul Qa'dah 1447";
 
     return (
-      <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 animate-in fade-in duration-500">
+      <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text)] py-12 px-4 sm:px-6 animate-in fade-in duration-500">
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="flex items-center gap-4 mb-8">
             <button onClick={goBack} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
@@ -695,7 +695,7 @@ export default function IbadahPage() {
 
   // C. Calendar Detail
   const CalendarDetailView = () => (
-    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] py-12 px-4 sm:px-6 animate-in slide-in-from-right-8 duration-500">
+    <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text)] py-12 px-4 sm:px-6 animate-in slide-in-from-right-8 duration-500">
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="flex items-center gap-4 mb-8">
           <button onClick={() => setSubView('calendar')} className="p-3 bg-white hover:bg-emerald-50 rounded-full transition-all text-[#0D4433] shadow-sm border border-emerald-100">
@@ -735,7 +735,7 @@ export default function IbadahPage() {
     if (!zakatResult) return null;
     const fmt = (n: number) => '₹\u00a0' + Math.round(n).toLocaleString('en-IN');
     return (
-      <div className="min-h-screen bg-white text-[#2D2D2D] flex items-center justify-center p-4 text-center animate-in zoom-in-95 duration-500">
+      <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text)] flex items-center justify-center p-4 text-center animate-in zoom-in-95 duration-500">
         <div className="max-w-md space-y-8">
           <div className="w-24 h-24 bg-emerald-50 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-inner">
             <Calculator size={48} className="text-emerald-500" />
@@ -772,7 +772,7 @@ export default function IbadahPage() {
   const theme = HERO_THEMES[activeHeroTheme];
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] pb-32 overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text)] pb-32 overflow-x-hidden">
       {/* ── HERO TIMINGS SECTION ── */}
       <section className={`relative min-h-[45vh] flex flex-col items-center justify-center px-6 pb-28 overflow-visible transition-all duration-[2000ms] ${theme.bg}`}>
         <div className="absolute inset-0 opacity-15 pointer-events-none">
@@ -863,7 +863,7 @@ export default function IbadahPage() {
           />
         </div>
 
-        <div className="bg-[#FDFCF8] rounded-[2.5rem] p-7 flex gap-5 items-start border border-emerald-100 shadow-sm">
+        <div className="bg-[var(--bg-deep)] rounded-[2.5rem] p-7 flex gap-5 items-start border border-emerald-100 shadow-sm">
           <ShieldCheck className="w-10 h-10 text-emerald-600 shrink-0 mt-0.5" />
           <p className="text-[10px] text-emerald-900/60 font-medium leading-relaxed uppercase tracking-wider">
             {t('ibadah.disclaimer')}

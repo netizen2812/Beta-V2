@@ -38,7 +38,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "sanctuary-of-calm", title: "The Sanctuary of Calm", title_arabic: "ملاذ السكينة",
     tagline: "Find peace within the storms of life through Sabr and Quranic healing.",
     category: "Peace", icon: "🌅", difficulty: "Beginner", duration_min: 12,
-    palette: { from: "#E8F5E9", via: "#C8E6C9", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
+    palette: { from: "#E8F5E9", via: "#C8E6C9", to: "#EBF1E8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "calm-s1", index: 0, type: "listen", title: "Maulana on Sabr", description: "Listen as our Maulana opens your heart to the wisdom of patience — the anchor of every believer.", asset_key: "bridge_emotional_stress_general_stress", duration_sec: 90, locked: false },
       { id: "calm-s2", index: 1, type: "recite", title: "Recite Surah Ash-Sharh", description: "The Surah of Relief. Recite slowly, letting each verse settle in your chest. After hardship comes ease.", asset_key: null, duration_sec: 120, surah: { number: 94, name: "Ash-Sharh", arabic: "الشرح", verses: 8 }, locked: true },
@@ -49,7 +49,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "foundation-of-prayer", title: "The Foundation of Prayer", title_arabic: "أساس الصلاة",
     tagline: "Master the short Surahs with precision — every letter, every breath, perfected.",
     category: "Prayer", icon: "🕌", difficulty: "Intermediate", duration_min: 15,
-    palette: { from: "#E0F2F1", via: "#B2DFDB", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
+    palette: { from: "#E0F2F1", via: "#B2DFDB", to: "#EBF1E8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "prayer-s1", index: 0, type: "listen", title: "Makharij of Al-Fatiha", description: "Listen to the precise articulation points of Surah Al-Fatiha — isolating the difficult ق vs ك distinction.", asset_key: "maulana_feedback_tajweed_precision", duration_sec: 100, surah: { number: 1, name: "Al-Fatiha", arabic: "الفاتحة", verses: 7 }, locked: false },
       { id: "prayer-s2", index: 1, type: "listen", title: "Word-by-Word Tarjummah", description: "Immersive literal translation playback — each word of Al-Fatiha spoken by Maulana's voice with meaning.", asset_key: "translation_tarjummah_fatiha", duration_sec: 120, surah: { number: 1, name: "Al-Fatiha", arabic: "الفاتحة", verses: 7 }, locked: true },
@@ -60,7 +60,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "morning-light", title: "The Morning Light", title_arabic: "نور الصباح",
     tagline: "Seize the barakah of Fajr — a proactive dawn routine for the focused believer.",
     category: "Growth", icon: "☀️", difficulty: "Beginner", duration_min: 10,
-    palette: { from: "#FFF3E0", via: "#FFE0B2", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
+    palette: { from: "#FFF3E0", via: "#FFE0B2", to: "#EBF1E8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "morning-s1", index: 0, type: "listen", title: "Morning Greeting", description: "A time-sensitive Maulana greeting, warm and energising — tailored to the sacred hour of dawn.", asset_key: "reception_greetings_time_based_morning", duration_sec: 45, locked: false },
       { id: "morning-s2", index: 1, type: "recite", title: "Surah Al-Alaq — First 5 Verses", description: "The first revelation. Recite with flow analysis — feel the weight of the first divine command: Iqra.", asset_key: null, duration_sec: 90, surah: { number: 96, name: "Al-Alaq", arabic: "العلق", verses: 5 }, locked: true, leads_to_imam: true },
@@ -70,7 +70,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "night-vigil", title: "The Night Vigil", title_arabic: "قيام الليل",
     tagline: "Enter the sacred stillness of Tahajjud — surrender to the One who never sleeps.",
     category: "Spirituality", icon: "🌙", difficulty: "Advanced", duration_min: 18,
-    palette: { from: "#E8EAF6", via: "#C5CAE9", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
+    palette: { from: "#E8EAF6", via: "#C5CAE9", to: "#EBF1E8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "vigil-s1", index: 0, type: "listen", title: "The Virtue of Night Prayer", description: "Maulana speaks on Surah Al-Muzammil and the spiritual rewards of rising in the night's last third.", asset_key: "bridge_emotional_personal_grief_loneliness", duration_sec: 110, surah: { number: 73, name: "Al-Muzzammil", arabic: "المزمل", verses: 20 }, locked: false },
       { id: "vigil-s2", index: 1, type: "recite", title: "Recite Surah Al-Ikhlas × 3", description: "Three repetitions, each worth a third of the Quran. Measured, deliberate, heartfelt.", asset_key: null, duration_sec: 60, surah: { number: 112, name: "Al-Ikhlas", arabic: "الإخلاص", verses: 4 }, locked: true },
@@ -81,7 +81,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "grateful-heart", title: "The Grateful Heart", title_arabic: "قلب الشاكر",
     tagline: "Transform your perspective — Shukr is not just gratitude, it is abundance itself.",
     category: "Peace", icon: "💛", difficulty: "Beginner", duration_min: 11,
-    palette: { from: "#FFEBEE", via: "#FFCDD2", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
+    palette: { from: "#FFEBEE", via: "#FFCDD2", to: "#EBF1E8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "grateful-s1", index: 0, type: "listen", title: "The Ayah of Gratitude", description: "Maulana recites and explains Ibrahim 14:7 — 'If you are grateful, I will surely increase you.'", asset_key: "bridge_emotional_stress_general_stress", duration_sec: 85, surah: { number: 14, name: "Ibrahim", arabic: "إبراهيم", verses: 7 }, locked: false },
       { id: "grateful-s2", index: 1, type: "recite", title: "Surah Ar-Rahman — Opening", description: "Recite the opening verses of the Surah of Divine Mercy. With each 'Fabiayyi ala'i' — feel the gift.", asset_key: null, duration_sec: 90, surah: { number: 55, name: "Ar-Rahman", arabic: "الرحمن", verses: 13 }, locked: true },
@@ -92,7 +92,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "seal-of-surahs", title: "The Seal of Surahs", title_arabic: "خواتيم السور",
     tagline: "Master the last 10 Surahs — the treasury every Muslim carries in their chest.",
     category: "Learning", icon: "📖", difficulty: "Intermediate", duration_min: 20,
-    palette: { from: "#E0F2F1", via: "#B2DFDB", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
+    palette: { from: "#E0F2F1", via: "#B2DFDB", to: "#EBF1E8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "seal-s1", index: 0, type: "listen", title: "Why the Last 10 Matter", description: "Maulana explains the status of the Mufassal Surahs in Salah and daily life.", asset_key: "maulana_feedback_tajweed_precision", duration_sec: 95, locked: false },
       { id: "seal-s2", index: 1, type: "recite", title: "Surah Al-Kawthar", description: "The shortest Surah. Three verses that contain the ocean. Recite with full tajweed precision.", asset_key: null, duration_sec: 45, surah: { number: 108, name: "Al-Kawthar", arabic: "الكوثر", verses: 3 }, locked: true },
@@ -103,7 +103,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "stories-of-prophets", title: "Stories of the Prophets", title_arabic: "قصص الأنبياء",
     tagline: "Walk with Ibrahim, Musa, and Isa — their stories are your map through every trial.",
     category: "Learning", icon: "⭐", difficulty: "Intermediate", duration_min: 16,
-    palette: { from: "#FFFDE7", via: "#FFF9C4", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
+    palette: { from: "#FFFDE7", via: "#FFF9C4", to: "#EBF1E8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "prophets-s1", index: 0, type: "listen", title: "Ibrahim & the Fire", description: "Maulana narrates Ibrahim's trial — the fire that became cool. A story of absolute tawakkul.", asset_key: "bridge_emotional_personal_grief_loneliness", duration_sec: 130, surah: { number: 21, name: "Al-Anbiya", arabic: "الأنبياء", verses: 69 }, locked: false },
       { id: "prophets-s2", index: 1, type: "recite", title: "Ayat of Ibrahim's Prayer", description: "Recite Ibrahim's du'a from Surah Ibrahim — the prayer of a man who lost everything.", asset_key: null, duration_sec: 75, surah: { number: 14, name: "Ibrahim", arabic: "إبراهيم", verses: 41 }, locked: true },
@@ -114,7 +114,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "gate-of-tawbah", title: "The Gate of Tawbah", title_arabic: "باب التوبة",
     tagline: "Every door is open to the one who returns — your sincere repentance is never too late.",
     category: "Spirituality", icon: "🌹", difficulty: "Beginner", duration_min: 13,
-    palette: { from: "#FCE4EC", via: "#F8BBD0", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
+    palette: { from: "#FCE4EC", via: "#F8BBD0", to: "#EBF1E8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "tawbah-s1", index: 0, type: "listen", title: "Allah's Door Is Always Open", description: "Maulana recites Az-Zumar 39:53 and speaks on the infinite mercy of Tawbah.", asset_key: "reception_greetings_context_based_post_hardship", duration_sec: 100, surah: { number: 39, name: "Az-Zumar", arabic: "الزمر", verses: 53 }, locked: false },
       { id: "tawbah-s2", index: 1, type: "recite", title: "Sayyid Al-Istighfar", description: "The Master of Repentance. Recite this supplication three times with presence and sincerity.", asset_key: null, duration_sec: 60, locked: true },
@@ -125,7 +125,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "knowledge-seeker", title: "The Knowledge Seeker", title_arabic: "طالب العلم",
     tagline: "Seeking knowledge is an act of worship — each lesson a step closer to Allah.",
     category: "Learning", icon: "🔭", difficulty: "Advanced", duration_min: 17,
-    palette: { from: "#E1F5FE", via: "#B3E5FC", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
+    palette: { from: "#E1F5FE", via: "#B3E5FC", to: "#EBF1E8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "knowledge-s1", index: 0, type: "listen", title: "Iqra — The Command to Read", description: "Maulana meditates on the first revelation and the Islamic tradition of 'Ilm.", asset_key: "bridge_emotional_stress_academic_stress", duration_sec: 115, surah: { number: 96, name: "Al-Alaq", arabic: "العلق", verses: 5 }, locked: false },
       { id: "knowledge-s2", index: 1, type: "recite", title: "Surah Al-Alaq — Full", description: "Recite all 19 verses of the Surah of the Clinging Clot — the very genesis of the Quran.", asset_key: null, duration_sec: 110, surah: { number: 96, name: "Al-Alaq", arabic: "العلق", verses: 19 }, locked: true },
@@ -136,7 +136,7 @@ const JOURNEY_MAP: Record<string, Journey> = {
     id: "family-covenant", title: "The Family Covenant", title_arabic: "ميثاق الأسرة",
     tagline: "The family is a mercy from Allah — nurture it with patience, love, and Quranic wisdom.",
     category: "Growth", icon: "🏡", difficulty: "Beginner", duration_min: 12,
-    palette: { from: "#EFEBE9", via: "#D7CCC8", to: "#FDFCF8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
+    palette: { from: "#EFEBE9", via: "#D7CCC8", to: "#EBF1E8", accent: "#0D4433", glow: "rgba(16,185,129,0.15)" },
     stages: [
       { id: "family-s1", index: 0, type: "listen", title: "Marriage, Mercy & Tranquility", description: "Maulana explains Ar-Rum 30:21 — the Quranic vision of a home filled with mawaddah and rahmah.", asset_key: "bridge_emotional_personal_family_issues", duration_sec: 105, surah: { number: 30, name: "Ar-Rum", arabic: "الروم", verses: 21 }, locked: false },
       { id: "family-s2", index: 1, type: "recite", title: "The Family Du'a", description: "Recite the Quranic du'a: 'Our Lord, grant us from among our wives and offspring comfort to our eyes.'", asset_key: null, duration_sec: 50, surah: { number: 25, name: "Al-Furqan", arabic: "الفرقان", verses: 74 }, locked: true },

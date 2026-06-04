@@ -6,23 +6,23 @@
   --color-emerald-glow: rgba(16,185,129,0.08);
   --color-gold: #D4AF37;
   --color-gold-warm: #f59e0b;
-  --color-midnight: #FDFCF8;
-  --color-charcoal: #f3f7f4;
-  --color-card: rgba(255,255,255,0.85);
+  --color-midnight: #EBF1E8;
+  --color-charcoal: #e3eae4;
+  --color-card: rgba(253, 254, 252, 0.9);
   --color-border: rgba(16,185,129,0.12);
   --color-border-active: rgba(16,185,129,0.3);
-  --color-sage: #5c7d68;
-  --color-badge: #F5F7F2;
+  --color-sage: #354a3d;
+  --color-badge: #e3eae4;
 }
 
 :root {
-  --bg-deep: #FDFCF8;
-  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-deep: #EBF1E8;
+  --bg-card: rgba(253, 254, 252, 0.9);
   --border: rgba(16, 185, 129, 0.12);
   --border-active: rgba(16, 185, 129, 0.3);
-  --text: #2D2D2D;
-  --text-dim: #5c7d68;
-  --text-muted: #8E9A92;
+  --text: #1B2A22;
+  --text-dim: #354A3D;
+  --text-muted: #5A6F62;
   --gold: #D4AF37;
   --gold-glow: rgba(212,175,55,0.08);
   --emerald: #0D4433;
@@ -48,7 +48,7 @@ body {
   background-image:
     radial-gradient(ellipse at 15% 0%, rgba(16,185,129,0.06) 0%, transparent 55%),
     radial-gradient(ellipse at 85% 100%, rgba(212,175,55,0.03) 0%, transparent 55%),
-    radial-gradient(ellipse at 50% 50%, #FDFCF8 40%, transparent 100%);
+    radial-gradient(ellipse at 50% 50%, var(--bg-deep) 40%, transparent 100%);
   background-attachment: fixed;
 }
 

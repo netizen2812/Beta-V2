@@ -1127,7 +1127,7 @@ export default function FullscreenAiPage() {
   // No longer use DEMO_WORDS for display — we use the live `words` state everywhere
 
   return (
-    <div className="min-h-screen bg-[#FDFCF8] text-[#2D2D2D] pb-32 overflow-x-hidden flex flex-col relative">
+    <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text)] pb-32 overflow-x-hidden flex flex-col relative">
       {/* Dynamic CSS Pattern Background (FaithTech moving background) */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.03] moving-pattern z-0" />
 
@@ -1488,7 +1488,7 @@ export default function FullscreenAiPage() {
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="relative w-full sm:w-[380px] h-full bg-[#FDFCF8] shadow-2xl border-l border-emerald-100 flex flex-col p-6 overflow-y-auto no-scrollbar"
+              className="relative w-full sm:w-[380px] h-full bg-[var(--bg-card)] shadow-2xl border-l border-emerald-100 flex flex-col p-6 overflow-y-auto no-scrollbar"
             >
               <div className="flex justify-between items-center mb-8 shrink-0">
                 <div>

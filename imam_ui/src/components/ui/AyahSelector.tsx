@@ -183,7 +183,7 @@ export default function AyahSelector({ selectedAyah, onSelect }: AyahSelectorPro
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-lg z-[70] bg-[#FDFCF8] rounded-[2rem] border border-emerald-100 p-7 sm:p-8 shadow-2xl overflow-hidden"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-lg z-[70] bg-[var(--bg-deep)] rounded-[2rem] border border-emerald-100 p-7 sm:p-8 shadow-2xl overflow-hidden"
             >
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
