@@ -2,11 +2,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Sparkles, Moon, MessageCircle } from "lucide-react";
+import { Sparkles, Moon } from "lucide-react";
 
 const tabs = [
   { href: "/",          label: "AI Learning", icon: Sparkles },
-  { href: "/chat",      label: "Ask Imam",    icon: MessageCircle },
   { href: "/ibadah",    label: "Ibadah",      icon: Moon     },
 ];
 

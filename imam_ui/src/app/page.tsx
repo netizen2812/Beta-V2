@@ -2,11 +2,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Mic, Volume2, Sparkles, ChevronRight, Info,
+  Mic, Send, Volume2, Sparkles, ChevronRight, Info,
   Flame, BookOpen, Trophy, TrendingUp, Square, X,
-  User, Calendar, Award, ChevronDown
+  User, Calendar, Award, ChevronDown, History, Plus, Trash2
 } from 'lucide-react';
-import BottomNav from '@/components/ui/BottomNav';
+
 import MushafulPage from '@/components/ui/MushafulPage';
 import RAGDrawer from '@/components/ui/RAGDrawer';
 import AyahSelector from '@/components/ui/AyahSelector';
@@ -568,7 +568,7 @@ const RECENT_SESSIONS = [
 
 // ─── MAIN COMPONENT ────────────────────────────────────────────────────────────
 export default function FullscreenAiPage() {
-  const activeMode = 'recitation';
+  const [activeMode, setActiveMode] = useState<Mode>('recitation');
   const [globalLanguage, setGlobalLanguage] = useState<Language>('en');
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(0);
@@ -582,6 +582,10 @@ export default function FullscreenAiPage() {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  // Voice Option Checkboxes
+  const [playVoiceResponse, setPlayVoiceResponse] = useState(true);
+  const [isAdvisoryLoading, setIsAdvisoryLoading] = useState(false);
 
   // Recitation Target States
   const [selectedAyah, setSelectedAyah] = useState("1:1");
@@ -597,6 +601,12 @@ export default function FullscreenAiPage() {
   const [ayahTranslation, setAyahTranslation] = useState("");
   const [ayahTranslations, setAyahTranslations] = useState<{ lang: string; label: string; text: string }[]>([]);
 
+  // Chat Voice SST States & Refs
+  const chatMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chatAudioChunksRef = useRef<Blob[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [chatIsRecording, setChatIsRecording] = useState(false);
+
   // Recitation Recording Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -607,8 +617,19 @@ export default function FullscreenAiPage() {
   const [showTafsirDrawer, setShowTafsirDrawer] = useState(false);
   const [playbackAudio, setPlaybackAudio] = useState<HTMLAudioElement | null>(null);
 
-  // Chat/Jurisprudence School State (kept for recitation dependency)
+  // Chat States
   const [madhab, setMadhab] = useState<Madhab>('General');
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [threads, setThreads] = useState<ChatThread[]>([]);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const [showHistorySidebar, setShowHistorySidebar] = useState(false);
+
+  // Audio Playback Tracking State
+  const [activeAudioMessageId, setActiveAudioMessageId] = useState<string | null>(null);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const chatAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const handlePlayVoice = (url: string) => {
     if (playbackAudio) {
@@ -619,6 +640,38 @@ export default function FullscreenAiPage() {
     setPlaybackAudio(audio);
   };
 
+  // Play Maulana Dynamic TTS Voice Advisory
+  const playMaulanaVoiceAdvisory = async (rule: string, word: string, guidanceText: string) => {
+    setIsAdvisoryLoading(true);
+    try {
+      // Route through Node.js backend proxy — never call AI Bridge directly from browser
+      // AI_BRIDGE_URL is empty in Vercel production; BACKEND_URL is the correct entry point
+      const response = await fetch(`${BACKEND_URL}/api/quran/maulana-voice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rule,
+          word,
+          guidance: guidanceText,
+          language: globalLanguage === 'en' ? 'english' : globalLanguage === 'ar' ? 'arabic' : 'urdu',
+          madhab: madhab.toLowerCase(),
+          ayah_id: selectedAyah
+        })
+      });
+      if (!response.ok) {
+        console.warn(`Maulana voice advisory returned ${response.status} — skipping audio`);
+        setIsAdvisoryLoading(false);
+        return;
+      }
+      const blob = await response.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      handlePlayVoice(audioUrl);
+    } catch (e) {
+      console.error("Failed to play Maulana voice advisory:", e);
+    } finally {
+      setIsAdvisoryLoading(false);
+    }
+  };
 
   // Fetch Ayah Text from Database
   const fetchAyahText = async (ayahId: string) => {
@@ -838,9 +891,257 @@ export default function FullscreenAiPage() {
     }
   };
 
+  // Chat Voice Input Trigger (SST transcribing via Whisper)
+  const handleChatVoiceTrigger = async () => {
+    if (!chatIsRecording) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        chatAudioChunksRef.current = [];
+        
+        let mimeType = 'audio/webm';
+        if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/ogg';
+        if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/mp4';
+        if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+
+        const options = mimeType ? { mimeType } : undefined;
+        const recorder = new MediaRecorder(stream, options);
+        
+        recorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            chatAudioChunksRef.current.push(event.data);
+          }
+        };
+
+        recorder.onstop = async () => {
+          stream.getTracks().forEach(track => track.stop());
+          const actualMime = mimeType || 'audio/webm';
+          const ext = actualMime.includes("mp4") ? "mp4" : actualMime.includes("ogg") ? "ogg" : "webm";
+          const audioBlob = new Blob(chatAudioChunksRef.current, { type: actualMime });
+          if (audioBlob.size > 0) {
+            await transcribeChatAudio(audioBlob, ext);
+          }
+        };
+
+        chatMediaRecorderRef.current = recorder;
+        recorder.start(250);
+        setChatIsRecording(true);
+      } catch (err) {
+        console.error("Mic access error for transcription:", err);
+        alert("Microphone access is required for real-time transcribing.");
+      }
+    } else {
+      if (chatMediaRecorderRef.current && chatMediaRecorderRef.current.state !== 'inactive') {
+        chatMediaRecorderRef.current.stop();
+      }
+      setChatIsRecording(false);
+    }
+  };
+
+  const transcribeChatAudio = async (audioBlob: Blob, ext: string = "webm") => {
+    setChatInput("Transcribing your question...");
+    setIsChatLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("audio_file", audioBlob, `question.${ext}`);
+
+      const res = await fetch(`${BACKEND_URL}/api/quran/transcribe`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res.ok) {
+        const payload = await res.json();
+        if (payload.status === "success" && payload.data?.text) {
+          setChatInput(payload.data.text);
+        } else if (payload.transcription) {
+          setChatInput(payload.transcription);
+        } else {
+          throw new Error();
+        }
+      } else {
+        throw new Error();
+      }
+    } catch (e) {
+      console.error("ASR transcription error:", e);
+      setChatInput("Could not transcribe clearly. Please write your question.");
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchAyahText(selectedAyah);
   }, [selectedAyah]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tab = searchParams.get('tab');
+      if (tab === 'journeys') {
+        setActiveMode('chat');
+        setTimeout(() => {
+          const el = document.getElementById('journeys-section');
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 300);
+      }
+    }
+  }, []);
+
+  // ─── ASK IMAM ELEVATED EXPERIENCE HELPERS ───
+  useEffect(() => {
+    const audio = new Audio();
+    chatAudioRef.current = audio;
+    
+    const handlePlay = () => setIsAudioPlaying(true);
+    const handlePause = () => setIsAudioPlaying(false);
+    const handleEnded = () => {
+      setIsAudioPlaying(false);
+      setActiveAudioMessageId(null);
+    };
+    const handleError = () => {
+      setIsAudioPlaying(false);
+      setActiveAudioMessageId(null);
+    };
+
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("playing", handlePlay);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("error", handleError);
+
+    // Initialize Sessions from localStorage
+    const stored = localStorage.getItem("imam_home_chat_threads");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as ChatThread[];
+        setThreads(parsed);
+        if (parsed.length > 0) {
+          const sorted = [...parsed].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+          setActiveThreadId(sorted[0].id);
+          setChatMessages(sorted[0].messages);
+          setMadhab(sorted[0].madhab || 'General');
+        } else {
+          createHomeThread(parsed);
+        }
+      } catch (e) {
+        console.error("Failed to parse home chat threads", e);
+        createHomeThread([]);
+      }
+    } else {
+      createHomeThread([]);
+    }
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("playing", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("error", handleError);
+    };
+  }, []);
+
+  const createHomeThread = (currentThreads: ChatThread[] = []) => {
+    const newId = `ht-${Date.now()}`;
+    const newThread: ChatThread = {
+      id: newId,
+      title: "New Guidance Session",
+      madhab: "General",
+      messages: [
+        {
+          id: `welcome-${Date.now()}`,
+          role: "maulana",
+          text: "Assalamu Alaikum wa Rahmatullahi wa Barakatuh. I am IMAM, your AI guide trained on classical Tajweed scholarship and the four schools of jurisprudence.\n\nAsk me anything about Tajweed rules, Quranic recitation, or seek clarification on a specific ayah — I will provide guidance grounded in authentic Islamic sources.",
+          timestamp: new Date(),
+        }
+      ],
+      updatedAt: new Date().toISOString()
+    };
+    const updated = [newThread, ...currentThreads];
+    setThreads(updated);
+    setActiveThreadId(newId);
+    setChatMessages(newThread.messages);
+    setMadhab("General");
+    localStorage.setItem("imam_home_chat_threads", JSON.stringify(updated));
+    return newThread;
+  };
+
+  const updateHomeThreadMessages = (threadId: string, updatedMsgs: Message[], selectedMadhab: Madhab = madhab) => {
+    setThreads(prev => {
+      const updated = prev.map(t => {
+        if (t.id === threadId) {
+          let title = t.title;
+          if (title === "New Guidance Session" || title === "New Guidance" || title === "New Session") {
+            const firstUserMsg = updatedMsgs.find(m => m.role === "user");
+            if (firstUserMsg) {
+              title = firstUserMsg.text.length > 30 ? firstUserMsg.text.substring(0, 30) + "..." : firstUserMsg.text;
+            }
+          }
+          return {
+            ...t,
+            messages: updatedMsgs,
+            madhab: selectedMadhab,
+            title,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return t;
+      });
+      localStorage.setItem("imam_home_chat_threads", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleMadhabChange = (newMadhab: Madhab) => {
+    setMadhab(newMadhab);
+    if (activeThreadId) {
+      setThreads(prev => {
+        const updated = prev.map(t => {
+          if (t.id === activeThreadId) {
+            return {
+              ...t,
+              madhab: newMadhab,
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return t;
+        });
+        localStorage.setItem("imam_home_chat_threads", JSON.stringify(updated));
+        return updated;
+      });
+    }
+  };
+
+  const handlePlayChatVoice = (messageId: string, url: string) => {
+    if (chatAudioRef.current) {
+      if (activeAudioMessageId === messageId) {
+        if (isAudioPlaying) {
+          chatAudioRef.current.pause();
+          return;
+        } else {
+          chatAudioRef.current.play().catch(e => console.warn("Failed to play chat voice:", e));
+          return;
+        }
+      }
+      chatAudioRef.current.pause();
+    }
+
+    setActiveAudioMessageId(messageId);
+    if (chatAudioRef.current) {
+      chatAudioRef.current.src = url;
+      chatAudioRef.current.load();
+      chatAudioRef.current.play()
+        .then(() => setIsAudioPlaying(true))
+        .catch(e => {
+          console.warn("Failed to play chat voice:", e);
+          setActiveAudioMessageId(null);
+          setIsAudioPlaying(false);
+        });
+    }
+  };
 
   // Minimum audio blob size (bytes) to consider it as actual speech.
   // WebM/Opus at 250ms timeslice: a ~1 second recording produces ~8-15 KB.
@@ -911,6 +1212,7 @@ export default function FullscreenAiPage() {
 
   const processRecitationAudio = async (audioBlob: Blob, ext: string = "webm") => {
     setRecitationPhase('done');
+    setIsChatLoading(true);
     setIsRecitationLoading(true);
 
     try {
@@ -1003,6 +1305,7 @@ export default function FullscreenAiPage() {
         score: undefined
       })));
     } finally {
+      setIsChatLoading(false);
       setIsRecitationLoading(false);
     }
   };
@@ -1025,7 +1328,136 @@ export default function FullscreenAiPage() {
     }
   };
 
+  // Send Chat Message
+  const sendChatMessage = async (text: string) => {
+    if (!text.trim() || isChatLoading) return;
 
+    // Unlock browser audio context
+    if (chatAudioRef.current) {
+      chatAudioRef.current.play().catch(() => {});
+    }
+
+    let currentThreadId = activeThreadId;
+    if (!currentThreadId) {
+      const newT = createHomeThread(threads);
+      currentThreadId = newT.id;
+    }
+
+    const userMsg: Message = { id: `u-${Date.now()}`, role: "user", text: text.trim(), timestamp: new Date() };
+    const updatedMessages = [...chatMessages, userMsg];
+    
+    // Instantly update messages & clear input
+    setChatMessages(updatedMessages);
+    setChatInput("");
+    setIsChatLoading(true);
+
+    // Save user message instantly
+    updateHomeThreadMessages(currentThreadId, updatedMessages, madhab);
+
+    // Refocus input field
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 50);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/quran/ask`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_question: text.trim(),
+          ayah_id: selectedAyah,
+          language_code: globalLanguage,
+          madhab: madhab.toLowerCase()
+        })
+      });
+
+      if (res.ok) {
+        const payload = await res.json();
+        if (payload.status === "success" && payload.data?.answer) {
+          const answerText = payload.data.answer;
+          let audioUrl = undefined;
+          
+          if (playVoiceResponse) {
+            const ttsLang = globalLanguage === 'ar' ? 'ar' : globalLanguage === 'ur' ? 'ur' : 'en';
+            const ttsRes = await fetch(`${BACKEND_URL}/api/quran/tts`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: answerText, language: ttsLang })
+            });
+            if (ttsRes.ok) {
+              const blob = await ttsRes.blob();
+              audioUrl = URL.createObjectURL(blob);
+            }
+          }
+
+          const maulanaMsg: Message = {
+            id: `m-${Date.now()}`,
+            role: "maulana",
+            text: answerText,
+            timestamp: new Date(),
+            audioUrl
+          };
+
+          const finalMessages = [...updatedMessages, maulanaMsg];
+          setChatMessages(finalMessages);
+          updateHomeThreadMessages(currentThreadId, finalMessages, madhab);
+          
+          if (audioUrl) {
+            handlePlayChatVoice(maulanaMsg.id, audioUrl);
+          }
+        } else {
+          throw new Error();
+        }
+      } else {
+        throw new Error();
+      }
+    } catch (e) {
+      console.warn("RAG query failed, fallback template used.", e);
+      let fallbackText = `As per the ${madhab} school: `;
+      if (text.includes("Qalqalah")) {
+        fallbackText += "Qalqalah letters are ق ط ب ج د. When pausing, they receive a strong resonance echo (Kubra).";
+      } else if (text.includes("Madd")) {
+        fallbackText += "Madd Lazim is obligatory and must be extended for 6 full counts.";
+      } else {
+        fallbackText += "Reciting with sincerity and correct pronunciation is highly praised. Focus on holding your Ghunnah for 2 counts.";
+      }
+
+      let audioUrl = undefined;
+      if (playVoiceResponse) {
+        try {
+          const ttsLang = globalLanguage === 'ar' ? 'ar' : globalLanguage === 'ur' ? 'ur' : 'en';
+          const ttsRes = await fetch(`${BACKEND_URL}/api/quran/tts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: fallbackText, language: ttsLang })
+          });
+          if (ttsRes.ok) {
+            const blob = await ttsRes.blob();
+            audioUrl = URL.createObjectURL(blob);
+          }
+        } catch (ttsErr) {
+          console.warn("TTS fallback failed:", ttsErr);
+        }
+      }
+
+      const maulanaMsg: Message = {
+        id: `m-${Date.now()}`,
+        role: "maulana",
+        text: fallbackText,
+        timestamp: new Date(),
+        audioUrl
+      };
+
+      const finalMessages = [...updatedMessages, maulanaMsg];
+      setChatMessages(finalMessages);
+      updateHomeThreadMessages(currentThreadId, finalMessages, madhab);
+      if (audioUrl) {
+        handlePlayChatVoice(maulanaMsg.id, audioUrl);
+      }
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   // No longer use DEMO_WORDS for display — we use the live `words` state everywhere
 
@@ -1084,7 +1516,21 @@ export default function FullscreenAiPage() {
       <main className="relative z-20 w-full px-4 sm:px-10 md:px-16 lg:px-24 flex-1 flex flex-col min-h-[calc(100vh-160px)] pb-24">
         <div className="flex-1 flex flex-col justify-between w-full">
           
-
+          {/* Top Mode Sliding Toggle - Elegantly Centered */}
+          <div className="relative z-10 bg-white border border-emerald-50 rounded-2xl p-1.5 flex gap-1.5 shrink-0 max-w-xl w-full mx-auto mb-8 shadow-sm">
+            <button
+              onClick={() => { setActiveMode('recitation'); }}
+              className={`flex-1 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${activeMode === 'recitation' ? 'bg-[#0D4433] text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              🎙️ Recitation Mode
+            </button>
+            <button
+              onClick={() => { setActiveMode('chat'); }}
+              className={`flex-1 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${activeMode === 'chat' ? 'bg-[#0D4433] text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              💬 Ask Imam
+            </button>
+          </div>
 
           {/* Mode Contents - Spreads to full width seamlessly */}
           <div className="flex-1 flex flex-col justify-center relative z-10">
@@ -1355,12 +1801,242 @@ export default function FullscreenAiPage() {
                   </motion.div>
                 </div>
               )}
+
+              {/* MODE 2: ASK IMAM */}
+              {activeMode === 'chat' && (
+                <motion.div
+                  key="chat"
+                  initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }}
+                  className="flex-1 flex flex-col w-full animate-in fade-in duration-300"
+                >
+                  {/* Journey Horizontal Scroll Section */}
+                  <div id="journeys-section" className="mb-6 w-full">
+                    <JourneyScrollSection />
+                  </div>
+
+                  {/* Columns container for chat log & settings */}
+                  <div className="flex-1 flex flex-col md:flex-row gap-4 md:gap-8 justify-between w-full">
+                  {/* Left Column: Chat log & input bar inside a premium card console (2/3rds width on desktop) */}
+                  <div 
+                    className="w-full md:w-2/3 flex flex-col justify-between h-[55vh] md:h-[65vh] min-h-[450px] glass rounded-3xl p-4 md:p-6 shadow-xl relative"
+                    style={{ background: "rgba(253, 254, 252, 0.85)" }}
+                  >
+                    {/* Chat Messages Feed */}
+                    <div className="flex-1 overflow-y-auto pr-1 space-y-4 pb-20 custom-scroll">
+                      {chatMessages.length > 0 ? (
+                        chatMessages.map((msg, i) => (
+                          <div key={msg.id || i} className={`flex gap-3 animate-in fade-in duration-300 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            {msg.role === 'maulana' && (
+                              <div className="w-9 h-9 shrink-0 shadow-sm rounded-full overflow-hidden flex items-center justify-center bg-white border border-emerald-100">
+                                <img src="/logo.png" alt="IMAM Logo" className="w-6 h-6 object-contain" />
+                              </div>
+                            )}
+                            
+                            <div className={`flex flex-col gap-1.5 max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                              <div 
+                                className="p-4 rounded-2xl text-xs font-semibold leading-relaxed shadow-sm transition-all duration-300"
+                                style={
+                                  msg.role === 'user'
+                                    ? { background: "linear-gradient(135deg, #0D4433, #0a5c3d)", color: "white", borderTopRightRadius: "4px" }
+                                    : {
+                                        background: "white", 
+                                        border: activeAudioMessageId === msg.id && isAudioPlaying 
+                                          ? "1px solid rgba(212, 175, 55, 0.6)" 
+                                          : "1px solid var(--border)",
+                                        boxShadow: activeAudioMessageId === msg.id && isAudioPlaying 
+                                          ? "0 0 12px rgba(212, 175, 55, 0.15)" 
+                                          : "none",
+                                        color: "#1e293b",
+                                        borderTopLeftRadius: "4px"
+                                      }
+                                }
+                              >
+                                {msg.text.split("\n\n").map((para, pi) => (
+                                  <p key={pi} className={`${pi > 0 ? "mt-2" : ""}`}
+                                    dangerouslySetInnerHTML={{
+                                      __html: para.replace(/\*\*(.+?)\*\*/g, '<strong style="color:#D4AF37">$1</strong>'),
+                                    }}
+                                  />
+                                ))}
+
+                                {msg.role === 'maulana' && msg.audioUrl && (
+                                  <button
+                                    onClick={() => handlePlayChatVoice(msg.id, msg.audioUrl!)}
+                                    className="flex items-center gap-1.5 mt-2.5 px-3 py-1.5 bg-slate-50 hover:bg-emerald-50 text-[#0D4433] rounded-lg border border-emerald-100/40 text-[9px] font-black uppercase tracking-wider cursor-pointer transition-all"
+                                  >
+                                    {activeAudioMessageId === msg.id && isAudioPlaying ? (
+                                      <div className="flex items-end gap-[1.5px] h-3 w-3 mb-[1px]">
+                                        {[0, 1, 2].map(idx => (
+                                          <motion.div
+                                            key={idx}
+                                            className="w-[2px] bg-[#0d4433] rounded-full"
+                                            animate={{
+                                              height: ["25%", "100%", "25%"],
+                                            }}
+                                            transition={{
+                                              repeat: Infinity,
+                                              duration: 0.5 + idx * 0.12,
+                                              ease: "easeInOut",
+                                            }}
+                                          />
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <Volume2 className="w-3 h-3" />
+                                    )}
+                                    {activeAudioMessageId === msg.id && isAudioPlaying ? "Playing..." : "Repeat Voice"}
+                                  </button>
+                                )}
+                              </div>
+                              
+                              <span className="text-[9px] text-slate-400 font-bold px-1">
+                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-10 space-y-4">
+                          <Sparkles className="w-10 h-10 text-emerald-600/30 mx-auto animate-pulse" />
+                          <div>
+                            <h4 className="text-sm font-black text-[#0D4433]">Ask Imam</h4>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1.5">Grounded in authentic jurisprudence</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Typing Indicator inside the messages feed */}
+                      <AnimatePresence>
+                        {isChatLoading && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            className="flex gap-3 justify-start animate-in fade-in duration-300"
+                          >
+                            <div className="w-9 h-9 shrink-0 shadow-sm rounded-full overflow-hidden flex items-center justify-center bg-white border border-emerald-100">
+                              <img src="/logo.png" alt="IMAM Logo" className="w-6 h-6 object-contain animate-pulse" />
+                            </div>
+                            <div className="flex flex-col gap-1 items-start max-w-[80%]">
+                              <div className="bg-white border border-emerald-50 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5 shadow-sm">
+                                {[0, 1, 2].map(i => (
+                                  <motion.span
+                                    key={i}
+                                    className="w-1.5 h-1.5 rounded-full"
+                                    style={{ background: "linear-gradient(135deg, #0D4433, #10b981)" }}
+                                    animate={{ y: [0, -4, 0] }}
+                                    transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.15, ease: "easeInOut" }}
+                                  />
+                                ))}
+                                <span className="text-[10px] text-slate-400 font-bold ml-1">IMAM is reflecting...</span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Bottom gradient mask for smooth scrolling behind input */}
+                    <div 
+                      className="absolute bottom-16 left-4 right-4 h-12 pointer-events-none z-10" 
+                      style={{
+                        background: "linear-gradient(to top, rgba(253, 254, 252, 0.95) 20%, transparent 100%)"
+                      }}
+                    />
+
+                    {/* Anchored Input Console at the bottom of the card */}
+                    <div className="absolute bottom-4 left-4 right-4 z-20 flex items-center gap-2.5 glass-emerald p-2 rounded-2xl border border-[rgba(16,185,129,0.18)] shadow-md" style={{ background: "rgba(244, 251, 247, 0.95)" }}>
+                      {/* Sidebar History toggle button */}
+                      <button
+                        onClick={() => setShowHistorySidebar(true)}
+                        className="w-9 h-9 bg-white border border-slate-200 text-slate-400 hover:text-[#0D4433] rounded-xl flex items-center justify-center shrink-0 cursor-pointer shadow-sm transition-all"
+                        title="View Chat Sessions"
+                      >
+                        <History className="w-4 h-4" />
+                      </button>
+
+                      <input
+                        type="text"
+                        ref={inputRef}
+                        placeholder="Write your question..."
+                        value={chatInput}
+                        onChange={e => setChatInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') sendChatMessage(chatInput); }}
+                        className="flex-1 bg-transparent px-3 py-2 text-xs outline-none text-slate-700 font-semibold w-0 min-w-0"
+                      />
+
+                      <button
+                        onClick={handleChatVoiceTrigger}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border cursor-pointer transition-all ${chatIsRecording ? 'bg-red-500 border-red-500 text-white animate-pulse' : 'bg-white border-slate-200 text-slate-400 hover:text-[#0D4433]'}`}
+                      >
+                        <Mic className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={() => sendChatMessage(chatInput)}
+                        disabled={!chatInput.trim() || isChatLoading}
+                        className="w-9 h-9 bg-[#0D4433] hover:bg-[#093527] text-white rounded-xl flex items-center justify-center shrink-0 cursor-pointer shadow-sm transition-all disabled:opacity-50"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Settings & Presets (1/3rd width on desktop) */}
+                  <div className="w-full md:w-1/3 flex flex-col gap-3 md:gap-5 md:border-l md:border-emerald-100/30 md:pl-8 shrink-0 justify-center">
+                    {/* Madhab Selector */}
+                    <div className="space-y-2">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Madhab School</span>
+                      <div className="flex flex-wrap gap-1.5 bg-slate-50 border border-slate-100 p-1.5 rounded-xl">
+                        {(['General', 'Hanafi', 'Shafi\'i', 'Maliki', 'Hanbali'] as Madhab[]).map(m => (
+                          <button
+                            key={m}
+                            onClick={() => handleMadhabChange(m)}
+                            className={`flex-1 min-w-[70px] py-2.5 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${madhab === m ? 'bg-white text-[#0D4433] shadow-sm border border-emerald-50 font-black' : 'text-slate-400 hover:text-slate-600'}`}
+                          >
+                            {m === 'General' ? 'GEN' : m === 'Hanafi' ? 'HN' : m === 'Shafi\'i' ? 'SH' : m === 'Maliki' ? 'MK' : 'HB'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Speech response switch & Presets list */}
+                    <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl select-none">
+                      <label htmlFor="voiceResponse" className="text-[10px] font-black uppercase tracking-wider text-slate-400 cursor-pointer">
+                        Voice Response 🔊
+                      </label>
+                      <input
+                        type="checkbox"
+                        id="voiceResponse"
+                        checked={playVoiceResponse}
+                        onChange={e => setPlayVoiceResponse(e.target.checked)}
+                        className="w-4 h-4 rounded text-emerald-600 border-slate-200 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Quick Topics */}
+                    <div className="space-y-2 hidden md:block">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Presets</span>
+                      <div className="space-y-1.5">
+                        {SUGGESTED_QUESTIONS.slice(0, 3).map((q, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => sendChatMessage(q)}
+                            className="w-full text-left px-3.5 py-2.5 bg-white hover:bg-emerald-50 border border-emerald-100/30 rounded-xl text-[10px] font-bold text-slate-600 truncate transition-all shadow-sm"
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </div>
       </main>
-
-      <BottomNav />
 
       {/* ── STATS / PROFILE DRAWER ── */}
       <AnimatePresence>
@@ -1474,7 +2150,120 @@ export default function FullscreenAiPage() {
         )}
       </AnimatePresence>
 
+      {/* Home Sidebar history drawer */}
+      <AnimatePresence>
+        {showHistorySidebar && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHistorySidebar(false)}
+              className="fixed inset-0 z-[250] bg-black/30 backdrop-blur-[3px]"
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 22, stiffness: 160 }}
+              className="fixed top-0 bottom-0 left-0 w-80 max-w-[85vw] z-[260] glass flex flex-col shadow-2xl"
+              style={{ borderRight: "1px solid var(--border)", background: "rgba(253, 254, 252, 0.96)" }}
+            >
+              {/* Drawer Header */}
+              <div className="p-4 border-b border-emerald-100/10 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <History className="w-5 h-5 text-emerald-800" />
+                  <h2 className="font-black text-emerald-900 text-sm tracking-wider uppercase">Chat History</h2>
+                </div>
+                <button
+                  onClick={() => setShowHistorySidebar(false)}
+                  className="p-1.5 rounded-xl hover:bg-emerald-50/50 text-emerald-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
+              {/* New Chat Button */}
+              <div className="p-3">
+                <button
+                  onClick={() => {
+                    createHomeThread(threads);
+                    setShowHistorySidebar(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold text-white transition-all hover:opacity-95 shadow-md shadow-emerald-950/10 cursor-pointer"
+                  style={{ background: "linear-gradient(135deg, #06402B, #0a5c3d)" }}
+                >
+                  <Plus className="w-4 h-4" />
+                  New Guidance
+                </button>
+              </div>
+
+              {/* Threads list */}
+              <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2 custom-scroll">
+                {threads.length === 0 ? (
+                  <p className="text-center text-xs text-emerald-700/50 mt-10">No past conversations</p>
+                ) : (
+                  threads.map(t => {
+                    const isActive = t.id === activeThreadId;
+                    return (
+                      <div
+                        key={t.id}
+                        className={`group relative rounded-xl transition-all cursor-pointer p-3 flex flex-col gap-1 border ${
+                          isActive
+                            ? "bg-emerald-500/10 border-emerald-500/20 animate-none"
+                            : "hover:bg-emerald-500/5 border-transparent"
+                        }`}
+                        onClick={() => {
+                          setActiveThreadId(t.id);
+                          setChatMessages(t.messages);
+                          setMadhab(t.madhab || 'General');
+                          setShowHistorySidebar(false);
+                        }}
+                      >
+                        <p className={`text-xs font-bold truncate pr-6 ${isActive ? "text-emerald-950" : "text-emerald-900"}`}>
+                          {t.title}
+                        </p>
+                        <div className="flex items-center justify-between text-[9px] text-emerald-700/60 font-bold">
+                          <span className="uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded text-[8px]">
+                            {t.madhab === 'General' ? 'General' : t.madhab}
+                          </span>
+                          <span>
+                            {new Date(t.updatedAt).toLocaleDateString([], { month: "short", day: "numeric" })}
+                          </span>
+                        </div>
+                        
+                        {/* Delete button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const updated = threads.filter(item => item.id !== t.id);
+                            setThreads(updated);
+                            localStorage.setItem("imam_home_chat_threads", JSON.stringify(updated));
+                            if (isActive) {
+                              if (updated.length > 0) {
+                                setActiveThreadId(updated[0].id);
+                                setChatMessages(updated[0].messages);
+                                setMadhab(updated[0].madhab || 'General');
+                              } else {
+                                createHomeThread([]);
+                              }
+                            }
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-red-50 text-red-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <RAGDrawer
         isOpen={showTafsirDrawer}
