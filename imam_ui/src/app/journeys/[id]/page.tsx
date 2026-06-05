@@ -145,7 +145,6 @@ const JOURNEY_MAP: Record<string, Journey> = {
   },
 };
 
-// ─── Stage type config ────────────────────────────────────────────────────────
 const STAGE_META: Record<StageType, { icon: string; label: string; color: string }> = {
   listen:    { icon: "🔊", label: "Listen",     color: "#a78bfa" },
   recite:    { icon: "🎙️", label: "Recite",     color: "#34d399" },
@@ -153,55 +152,176 @@ const STAGE_META: Record<StageType, { icon: string; label: string; color: string
   milestone: { icon: "🏆", label: "Milestone",  color: "#fbbf24" },
 };
 
-// ─── Audio Player (simulated) ─────────────────────────────────────────────────
-function AudioBar({ duration, accent, onComplete }: { duration: number; accent: string; onComplete: () => void }) {
+const RECITE_AYAH_MAP: Record<string, string> = {
+  "calm-s2": "94:1",
+  "morning-s2": "96:1",
+  "vigil-s2": "112:1",
+  "grateful-s2": "55:13",
+  "seal-s2": "108:1",
+  "seal-s3": "113:1",
+  "prophets-s2": "14:41",
+  "knowledge-s2": "96:1",
+  "family-s2": "25:74"
+};
+
+function getAbsoluteAyahId(surah: number, ayah: number): number {
+  const SURAH_VERSES = [
+    7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135,
+    112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85,
+    54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13,
+    14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42,
+    29, 19, 36, 25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11,
+    11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6
+  ];
+  let absId = 0;
+  for (let s = 1; s < surah; s++) {
+    absId += SURAH_VERSES[s - 1];
+  }
+  absId += ayah;
+  return absId;
+}
+
+// ─── Audio Player (Real & Pre-recorded) ───────────────────────────────────────
+interface AudioBarProps {
+  stage: Stage;
+  language: "en" | "ur" | "ar";
+  accent: string;
+  onComplete: () => void;
+}
+
+function AudioBar({ stage, language, accent, onComplete }: AudioBarProps) {
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [currentTimeText, setCurrentTimeText] = useState("0:00");
+  const [durationText, setDurationText] = useState("0:00");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const tick = useCallback(() => {
-    setProgress(p => {
-      const next = p + (100 / duration);
-      if (next >= 100) {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        setPlaying(false);
-        setTimeout(onComplete, 600);
-        return 100;
+  const formatTime = (sec: number) => {
+    if (isNaN(sec)) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const initAudio = () => {
+    if (audioRef.current) return audioRef.current;
+
+    let url = "";
+    if (stage.surah) {
+      const absId = getAbsoluteAyahId(stage.surah.number, 1);
+      if (language === 'ar') {
+        url = `https://cdn.islamic.network/quran/audio/192/ar.alafasy/${absId}.mp3`;
+      } else if (language === 'ur') {
+        url = `https://cdn.islamic.network/quran/audio/64/ur.khan/${absId}.mp3`;
+      } else {
+        url = `https://cdn.islamic.network/quran/audio/192/en.walk/${absId}.mp3`;
       }
-      return next;
-    });
-  }, [duration, onComplete]);
+    } else {
+      url = `/audio/journeys/${stage.id}_${language}.wav`;
+    }
+
+    const audio = new Audio(url);
+    audioRef.current = audio;
+
+    audio.onplay = () => setPlaying(true);
+    audio.onpause = () => setPlaying(false);
+    audio.onwaiting = () => setLoading(true);
+    audio.onplaying = () => setLoading(false);
+    audio.onloadedmetadata = () => {
+      setDurationText(formatTime(audio.duration));
+    };
+
+    audio.ontimeupdate = () => {
+      if (audio.duration) {
+        setProgress((audio.currentTime / audio.duration) * 100);
+      }
+      setCurrentTimeText(formatTime(audio.currentTime));
+    };
+
+    audio.onended = () => {
+      setPlaying(false);
+      setProgress(100);
+      onComplete();
+    };
+
+    audio.onerror = (e) => {
+      console.error("Audio playback error:", e);
+      setLoading(false);
+      setPlaying(false);
+      // Fallback: simulate progress so user is not blocked
+      let p = 0;
+      const simDuration = stage.duration_sec;
+      const interval = setInterval(() => {
+        p += (100 / simDuration);
+        if (p >= 100) {
+          clearInterval(interval);
+          onComplete();
+        } else {
+          setProgress(p);
+        }
+      }, 1000);
+    };
+
+    return audio;
+  };
 
   const togglePlay = () => {
+    const audio = initAudio();
     if (playing) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      setPlaying(false);
+      audio.pause();
     } else {
-      setPlaying(true);
-      intervalRef.current = setInterval(tick, 1000);
+      audio.play().catch(err => {
+        console.error("Failed to play audio:", err);
+      });
     }
   };
 
-  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+  // Reset audio when stage changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setPlaying(false);
+    setProgress(0);
+    setLoading(false);
+    setCurrentTimeText("0:00");
+    setDurationText("0:00");
+  }, [stage.id, language]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div className="flex items-center gap-4 p-4 rounded-2xl mt-4"
       style={{ background: "rgba(13,68,51,0.03)", border: "1px solid rgba(16,185,129,0.12)" }}>
       <button onClick={togglePlay}
-        className="w-11 h-11 flex items-center justify-center rounded-full flex-shrink-0 transition-all duration-200 hover:scale-110"
+        disabled={loading}
+        className="w-11 h-11 flex items-center justify-center rounded-full flex-shrink-0 transition-all duration-200 hover:scale-110 disabled:opacity-50"
         style={{ background: accent, color: "white" }}>
-        {playing
-          ? <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-          : <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        }
+        {loading ? (
+          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : playing ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        )}
       </button>
       <div className="flex-1">
         <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(13,68,51,0.07)" }}>
-          <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${accent}, ${accent}99)` }} />
+          <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${accent}, ${accent}99)` }} />
         </div>
         <div className="flex justify-between mt-1.5 text-xs opacity-50" style={{ color: "var(--text-dim)" }}>
-          <span>{Math.floor(progress / 100 * duration)}s</span>
-          <span>{duration}s</span>
+          <span>{currentTimeText}</span>
+          <span>{durationText !== "0:00" ? durationText : `${stage.duration_sec}s`}</span>
         </div>
       </div>
     </div>
@@ -284,7 +404,7 @@ function JourneyComplete({ journey }: { journey: Journey }) {
   );
 }
 
-// ─── Main Player ──────────────────────────────────────────────────────────────
+// ─── Main Player Page ─────────────────────────────────────────────────────────
 export default function JourneyPlayerPage() {
   const params = useParams();
   const router = useRouter();
@@ -296,8 +416,126 @@ export default function JourneyPlayerPage() {
   const [isComplete, setIsComplete] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [language, setLanguage] = useState<"en" | "ur" | "ar">("en");
+
+  // Recitation States
+  const [targetText, setTargetText] = useState("");
+  const [targetTranslation, setTargetTranslation] = useState("");
+  const [loadingVerse, setLoadingVerse] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recitedBlob, setRecitedBlob] = useState<Blob | null>(null);
+  const [evaluating, setEvaluating] = useState(false);
+  const [score, setScore] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState("");
+  const [words, setWords] = useState<any[]>([]);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [playingReference, setPlayingReference] = useState(false);
+
+  const referenceAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Sync language from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("preferred_language") || localStorage.getItem("globalLanguage");
+      if (stored === "ur" || stored === "ar" || stored === "en") {
+        setLanguage(stored as any);
+      }
+    }
+  }, []);
+
+  const currentStage = journey?.stages[currentIndex];
+
+  // Load verse text when stage changes
+  useEffect(() => {
+    if (!currentStage) return;
+
+    // Stop reference audio
+    if (referenceAudioRef.current) {
+      referenceAudioRef.current.pause();
+      setPlayingReference(false);
+    }
+
+    setScore(null);
+    setFeedback("");
+    setWords([]);
+    setRecitedBlob(null);
+    setRecording(false);
+    setEvaluating(false);
+
+    if (currentStage.type === "recite") {
+      const fetchVerse = async () => {
+        setLoadingVerse(true);
+        setTargetText("");
+        setTargetTranslation("");
+
+        const isSupplication = currentStage.id === "tawbah-s2";
+        if (isSupplication) {
+          setTargetText("اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ خَلَقْتَنِي وَأَنَا عَبْدُكَ وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ وَأَبُوءُ لَكَبِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ");
+          setTargetTranslation("O Allah, You are my Lord, there is no deity except You. You created me and I am Your servant, and I am faithful to my covenant and my promise to You as much as I can...");
+          setLoadingVerse(false);
+          return;
+        }
+
+        const ayahId = RECITE_AYAH_MAP[currentStage.id] || "1:1";
+        try {
+          const res = await fetch(`/api/quran/ayah?ayah_id=${ayahId}`);
+          if (res.ok) {
+            const payload = await res.json();
+            if (payload.status === "success" && payload.data) {
+              setTargetText(payload.data.arabic_text || "");
+              setTargetTranslation(payload.data.translation_text || "");
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch verse:", err);
+          // Fallbacks for offline
+          const fallbacks: Record<string, { arabic: string; translation: string }> = {
+            "94:1": { arabic: "أَلَمْ نَشْرَحْ لَكَ صَدْرَكَ", translation: "Did We not expand for you your chest?" },
+            "96:1": { arabic: "ٱقْرَأْ بِٱسْمِ رَبِّكَ ٱلَّذِى خَلَقَ", translation: "Recite in the name of your Lord who created -" },
+            "112:1": { arabic: "قُلْ هُوَ ٱللَّهُ أَحَدٌ", translation: "Say, \"He is Allah, [who is] One,\"" },
+            "55:13": { arabic: "فَبِأَيِّ آلَاءِ رَبِّكُمَا تُكَذِّبَانِ", translation: "So which of the favors of your Lord would you deny?" },
+            "108:1": { arabic: "إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ", translation: "Indeed, We have granted you Al-Kawthar." },
+            "113:1": { arabic: "قُل| أَعُوذُ بِرَبِّ الْفَلَقِ", translation: "Say, \"I seek refuge in the Lord of daybreak\"" },
+            "14:41": { arabic: "رَبَّنَا اغْفِرْ لِي وَلِوَالِدَيَّ وَلِلْمُؤْمِنِينَ يَوْمَ يَقُومُ الْحِسَابُ", translation: "Our Lord, forgive me and my parents and the believers the Day the account is established.\"" },
+            "25:74": { arabic: "رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ", translation: "Our Lord, grant us from among our wives and offspring comfort to our eyes..." }
+          };
+          const fb = fallbacks[ayahId] || fallbacks["94:1"];
+          setTargetText(fb.arabic);
+          setTargetTranslation(fb.translation);
+        } finally {
+          setLoadingVerse(false);
+        }
+      };
+      fetchVerse();
+    }
+  }, [currentStage?.id, language]);
+
+  // Recording timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (recording) {
+      interval = setInterval(() => {
+        setRecordingDuration(d => d + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [recording]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("completed_journeys");
+      if (stored) {
+        try {
+          setCompletedIds(new Set(JSON.parse(stored)));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
 
   if (!journey) {
     return (
@@ -307,9 +545,6 @@ export default function JourneyPlayerPage() {
     );
   }
 
-  const currentStage = journey.stages[currentIndex];
-  const stageMeta = STAGE_META[currentStage.type];
-
   const advanceStage = () => {
     setTransitioning(true);
     setTimeout(() => {
@@ -318,13 +553,13 @@ export default function JourneyPlayerPage() {
       setCompletedIds(newCompleted);
       if (currentIndex + 1 >= journey.stages.length) {
         setIsComplete(true);
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           try {
-            const stored = localStorage.getItem('completed_journeys');
+            const stored = localStorage.getItem("completed_journeys");
             const currentList = stored ? JSON.parse(stored) : [];
             if (!currentList.includes(journey.id)) {
               currentList.push(journey.id);
-              localStorage.setItem('completed_journeys', JSON.stringify(currentList));
+              localStorage.setItem("completed_journeys", JSON.stringify(currentList));
             }
           } catch (e) {
             console.error("Failed to save progress:", e);
@@ -336,6 +571,154 @@ export default function JourneyPlayerPage() {
       setTransitioning(false);
     }, 400);
   };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const chunks: Blob[] = [];
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        setRecitedBlob(blob);
+        processRecitation(blob);
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setRecording(true);
+      setScore(null);
+      setFeedback("");
+      setWords([]);
+      setRecordingDuration(0);
+    } catch (err) {
+      console.error("Failed to access microphone:", err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      setRecording(false);
+    }
+  };
+
+  const processRecitation = async (blob: Blob) => {
+    setEvaluating(true);
+    setFeedback("Evaluating pronunciation correctness, vowel stability, and Tajweed rule elongation timings...");
+
+    try {
+      const formData = new FormData();
+      formData.append("audio_file", blob, "recitation.webm");
+
+      const isSupplication = currentStage.id === "tawbah-s2";
+      const ayahId = isSupplication ? "1:1" : (RECITE_AYAH_MAP[currentStage.id] || "1:1");
+
+      formData.append("ayah_id", ayahId);
+      formData.append("madhab", "shafi");
+      formData.append("language_code", language);
+
+      const res = await fetch(`/api/quran/tajweed-check`, {
+        method: "POST",
+        body: formData
+      });
+
+      if (res.ok) {
+        const payload = await res.json();
+        if (payload.status === "success" && payload.data) {
+          const report = payload.data;
+          const scoreVal = typeof report.tajweed_score === "number"
+            ? report.tajweed_score
+            : (report.maulana_feedback?.score ?? 0);
+          setScore(scoreVal);
+
+          const feedbackText = typeof report.maulana_feedback === "string"
+            ? report.maulana_feedback
+            : (report.maulana_feedback?.guidance || report.maulana_feedback?.status || report.feedback || "Recitation analyzed.");
+          setFeedback(feedbackText);
+
+          if (report.word_results && report.word_results.length > 0) {
+            const mappedWords = report.word_results.map((w: any) => ({
+              text: w.word_ar || w.word || w.text || "",
+              status: w.status === "correct" ? ("correct" as const)
+                : (w.status === "minor_error" || w.status === "major_error" || w.status === "error") ? ("error" as const)
+                : ("pending" as const),
+              score: typeof w.similarity === "number" ? Math.round(w.similarity * 100) : w.score,
+              phonetic: w.actual_phonetic || w.phonetic || w.expected_phonetic || undefined,
+              expected_phonetic: w.expected_phonetic || undefined,
+              rule: w.rule || undefined,
+              guidance: w.guidance || undefined
+            }));
+            setWords(mappedWords);
+          } else {
+            setWords([{ text: targetText, status: scoreVal >= 75 ? "correct" : "error", score: scoreVal }]);
+          }
+        } else {
+          throw new Error("Recitation analysis failed.");
+        }
+      } else {
+        throw new Error("HTTP error " + res.status);
+      }
+    } catch (err: any) {
+      console.error("Evaluation error:", err);
+      setScore(0);
+      setFeedback(`⚠️ Evaluation failed: ${err.message || "Could not reach server."}`);
+    } finally {
+      setEvaluating(false);
+    }
+  };
+
+  const toggleReferenceAudio = () => {
+    if (playingReference) {
+      if (referenceAudioRef.current) referenceAudioRef.current.pause();
+      setPlayingReference(false);
+      return;
+    }
+
+    let url = "";
+    if (currentStage.id === "tawbah-s2") {
+      url = `/audio/journeys/tawbah-s2_${language}.wav`;
+    } else {
+      const ayahId = RECITE_AYAH_MAP[currentStage.id];
+      if (ayahId) {
+        const [s, a] = ayahId.split(":").map(Number);
+        const absId = getAbsoluteAyahId(s, a);
+        url = `https://cdn.islamic.network/quran/audio/192/ar.alafasy/${absId}.mp3`;
+      }
+    }
+
+    if (!url) return;
+
+    if (referenceAudioRef.current) {
+      referenceAudioRef.current.pause();
+    }
+
+    const audio = new Audio(url);
+    referenceAudioRef.current = audio;
+
+    audio.onplay = () => setPlayingReference(true);
+    audio.onpause = () => setPlayingReference(false);
+    audio.onended = () => setPlayingReference(false);
+    audio.onerror = () => setPlayingReference(false);
+
+    audio.play().catch(err => {
+      console.error("Failed to play reference:", err);
+      setPlayingReference(false);
+    });
+  };
+
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
+
+  const stageMeta = currentStage ? STAGE_META[currentStage.type] : null;
 
   return (
     <main className="relative min-h-screen overflow-hidden" style={{ background: `linear-gradient(160deg, ${journey.palette.from} 0%, ${journey.palette.via} 40%, ${journey.palette.to} 100%)` }}>
@@ -371,8 +754,11 @@ export default function JourneyPlayerPage() {
             </svg>
             Journeys
           </Link>
-          <div className="text-center">
+          <div className="text-center flex items-center gap-2">
             <span className="text-2xl">{journey.icon}</span>
+            {language !== "en" && (
+              <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold uppercase">{language}</span>
+            )}
           </div>
           <div className="text-xs px-3 py-1.5 rounded-full" style={{ background: "rgba(13,68,51,0.04)", border: "1px solid rgba(16,185,129,0.1)", color: "var(--text-dim)" }}>
             {journey.duration_min} min
@@ -405,96 +791,218 @@ export default function JourneyPlayerPage() {
                 animation: mounted ? "fadeUp 0.5s ease-out" : "none",
               }}
             >
-              {/* Stage badge */}
-              <div className="flex items-center gap-2 mb-5">
-                <span className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest"
-                  style={{ background: `${stageMeta.color}22`, color: stageMeta.color, border: `1px solid ${stageMeta.color}44` }}>
-                  {stageMeta.icon} {stageMeta.label}
-                </span>
-                <span className="text-xs opacity-40" style={{ color: "var(--text-muted)" }}>
-                  Stage {currentIndex + 1} of {journey.stages.length}
-                </span>
-              </div>
-
-              {/* Stage title */}
-              <h2 className="text-2xl font-bold mb-3" style={{ color: "var(--text)", lineHeight: 1.3 }}>
-                {currentStage.title}
-              </h2>
-
-              {/* Surah badge */}
-              {currentStage.surah && (
-                <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-xl"
-                  style={{ background: `${journey.palette.accent}15`, border: `1px solid ${journey.palette.accent}33` }}>
-                  <span className="font-arabic text-lg" style={{ color: journey.palette.accent, fontFamily: "'Amiri', serif" }}>
-                    {currentStage.surah.arabic}
-                  </span>
-                  <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    Surah {currentStage.surah.name} · {currentStage.surah.verses} verses
-                  </span>
-                </div>
-              )}
-
-              {/* Description */}
-              <p className="text-base leading-relaxed mb-auto" style={{ color: "var(--text)", opacity: 0.85 }}>
-                {currentStage.description}
-              </p>
-
-              {/* Audio player for listen/reflect stages */}
-              {(currentStage.type === "listen" || currentStage.type === "reflect") && currentStage.asset_key && (
-                <AudioBar duration={currentStage.duration_sec} accent={journey.palette.accent} onComplete={() => {}} />
-              )}
-
-              {/* Recite mic prompt */}
-              {currentStage.type === "recite" && (
-                <div className="mt-5 flex items-center gap-3 p-4 rounded-2xl"
-                  style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
-                  <div className="w-10 h-10 flex items-center justify-center rounded-full"
-                    style={{ background: "rgba(16,185,129,0.15)", color: "var(--emerald)" }}>
-                    🎙️
+              {stageMeta && (
+                <>
+                  {/* Stage badge */}
+                  <div className="flex items-center gap-2 mb-5">
+                    <span className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest"
+                      style={{ background: `${stageMeta.color}22`, color: stageMeta.color, border: `1px solid ${stageMeta.color}44` }}>
+                      {stageMeta.icon} {stageMeta.label}
+                    </span>
+                    <span className="text-xs opacity-40" style={{ color: "var(--text-muted)" }}>
+                      Stage {currentIndex + 1} of {journey.stages.length}
+                    </span>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: "var(--emerald)" }}>Ready to recite?</p>
-                    <p className="text-xs opacity-60 mt-0.5" style={{ color: "var(--text-muted)" }}>
-                      Your recitation will be gently evaluated for tajweed and flow.
-                    </p>
-                  </div>
-                </div>
-              )}
 
-              {/* Milestone visual */}
-              {currentStage.type === "milestone" && (
-                <div className="mt-5 flex flex-col items-center py-4">
-                  <div className="text-5xl mb-3" style={{ filter: `drop-shadow(0 0 20px ${journey.palette.glow})` }}>🏆</div>
-                  <p className="text-sm font-semibold" style={{ color: journey.palette.accent }}>Milestone Unlocked</p>
-                  <p className="text-xs opacity-50 mt-1 text-center" style={{ color: "var(--text-muted)" }}>
-                    Your commitment is recorded. Return daily to build your streak.
+                  {/* Stage title */}
+                  <h2 className="text-2xl font-bold mb-3" style={{ color: "var(--text)", lineHeight: 1.3 }}>
+                    {currentStage.title}
+                  </h2>
+
+                  {/* Surah badge */}
+                  {currentStage.surah && (
+                    <div className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-xl self-start"
+                      style={{ background: `${journey.palette.accent}15`, border: `1px solid ${journey.palette.accent}33` }}>
+                      <span className="font-arabic text-lg" style={{ color: journey.palette.accent, fontFamily: "'Amiri', serif" }}>
+                        {currentStage.surah.arabic}
+                      </span>
+                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        Surah {currentStage.surah.name} · {currentStage.surah.verses} verses
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  <p className="text-base leading-relaxed mb-auto" style={{ color: "var(--text)", opacity: 0.85 }}>
+                    {currentStage.description}
                   </p>
-                </div>
-              )}
 
-              {/* CTA button */}
-              <button onClick={advanceStage}
-                className="mt-6 w-full py-4 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
-                style={{
-                  background: "linear-gradient(135deg, var(--emerald), var(--emerald-mid))",
-                  color: "white",
-                  boxShadow: "0 4px 20px rgba(13,68,51,0.15)",
-                }}>
-                {currentIndex + 1 < journey.stages.length ? (
-                  <>
-                    {currentStage.type === "listen" || currentStage.type === "reflect" ? "I've Listened — Continue" :
-                     currentStage.type === "recite" ? "Submit Recitation" :
-                     "Complete Milestone"}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </>
-                ) : (
-                  <>
-                    Complete Journey & Talk to Imam ✨
-                  </>
-                )}
-              </button>
+                  {/* Audio player for listen/reflect stages */}
+                  {(currentStage.type === "listen" || currentStage.type === "reflect") && (
+                    <AudioBar stage={currentStage} language={language} accent={journey.palette.accent} onComplete={() => {}} />
+                  )}
+
+                  {/* Recite Stage UI */}
+                  {currentStage.type === "recite" && (
+                    <div className="space-y-5 mt-4">
+                      {/* Dynamic target verse display */}
+                      <div className="bg-slate-50/50 border border-emerald-50 rounded-2xl p-6 flex flex-col items-center shadow-inner">
+                        {loadingVerse ? (
+                          <div className="flex items-center justify-center py-6">
+                            <div className="w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        ) : (
+                          <>
+                            <p className="font-arabic text-center text-3xl leading-loose text-slate-800" 
+                               style={{ fontFamily: "'Amiri', serif", direction: "rtl", textShadow: "0 0.5px 1px rgba(0,0,0,0.05)" }}>
+                              {targetText}
+                            </p>
+                            {targetTranslation && (
+                              <p className="text-sm opacity-60 text-slate-500 italic mt-4 text-center leading-relaxed">
+                                "{targetTranslation}"
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Buttons row */}
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={toggleReferenceAudio}
+                          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border font-bold text-sm transition-all duration-200"
+                          style={{
+                            background: playingReference ? journey.palette.accent : "rgba(13,68,51,0.04)",
+                            color: playingReference ? "#fff" : "var(--text)",
+                            borderColor: playingReference ? journey.palette.accent : "rgba(13,68,51,0.15)"
+                          }}
+                        >
+                          <span>🔊</span>
+                          {playingReference ? "Playing Reference..." : "Listen to Reference"}
+                        </button>
+
+                        <button
+                          onClick={recording ? stopRecording : startRecording}
+                          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all duration-200 text-white shadow-sm"
+                          style={{
+                            background: recording 
+                              ? "linear-gradient(135deg, #EF4444, #DC2626)" 
+                              : "linear-gradient(135deg, var(--emerald), var(--emerald-mid))"
+                          }}
+                        >
+                          {recording ? (
+                            <>
+                              <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+                              <span>Stop ({formatTime(recordingDuration)})</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🎙️</span>
+                              <span>Start Reciting</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Evaluation progress */}
+                      {evaluating && (
+                        <div className="bg-emerald-50/20 border border-emerald-100/30 p-5 rounded-2xl flex flex-col items-center justify-center text-center space-y-3">
+                          <div className="w-7 h-7 border-3 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                          <p className="text-sm text-emerald-800 font-semibold">{feedback}</p>
+                        </div>
+                      )}
+
+                      {/* Evaluation Report */}
+                      {!evaluating && score !== null && (
+                        <div className="bg-slate-50 border border-emerald-50 p-5 rounded-2xl space-y-4 shadow-sm"
+                             style={{ animation: "fadeUp 0.4s ease-out" }}>
+                          
+                          {/* Score Ring */}
+                          <div className="flex items-center gap-4">
+                            <div className="relative w-16 h-16 flex items-center justify-center rounded-full bg-white shadow-sm border border-emerald-50">
+                              <span className="text-base font-black text-slate-800">{score}%</span>
+                              <svg className="absolute inset-0 w-full h-full transform -rotate-90">
+                                <circle cx="32" cy="32" r="28" stroke="rgba(16,185,129,0.1)" strokeWidth="3.5" fill="none" />
+                                <circle cx="32" cy="32" r="28" stroke="#10B981" strokeWidth="3.5" fill="none"
+                                        strokeDasharray={2 * Math.PI * 28}
+                                        strokeDashoffset={2 * Math.PI * 28 * (1 - score / 100)} />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Maulana's Grade</p>
+                              <p className="text-base font-black text-emerald-700 mt-0.5">
+                                {score >= 95 ? "Mumtaz (Perfect)" : score >= 85 ? "Jayyid (Good)" : "Niqis (Correction Needed)"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Word chips */}
+                          <div className="space-y-1.5">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Word-by-Word Analysis</p>
+                            <div className="flex flex-wrap gap-2 justify-center py-2" style={{ direction: "rtl" }}>
+                              {words.map((w, idx) => (
+                                <div key={idx} className="relative group cursor-pointer">
+                                  <span className={`inline-block font-arabic text-sm px-2.5 py-1 rounded-lg border font-semibold transition-all duration-200 ${
+                                    w.status === "correct"
+                                      ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                                      : "bg-rose-50 border-rose-200 text-rose-700"
+                                  }`}>
+                                    {w.text}
+                                  </span>
+                                  
+                                  {/* Popover on Hover */}
+                                  {(w.phonetic || w.rule || w.guidance) && (
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-48 bg-slate-800 text-white text-[10px] p-2.5 rounded-lg shadow-xl z-30 pointer-events-none leading-relaxed">
+                                      {w.phonetic && <p><strong className="text-slate-300">Phonetic:</strong> {w.phonetic}</p>}
+                                      {w.rule && <p className="mt-0.5"><strong className="text-slate-300">Rule:</strong> {w.rule}</p>}
+                                      {w.guidance && <p className="mt-1 text-slate-200 font-medium">{w.guidance}</p>}
+                                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Feedback Guidance */}
+                          <div className="bg-white p-3.5 rounded-xl border border-emerald-50">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-[#D4AF37]">Imam's Guidance</p>
+                            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                              "{feedback}"
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Milestone visual */}
+                  {currentStage.type === "milestone" && (
+                    <div className="mt-5 flex flex-col items-center py-4">
+                      <div className="text-5xl mb-3" style={{ filter: `drop-shadow(0 0 20px ${journey.palette.glow})` }}>🏆</div>
+                      <p className="text-sm font-semibold" style={{ color: journey.palette.accent }}>Milestone Unlocked</p>
+                      <p className="text-xs opacity-50 mt-1 text-center" style={{ color: "var(--text-muted)" }}>
+                        Your commitment is recorded. Return daily to build your streak.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* CTA button */}
+                  <button onClick={advanceStage}
+                    disabled={currentStage.type === "recite" && score === null}
+                    className="mt-6 w-full py-4 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl disabled:opacity-50 disabled:pointer-events-none"
+                    style={{
+                      background: "linear-gradient(135deg, var(--emerald), var(--emerald-mid))",
+                      color: "white",
+                      boxShadow: "0 4px 20px rgba(13,68,51,0.15)",
+                    }}>
+                    {currentIndex + 1 < journey.stages.length ? (
+                      <>
+                        {currentStage.type === "listen" || currentStage.type === "reflect" ? "I've Listened — Continue" :
+                         currentStage.type === "recite" ? "Advance to Next Stage" :
+                         "Complete Milestone"}
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                      </>
+                    ) : (
+                      <>
+                        Complete Journey & Talk to Imam ✨
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

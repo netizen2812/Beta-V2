@@ -49,6 +49,7 @@ ai_bridge/models/*/
 *.rar
 quran_dataset.json
 *.wav
+!imam_ui/public/audio/journeys/*.wav
 *.mp3
 *.log
 

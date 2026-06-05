@@ -14,16 +14,16 @@ import { useRouter } from 'next/navigation';
 
 // ─── JOURNEY DATA ──────────────────────────────────────────────────────────────
 const JOURNEYS_DATA = [
-  { id: 'sanctuary-of-calm',    title: 'Sanctuary of Calm',      arabic: 'ملاذ السكينة',  icon: '🌅', stages: 3, duration: 12, category: 'Peace',       from: '#052E16', via: '#0D4433', accent: '#F59E0B', tag: 'Anxiety & Sabr' },
-  { id: 'foundation-of-prayer', title: 'Foundation of Prayer',   arabic: 'أساس الصلاة',  icon: '🕌', stages: 3, duration: 15, category: 'Prayer',      from: '#064E3B', via: '#065F46', accent: '#A7F3D0', tag: 'Short Surahs' },
-  { id: 'morning-light',        title: 'The Morning Light',      arabic: 'نور الصباح',    icon: '☀️', stages: 2, duration: 10, category: 'Growth',      from: '#14532D', via: '#166534', accent: '#FDE047', tag: 'Fajr Focus' },
-  { id: 'night-vigil',          title: 'The Night Vigil',        arabic: 'قيام الليل',    icon: '🌙', stages: 3, duration: 18, category: 'Spirituality', from: '#022C22', via: '#0F5342', accent: '#E2E8F0', tag: 'Tahajjud' },
-  { id: 'grateful-heart',       title: 'The Grateful Heart',     arabic: 'قلب الشاكر',    icon: '💛', stages: 3, duration: 11, category: 'Peace',       from: '#052E16', via: '#15803D', accent: '#FCA5A5', tag: 'Shukr & Mercy' },
-  { id: 'seal-of-surahs',       title: 'The Seal of Surahs',     arabic: 'خواتيم السور',  icon: '📖', stages: 3, duration: 20, category: 'Learning',    from: '#0F766E', via: '#115E59', accent: '#6EE7B7', tag: 'Last 10 Surahs' },
-  { id: 'stories-of-prophets',  title: 'Stories of Prophets',    arabic: 'قصص الأنبياء', icon: '⭐', stages: 3, duration: 16, category: 'Learning',    from: '#064E3B', via: '#15803D', accent: '#FEF08A', tag: 'Prophetic Tales' },
-  { id: 'gate-of-tawbah',       title: 'Gate of Tawbah',         arabic: 'باب التوبة',    icon: '🌹', stages: 3, duration: 13, category: 'Spirituality', from: '#1C1917', via: '#064E3B', accent: '#FBCFE8', tag: 'Repentance' },
-  { id: 'knowledge-seeker',     title: 'The Knowledge Seeker',   arabic: 'طالب العلم',    icon: '🔭', stages: 3, duration: 17, category: 'Learning',    from: '#047857', via: '#065F46', accent: '#93C5FD', tag: 'Islamic Wisdom' },
-  { id: 'family-covenant',      title: 'The Family Covenant',    arabic: 'ميثاق الأسرة',  icon: '🏡', stages: 3, duration: 12, category: 'Growth',      from: '#0D5C46', via: '#047857', accent: '#FED7AA', tag: 'Family & Love' },
+  { id: 'sanctuary-of-calm',    title: 'Sanctuary of Calm',      arabic: 'ملاذ السكينة',  icon: '🌅', stages: 3, duration: 12, category: 'Peace',       from: '#123C24', via: '#342309', accent: '#F59E0B', tag: 'Anxiety & Sabr', tagline: 'Find peace within the storms of life through Sabr and Quranic healing.' },
+  { id: 'foundation-of-prayer', title: 'Foundation of Prayer',   arabic: 'أساس الصلاة',  icon: '🕌', stages: 3, duration: 15, category: 'Prayer',      from: '#043E2B', via: '#03251E', accent: '#D4AF37', tag: 'Short Surahs', tagline: 'Master the short Surahs with precision — every letter, every breath, perfected.' },
+  { id: 'morning-light',        title: 'The Morning Light',      arabic: 'نور الصباح',    icon: '☀️', stages: 2, duration: 10, category: 'Growth',      from: '#0F3A40', via: '#513D11', accent: '#FDE047', tag: 'Fajr Focus', tagline: 'Seize the barakah of Fajr — a proactive dawn routine for the focused believer.' },
+  { id: 'night-vigil',          title: 'The Night Vigil',        arabic: 'قيام الليل',    icon: '🌙', stages: 3, duration: 18, category: 'Spirituality', from: '#070F26', via: '#0D2040', accent: '#C7D2FE', tag: 'Tahajjud', tagline: 'Enter the sacred stillness of Tahajjud — surrender to the One who never sleeps.' },
+  { id: 'grateful-heart',       title: 'The Grateful Heart',     arabic: 'قلب الشاكر',    icon: '💛', stages: 3, duration: 11, category: 'Peace',       from: '#4A1D1D', via: '#262A15', accent: '#FCA5A5', tag: 'Shukr & Mercy', tagline: 'Transform your perspective — Shukr is not just gratitude, it is abundance itself.' },
+  { id: 'seal-of-surahs',       title: 'The Seal of Surahs',     arabic: 'خواتيم السور',  icon: '📖', stages: 3, duration: 20, category: 'Learning',    from: '#0B4A40', via: '#062B28', accent: '#99F6E4', tag: 'Last 10 Surahs', tagline: 'Master the last 10 Surahs — the treasury every Muslim carries in their chest.' },
+  { id: 'stories-of-prophets',  title: 'Stories of Prophets',    arabic: 'قصص الأنبياء', icon: '⭐', stages: 3, duration: 16, category: 'Learning',    from: '#4C320C', via: '#2D1F07', accent: '#FEF08A', tag: 'Prophetic Tales', tagline: 'Walk with Ibrahim, Musa, and Isa — their stories are your map through every trial.' },
+  { id: 'gate-of-tawbah',       title: 'Gate of Tawbah',         arabic: 'باب التوبة',    icon: '🌹', stages: 3, duration: 13, category: 'Spirituality', from: '#3B0E23', via: '#1E0B22', accent: '#FBCFE8', tag: 'Repentance', tagline: 'Every door is open to the one who returns — your sincere repentance is never too late.' },
+  { id: 'knowledge-seeker',     title: 'The Knowledge Seeker',   arabic: 'طالب العلم',    icon: '🔭', stages: 3, duration: 17, category: 'Learning',    from: '#0F2C59', via: '#081D33', accent: '#93C5FD', tag: 'Islamic Wisdom', tagline: 'Seeking knowledge is an act of worship — each lesson a step closer to Allah.' },
+  { id: 'family-covenant',      title: 'The Family Covenant',    arabic: 'ميثاق الأسرة',  icon: '🏡', stages: 3, duration: 12, category: 'Growth',      from: '#3D2214', via: '#1B2E1E', accent: '#FED7AA', tag: 'Family & Love', tagline: 'The family is a mercy from Allah — nurture it with patience, love, and Quranic wisdom.' },
 ];
 
 // ─── JOURNEY CARD GRAPHIC ──────────────────────────────────────────────────────
@@ -31,93 +31,144 @@ function JourneyCardGraphic({ id, accent }: { id: string; accent: string }) {
   switch (id) {
     case 'sanctuary-of-calm':
       return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.18]" viewBox="0 0 180 240" fill="none">
-          <path d="M90 240 L0 80 M90 240 L30 60 M90 240 L60 50 M90 240 L120 50 M90 240 L150 60 M90 240 L180 80" stroke={accent} strokeWidth="1" strokeDasharray="3 3" />
-          <circle cx="90" cy="240" r="50" stroke={accent} strokeWidth="1.5" />
-          <circle cx="90" cy="240" r="30" fill={accent} opacity="0.15" />
+        <svg className="absolute inset-0 w-full h-full opacity-40 transition-all duration-500" viewBox="0 0 180 240" fill="none">
+          <defs>
+            <linearGradient id="calm-sun" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#F59E0B" />
+              <stop offset="100%" stopColor="#EF4444" stopOpacity="0.2" />
+            </linearGradient>
+          </defs>
+          <path d="M10 200 Q 50 185, 90 200 T 170 200" stroke={accent} strokeWidth="1.5" opacity="0.6" />
+          <path d="M0 215 Q 45 205, 90 215 T 180 215" stroke={accent} strokeWidth="1.2" opacity="0.4" />
+          <circle cx="90" cy="140" r="32" fill="url(#calm-sun)" />
+          <line x1="90" y1="90" x2="90" y2="70" stroke={accent} strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+          <line x1="45" y1="120" x2="25" y2="110" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+          <line x1="135" y1="120" x2="155" y2="110" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+          <line x1="55" y1="95" x2="40" y2="80" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+          <line x1="125" y1="95" x2="140" y2="80" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
         </svg>
       );
     case 'foundation-of-prayer':
       return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.18]" viewBox="0 0 180 240" fill="none">
-          <path d="M25 240 L25 160 C25 140 45 130 90 130 C135 130 155 140 155 160 L155 240" stroke={accent} strokeWidth="1.5" />
-          <path d="M90 130 L90 110 L85 115 L90 100 L95 115 L90 110" stroke={accent} strokeWidth="1.5" />
-          <path d="M140 240 L140 90 L144 85 L140 80 L136 85 L140 90" stroke={accent} strokeWidth="1" />
+        <svg className="absolute inset-0 w-full h-full opacity-40 transition-all duration-500" viewBox="0 0 180 240" fill="none">
+          <defs>
+            <linearGradient id="mosque-glow" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={accent} stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#03251E" stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+          <path d="M30 240 V150 C30 110, 60 90, 90 90 C120 90, 150 110, 150 150 V240" fill="url(#mosque-glow)" />
+          <path d="M30 240 V150 C30 110, 60 90, 90 90 C120 90, 150 110, 150 150 V240" stroke={accent} strokeWidth="1.5" opacity="0.7" />
+          <path d="M70 155 C70 135, 75 125, 90 125 C105 125, 110 135, 110 155 Z" fill={accent} opacity="0.4" />
+          <circle cx="90" cy="115" r="4" fill={accent} />
+          <circle cx="50" cy="60" r="1.5" fill="#fff" opacity="0.8" />
+          <circle cx="130" cy="50" r="1.2" fill="#fff" opacity="0.6" />
+          <circle cx="140" cy="80" r="1" fill="#fff" opacity="0.5" />
         </svg>
       );
     case 'morning-light':
       return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.18]" viewBox="0 0 180 240" fill="none">
-          <circle cx="90" cy="95" r="22" stroke={accent} strokeWidth="1.5" />
-          <circle cx="90" cy="95" r="12" fill={accent} opacity="0.15" />
-          {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, idx) => {
+        <svg className="absolute inset-0 w-full h-full opacity-40 transition-all duration-500" viewBox="0 0 180 240" fill="none">
+          <circle cx="90" cy="120" r="28" fill={accent} opacity="0.25" />
+          <circle cx="90" cy="120" r="18" fill={accent} opacity="0.4" />
+          {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle, idx) => {
             const rad = (angle * Math.PI) / 180;
-            const x1 = 90 + Math.cos(rad) * 28;
-            const y1 = 95 + Math.sin(rad) * 28;
-            const x2 = 90 + Math.cos(rad) * 40;
-            const y2 = 95 + Math.sin(rad) * 40;
-            return <line key={idx} x1={x1} y1={y1} x2={x2} y2={y2} stroke={accent} strokeWidth="1" />;
+            const x1 = 90 + Math.cos(rad) * 22;
+            const y1 = 120 + Math.sin(rad) * 22;
+            const x2 = 90 + Math.cos(rad) * 55;
+            const y2 = 120 + Math.sin(rad) * 55;
+            return <line key={idx} x1={x1} y1={y1} x2={x2} y2={y2} stroke={accent} strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />;
           })}
         </svg>
       );
     case 'night-vigil':
       return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.18]" viewBox="0 0 180 240" fill="none">
-          <path d="M110 60 C110 90 85 110 55 110 C46 110 38 106 33 102 C46 115 67 119 84 115 C105 109 118 85 114 64 C113 60 111 61 110 60 Z" fill={accent} />
-          <polygon points="45,50 47,54 51,54 48,56 49,60 45,58 41,60 42,56 39,54 43,54" fill={accent} />
-          <polygon points="120,140 122,144 126,144 123,146 124,150 120,148 116,150 117,146 114,144 118,144" fill={accent} />
-          <polygon points="90,175 91,177 94,177 92,179 93,182 90,180 87,182 88,179 86,177 89,177" fill={accent} />
+        <svg className="absolute inset-0 w-full h-full opacity-45 transition-all duration-500" viewBox="0 0 180 240" fill="none">
+          <path d="M115 70 C115 105, 85 130, 50 130 C38 130, 28 126, 20 120 C35 135, 60 140, 80 135 C105 128, 120 100, 120 75 C120 71, 118 72, 115 70 Z" fill={accent} opacity="0.6" />
+          <circle cx="45" cy="50" r="1.5" fill="#fff" opacity="0.8" />
+          <circle cx="140" cy="120" r="2" fill={accent} opacity="0.7" />
+          <circle cx="105" cy="155" r="1.2" fill="#fff" opacity="0.5" />
+          <circle cx="75" cy="40" r="1" fill="#fff" opacity="0.4" />
+          <path d="M20 170 Q 50 160, 80 170 T 140 170" stroke={accent} strokeWidth="1" opacity="0.3" strokeDasharray="3 3" />
         </svg>
       );
     case 'grateful-heart':
       return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.18]" viewBox="0 0 180 240" fill="none">
-          <circle cx="90" cy="115" r="25" stroke={accent} strokeWidth="1.5" />
-          <circle cx="90" cy="115" r="40" stroke={accent} strokeWidth="0.75" strokeDasharray="2 2" />
-          <path d="M90 70 C65 92 50 115 90 160 C130 115 115 92 90 70 Z" stroke={accent} strokeWidth="1.5" />
+        <svg className="absolute inset-0 w-full h-full opacity-40 transition-all duration-500" viewBox="0 0 180 240" fill="none">
+          <defs>
+            <radialGradient id="heart-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={accent} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={accent} stopOpacity="0.0" />
+            </radialGradient>
+          </defs>
+          <circle cx="90" cy="120" r="60" stroke={accent} strokeWidth="0.75" strokeDasharray="4 4" opacity="0.3" />
+          <circle cx="90" cy="120" r="45" stroke={accent} strokeWidth="1" strokeDasharray="2 2" opacity="0.5" />
+          <circle cx="90" cy="120" r="30" fill="url(#heart-glow)" />
+          <path d="M90 98 C72 80, 50 98, 90 142 C130 98, 108 80, 90 98 Z" fill={accent} opacity="0.65" />
         </svg>
       );
     case 'seal-of-surahs':
       return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.18]" viewBox="0 0 180 240" fill="none">
-          <path d="M35 115 L90 135 L145 115 L135 92 L90 110 L45 92 Z" stroke={accent} strokeWidth="1.5" />
-          <path d="M90 135 L90 170 M55 150 L125 150" stroke={accent} strokeWidth="1.2" />
-          <path d="M45 160 L135 160" stroke={accent} strokeWidth="0.75" />
+        <svg className="absolute inset-0 w-full h-full opacity-40 transition-all duration-500" viewBox="0 0 180 240" fill="none">
+          <defs>
+            <linearGradient id="book-ray" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stopColor={accent} stopOpacity="0" />
+              <stop offset="100%" stopColor={accent} stopOpacity="0.3" />
+            </linearGradient>
+          </defs>
+          <path d="M90 130 L40 50 L140 50 Z" fill="url(#book-ray)" />
+          <path d="M65 140 L90 160 L115 140 M90 160 L90 185" stroke={accent} strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+          <line x1="50" y1="185" x2="130" y2="185" stroke={accent} strokeWidth="1.5" opacity="0.5" />
+          <path d="M45 125 Q 67 115, 90 128 Q 112 115, 135 125 V140 Q 112 130, 90 142 Q 67 130, 45 140 Z" fill={accent} opacity="0.7" />
+          <line x1="90" y1="128" x2="90" y2="142" stroke="#000" strokeWidth="0.8" opacity="0.3" />
         </svg>
       );
     case 'stories-of-prophets':
       return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.18]" viewBox="0 0 180 240" fill="none">
-          <path d="M0 210 Q40 185 90 200 Q140 215 180 190 L180 240 L0 240 Z" fill={accent} opacity="0.25" />
-          <path d="M90 40 L92 52 L104 54 L92 56 L90 68 L88 56 L76 54 L88 52 Z" fill={accent} />
-          <path d="M42 200 Q47 155 56 130" stroke={accent} strokeWidth="2.5" />
-          <path d="M56 130 Q38 112 20 120 M56 130 Q47 103 38 95 M56 130 Q65 103 78 108 M56 130 Q74 117 87 130" stroke={accent} strokeWidth="1.2" />
+        <svg className="absolute inset-0 w-full h-full opacity-40 transition-all duration-500" viewBox="0 0 180 240" fill="none">
+          <path d="M0 200 Q 55 175, 110 195 T 180 185 L180 240 L0 240 Z" fill={accent} opacity="0.15" />
+          <path d="M0 215 Q 45 200, 90 215 T 180 205 L180 240 L0 240 Z" fill={accent} opacity="0.25" />
+          <path d="M90 45 L93 57 L105 60 L93 63 L90 75 L87 63 L75 60 L87 57 Z" fill={accent} opacity="0.85" />
+          <path d="M90 51 L92 57 L98 60 L92 63 L90 69 L88 63 L82 60 L88 57 Z" fill="#fff" opacity="0.9" />
+          <path d="M45 205 Q52 165, 60 140" stroke={accent} strokeWidth="3.2" strokeLinecap="round" opacity="0.8" />
+          <path d="M60 140 Q40 122, 20 130 M60 140 Q50 110, 40 102 M60 140 Q70 110, 82 115 M60 140 Q80 125, 93 140" stroke={accent} strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
         </svg>
       );
     case 'gate-of-tawbah':
       return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.18]" viewBox="0 0 180 240" fill="none">
-          <path d="M40 240 L40 115 C40 85 60 70 90 70 C120 70 140 85 140 115 L140 240" stroke={accent} strokeWidth="2" />
-          <path d="M50 240 L50 120 C50 95 65 80 90 80 C115 80 130 95 130 120 L130 240" stroke={accent} strokeWidth="0.75" strokeDasharray="3 3" />
-          <path d="M90 115 L70 150 M90 115 L90 170 M90 115 L110 150" stroke={accent} strokeWidth="1" />
+        <svg className="absolute inset-0 w-full h-full opacity-40 transition-all duration-500" viewBox="0 0 180 240" fill="none">
+          <defs>
+            <linearGradient id="gate-light" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stopColor={accent} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={accent} stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+          <path d="M45 240 V130 Q 90 75, 135 130 V240 Z" fill="url(#gate-light)" />
+          <path d="M45 240 V130 C45 95, 65 80, 90 80 C115 80, 135 95, 135 130 V240" stroke={accent} strokeWidth="2" strokeLinecap="round" opacity="0.8" />
+          <path d="M53 240 V132 C53 103, 70 90, 90 90 C110 90, 127 103, 127 132 V240" stroke={accent} strokeWidth="0.8" strokeDasharray="3 3" opacity="0.5" />
+          <circle cx="90" cy="115" r="3.5" fill={accent} opacity="0.7" />
+          <path d="M90 80 L90 65 M82 70 H98" stroke={accent} strokeWidth="1" opacity="0.6" />
         </svg>
       );
     case 'knowledge-seeker':
       return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.18]" viewBox="0 0 180 240" fill="none">
-          <circle cx="90" cy="115" r="40" stroke={accent} strokeWidth="1.5" />
-          <circle cx="90" cy="115" r="4" fill={accent} />
-          <line x1="90" y1="75" x2="90" y2="155" stroke={accent} strokeWidth="1" />
-          <line x1="50" y1="115" x2="130" y2="115" stroke={accent} strokeWidth="1" />
-          <path d="M62 87 L118 143 M62 143 L118 87" stroke={accent} strokeWidth="0.75" strokeDasharray="2 2" />
+        <svg className="absolute inset-0 w-full h-full opacity-40 transition-all duration-500" viewBox="0 0 180 240" fill="none">
+          <ellipse cx="90" cy="115" rx="55" ry="22" stroke={accent} strokeWidth="1" transform="rotate(-15 90 115)" opacity="0.4" />
+          <ellipse cx="90" cy="115" rx="35" ry="14" stroke={accent} strokeWidth="0.75" transform="rotate(25 90 115)" strokeDasharray="2 2" opacity="0.5" />
+          <path d="M55 125 C55 110, 125 110, 125 125 V155 C125 170, 55 170, 55 155 Z" fill={accent} opacity="0.25" />
+          <path d="M55 125 C55 110, 125 110, 125 125 M55 155 C55 140, 125 140, 125 155 M55 125 V155 M125 125 V155" stroke={accent} strokeWidth="1.5" opacity="0.7" />
+          <path d="M120 95 L85 135 L80 142 L88 140 L125 100 Z" fill={accent} opacity="0.8" />
+          <circle cx="82" cy="141" r="1.5" fill={accent} />
         </svg>
       );
     case 'family-covenant':
       return (
-        <svg className="absolute inset-0 w-full h-full opacity-[0.18]" viewBox="0 0 180 240" fill="none">
-          <path d="M25 155 L90 110 L155 155" stroke={accent} strokeWidth="2" />
-          <path d="M40 165 L90 130 L140 165" stroke={accent} strokeWidth="0.75" strokeDasharray="2 2" />
-          <path d="M45 160 L45 240 M135 160 L135 240" stroke={accent} strokeWidth="1.5" />
+        <svg className="absolute inset-0 w-full h-full opacity-40 transition-all duration-500" viewBox="0 0 180 240" fill="none">
+          <circle cx="90" cy="95" r="30" fill={accent} opacity="0.18" />
+          <circle cx="72" cy="100" r="18" fill={accent} opacity="0.15" />
+          <circle cx="108" cy="100" r="18" fill={accent} opacity="0.15" />
+          <path d="M90 200 V125 M90 150 Q75 135, 60 140 M90 140 Q105 125, 120 132 M90 125 Q70 100, 80 90 M90 125 Q110 100, 100 90" stroke={accent} strokeWidth="2.5" strokeLinecap="round" opacity="0.7" />
+          <path d="M90 143 C83 135, 74 143, 90 158 C106 143, 97 135, 90 143 Z" fill={accent} opacity="0.8" />
         </svg>
       );
     default:
@@ -129,6 +180,7 @@ function JourneyCardGraphic({ id, accent }: { id: string; accent: string }) {
 function JourneyScrollSection() {
   const router = useRouter();
   const [activeIdx, setActiveIdx] = React.useState(0);
+  const [hoveredIdx, setHoveredIdx] = React.useState<number | null>(null);
   const [completedIds, setCompletedIds] = React.useState<Set<string>>(new Set());
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
@@ -187,21 +239,28 @@ function JourneyScrollSection() {
         {JOURNEYS_DATA.map((j, i) => {
           const done = completedIds.has(j.id);
           const isActive = i === activeIdx;
+          const isHovered = i === hoveredIdx;
           return (
             <div
               key={j.id}
               onClick={() => handleCardClick(j.id)}
+              onMouseEnter={() => setHoveredIdx(i)}
+              onMouseLeave={() => setHoveredIdx(null)}
               style={{
                 minWidth: 'var(--card-w)',
                 width: 'var(--card-w)',
                 height: 'var(--card-h)',
                 borderRadius: '1.25rem',
-                background: `linear-gradient(175deg, ${j.from} 0%, ${j.via} 60%, #031e13 100%)`,
-                border: isActive ? `2px solid ${j.accent}` : '1px solid rgba(255,255,255,0.06)',
-                boxShadow: isActive
-                  ? `0 12px 36px rgba(13,68,51,0.25), 0 0 0 1px ${j.accent}33`
-                  : '0 4px 16px rgba(0,0,0,0.15)',
-                transform: isActive ? 'scale(1.02)' : 'scale(0.97)',
+                background: `linear-gradient(175deg, ${j.from} 0%, ${j.via} 60%, #02120b 100%)`,
+                border: isHovered || isActive ? `2px solid ${j.accent}` : '1px solid rgba(255,255,255,0.06)',
+                boxShadow: isHovered
+                  ? `0 20px 40px rgba(0,0,0,0.35), 0 0 15px ${j.accent}44`
+                  : (isActive
+                    ? `0 12px 36px rgba(13,68,51,0.25), 0 0 0 1px ${j.accent}33`
+                    : '0 4px 16px rgba(0,0,0,0.15)'),
+                transform: isHovered 
+                  ? 'scale(1.05) translateY(-8px)' 
+                  : (isActive ? 'scale(1.02)' : 'scale(0.97)'),
                 transition: 'all 0.3s cubic-bezier(0.25, 1, 0.5, 1)',
                 cursor: 'pointer',
                 position: 'relative',
@@ -231,32 +290,41 @@ function JourneyScrollSection() {
               <div className="absolute inset-0 flex flex-col justify-between p-4 z-10">
                 {/* Top tag & Arabic */}
                 <div>
-                  <span className="inline-block text-[8px] font-black px-2 py-0.5 rounded-full mb-1.5 uppercase tracking-wider"
-                    style={{ background: `${j.accent}15`, color: j.accent, border: `0.5px solid ${j.accent}33` }}>
-                    {j.tag}
-                  </span>
-                  <p className="font-arabic text-right text-xs opacity-50 font-medium"
-                    style={{ color: j.accent, direction: 'rtl', fontFamily: "'Amiri', serif", lineHeight: 1.2 }}>
-                    {j.arabic}
-                  </p>
+                  <div className="flex items-center justify-between gap-1 mb-1.5">
+                    <span className="inline-block text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider"
+                      style={{ background: `${j.accent}15`, color: j.accent, border: `0.5px solid ${j.accent}33` }}>
+                      {j.icon} {j.tag}
+                    </span>
+                    <p className="font-arabic text-right text-[10px] opacity-65 font-semibold"
+                      style={{ color: j.accent, direction: 'rtl', fontFamily: "'Amiri', serif", lineHeight: 1.2 }}>
+                      {j.arabic}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Icon centered */}
-                <div className="flex justify-center items-center py-2">
-                  <span className="text-4xl" style={{ filter: `drop-shadow(0 0 12px ${j.accent}55)` }}>{j.icon}</span>
+                {/* Tagline description in middle */}
+                <div className="flex flex-col justify-center flex-1 my-2">
+                  <p className="text-[10px] leading-normal text-white/80 line-clamp-3 sm:line-clamp-4 font-medium"
+                    style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                    {j.tagline}
+                  </p>
                 </div>
 
                 {/* Bottom title & info */}
                 <div>
                   <div className="absolute bottom-0 left-0 right-0 h-16 rounded-b-[1.25rem] pointer-events-none"
-                    style={{ background: `linear-gradient(to top, #031e13 100%, transparent)` }}/>
+                    style={{ background: `linear-gradient(to top, #02120b 100%, transparent)` }}/>
                   <div className="relative z-10 mt-auto">
                     <h3 className="text-xs font-black leading-tight mb-1" style={{ color: '#ffffff' }}>{j.title}</h3>
                     <div className="flex items-center justify-between">
                       <span className="text-[8px] font-bold opacity-60" style={{ color: '#a7f3d0' }}>{j.stages} stages · {j.duration}m</span>
-                      <div className="w-4 h-4 rounded-full flex items-center justify-center transition-transform hover:translate-x-0.5"
-                        style={{ background: `${j.accent}20`, border: `0.5px solid ${j.accent}50` }}>
-                        <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke={j.accent} strokeWidth="3.5">
+                      <div className="w-4.5 h-4.5 rounded-full flex items-center justify-center transition-all duration-300"
+                        style={{ 
+                          background: isHovered ? j.accent : `${j.accent}20`, 
+                          border: `0.5px solid ${j.accent}50`,
+                          transform: isHovered ? 'scale(1.1) rotate(90deg)' : 'none' 
+                        }}>
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke={isHovered ? '#000' : j.accent} strokeWidth="4">
                           <path d="M5 12h14M12 5l7 7-7 7"/>
                         </svg>
                       </div>
@@ -270,34 +338,43 @@ function JourneyScrollSection() {
       </div>
 
       {/* Tasbih/Beads Stage Navigator */}
-      <div className="relative flex items-center justify-center mt-2 mb-1 px-4 w-full">
+      <div className="relative flex items-center justify-center mt-3 mb-2 px-4 w-full">
         {/* Thread connecting beads */}
-        <div className="absolute top-1/2 left-[5%] right-[5%] h-[1.5px] -translate-y-1/2 pointer-events-none z-0"
+        <div className="absolute top-[35%] left-[5%] right-[5%] h-[2px] -translate-y-1/2 pointer-events-none z-0"
           style={{
-            background: 'linear-gradient(90deg, rgba(20,83,45,0.05) 0%, rgba(20,83,45,0.3) 50%, rgba(20,83,45,0.05) 100%)',
+            background: 'linear-gradient(90deg, rgba(20,83,45,0.05) 0%, rgba(20,83,45,0.4) 50%, rgba(20,83,45,0.05) 100%)',
           }}
         />
         
         {/* Beads row */}
-        <div className="relative z-10 flex items-center justify-center gap-3 overflow-x-auto no-scrollbar max-w-full py-1">
+        <div className="relative z-10 flex items-center justify-center gap-4 overflow-x-auto no-scrollbar max-w-full py-2">
           {JOURNEYS_DATA.map((j, i) => {
             const done = completedIds.has(j.id);
             const isActive = i === activeIdx;
+            const isHovered = i === hoveredIdx;
+            const isHighlighted = isActive || isHovered;
             
             return (
               <button
                 key={j.id}
                 onClick={() => scrollToIdx(i)}
-                className="relative flex flex-col items-center focus:outline-none transition-all duration-300 hover:scale-105 shrink-0"
+                onMouseEnter={() => setHoveredIdx(i)}
+                onMouseLeave={() => setHoveredIdx(null)}
+                className="relative flex flex-col items-center focus:outline-none transition-all duration-300 shrink-0"
+                style={{
+                  transform: isHighlighted ? 'scale(1.15)' : 'scale(1)',
+                }}
               >
                 {/* Number Ring */}
                 <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black transition-all duration-300 mb-1"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 mb-1.5"
                   style={{
-                    background: isActive ? '#0D4433' : 'rgba(255, 255, 255, 0.95)',
-                    color: isActive ? '#fff' : '#0D4433',
-                    border: `1.5px solid ${isActive ? '#D4AF37' : 'rgba(13,68,51,0.3)'}`,
-                    boxShadow: isActive ? '0 0 8px rgba(212,175,55,0.35)' : 'none',
+                    background: isHighlighted ? '#0D4433' : 'rgba(255, 255, 255, 0.95)',
+                    color: isHighlighted ? '#fff' : '#0D4433',
+                    border: `2px solid ${isHighlighted ? (isHovered && !isActive ? '#10B981' : '#D4AF37') : 'rgba(13,68,51,0.25)'}`,
+                    boxShadow: isHighlighted 
+                      ? (isHovered && !isActive ? '0 0 10px rgba(16,185,129,0.4)' : '0 0 8px rgba(212,175,55,0.35)') 
+                      : 'none',
                   }}
                 >
                   {i + 1}
@@ -305,17 +382,17 @@ function JourneyScrollSection() {
 
                 {/* 3D Tasbih Bead */}
                 <div
-                  className="w-3 h-3 rounded-full transition-all duration-300 relative shadow-sm"
+                  className="w-4.5 h-4.5 rounded-full transition-all duration-300 relative shadow-sm"
                   style={{
                     background: done 
                       ? 'radial-gradient(circle at 35% 35%, #F59E0B 0%, #B45309 70%, #78350F 100%)' // Gold bead if done
-                      : isActive
-                      ? 'radial-gradient(circle at 35% 35%, #10B981 0%, #047857 70%, #064E3B 100%)' // Glowing jade bead if active
+                      : isHighlighted
+                      ? 'radial-gradient(circle at 35% 35%, #10B981 0%, #047857 70%, #064E3B 100%)' // Glowing jade bead if active/hovered
                       : 'radial-gradient(circle at 35% 35%, #f4fbf7 0%, #d1fae5 70%, #a7f3d0 100%)', // Pale green bead if inactive
-                    border: `0.5px solid ${isActive ? '#10B981' : 'rgba(13,68,51,0.15)'}`,
-                    opacity: isActive || done ? 1 : 0.5,
-                    transform: isActive ? 'scale(1.15)' : 'scale(1)',
-                    boxShadow: isActive ? '0 0 6px rgba(16,185,129,0.4)' : 'none',
+                    border: `0.5px solid ${isHighlighted ? '#10B981' : 'rgba(13,68,51,0.15)'}`,
+                    opacity: isHighlighted || done ? 1 : 0.6,
+                    transform: isHighlighted ? 'scale(1.15)' : 'scale(1)',
+                    boxShadow: isHighlighted ? '0 0 8px rgba(16,185,129,0.5)' : 'none',
                   }}
                 />
               </button>
@@ -1763,19 +1840,19 @@ export default function FullscreenAiPage() {
       {/* Global CSS for moving background pattern and responsive card dimensions */}
       <style>{`
         :root {
-          --card-w: 140px;
-          --card-h: 190px;
+          --card-w: 160px;
+          --card-h: 220px;
         }
         @media (min-width: 640px) {
           :root {
-            --card-w: 160px;
-            --card-h: 215px;
+            --card-w: 185px;
+            --card-h: 255px;
           }
         }
         @media (min-width: 768px) {
           :root {
-            --card-w: 180px;
-            --card-h: 240px;
+            --card-w: 210px;
+            --card-h: 285px;
           }
         }
 
