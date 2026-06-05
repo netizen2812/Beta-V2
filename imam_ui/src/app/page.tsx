@@ -347,12 +347,12 @@ function JourneyScrollSection() {
         />
         
         {/* Beads row */}
-        <div className="relative z-10 flex items-center justify-center gap-4 overflow-x-auto no-scrollbar max-w-full py-2">
+        <div className="relative z-10 flex items-center justify-center gap-4 overflow-x-auto no-scrollbar max-w-full py-4 px-6">
           {JOURNEYS_DATA.map((j, i) => {
             const done = completedIds.has(j.id);
             const isActive = i === activeIdx;
             const isHovered = i === hoveredIdx;
-            const isHighlighted = hoveredIdx !== null ? isHovered : isActive;
+            const isHighlighted = isHovered;
             
             return (
               <button
