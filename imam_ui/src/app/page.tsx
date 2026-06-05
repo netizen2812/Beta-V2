@@ -226,7 +226,7 @@ function JourneyScrollSection() {
       {/* Horizontal Scroll Cards */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto pb-4 px-2 no-scrollbar"
+        className="flex gap-4 overflow-x-auto pt-4 pb-4 px-2 no-scrollbar"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory' }}
         onScroll={e => {
           const el = e.currentTarget;
@@ -352,7 +352,7 @@ function JourneyScrollSection() {
             const done = completedIds.has(j.id);
             const isActive = i === activeIdx;
             const isHovered = i === hoveredIdx;
-            const isHighlighted = isActive || isHovered;
+            const isHighlighted = hoveredIdx !== null ? isHovered : isActive;
             
             return (
               <button
