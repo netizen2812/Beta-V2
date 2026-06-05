@@ -652,18 +652,10 @@ class TajweedScorer:
             else:
                 # Deletion (Reference word skipped)
                 actual = ""
-                # Check if it is inside the recited span
-                if ref_start <= i <= ref_end:
-                    similarity = 0.0
-                    status = "major_error"
-                    rule = "Missing Word"
-                    maulana_guidance = "Word was omitted from recitation."
-                else:
-                    # Outside the recited span (ignored)
-                    similarity = 1.0
-                    status = "correct"
-                    rule = None
-                    maulana_guidance = None
+                similarity = 0.0
+                status = "major_error"
+                rule = "Missing Word"
+                maulana_guidance = "Word was omitted or not detected in recitation."
 
             # Integrate Temporal/Spectral Feedback if provided
             if actual and temporal_feedback:
