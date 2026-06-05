@@ -1348,7 +1348,7 @@ export default function FullscreenAiPage() {
                                         {(tajweedScore ?? 0) >= 95 ? 'Mumtaz' : (tajweedScore ?? 0) >= 85 ? 'Jayyid' : 'Niqis'}
                                       </span>
                                     </div>
-                                    <h4 className="text-sm font-black text-slate-100 mt-1">Maulana's Guidance</h4>
+                                    <h4 className="text-sm font-black text-slate-100 mt-1">Imam's Guidance</h4>
                                     <p className="text-xs text-emerald-100/90 italic mt-1.5 pl-3 border-l-2 border-[#D4AF37] max-w-xl">
                                       "{tajweedFeedback || "MashaAllah, recitation parsed successfully."}"
                                     </p>
