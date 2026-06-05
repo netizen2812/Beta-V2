@@ -58,21 +58,44 @@ class PhoneticEngine:
         non_blank_mask = (predicted_ids != blank_id)
         mean_conf = max_probs[non_blank_mask].mean().item() if non_blank_mask.any() else 0.0
 
-        # 3. Temporal Analysis (CTC Frame Counting)
-        # We group identical consecutive IDs to find phoneme durations
-        # Each frame is approx 20ms (for 16kHz and typical Wav2Vec2 stride)
-        durations = []
+        # 3. Temporal Analysis (CTC Onset Difference Counting)
+        vocab = self.processor.tokenizer.get_vocab()
+        delimiter_id = vocab.get("|", -1)
+        
+        emissions = []
         current_id = -1
-        current_count = 0
-        for pid in predicted_ids[0].tolist():
-            if pid == current_id:
-                current_count += 1
+        pred_list = predicted_ids[0].tolist()
+        
+        for idx, pid in enumerate(pred_list):
+            if pid != blank_id:
+                if pid != current_id:
+                    char = self.processor.decode([pid])
+                    if pid == delimiter_id or char == " " or not char.strip():
+                        char = "|"
+                    emissions.append({
+                        "char": char,
+                        "id": pid,
+                        "onset_frame": idx
+                    })
+                    current_id = pid
             else:
-                if current_id != -1 and current_id != blank_id:
-                    char = self.processor.decode([current_id])
-                    durations.append({"char": char, "frames": current_count})
-                current_id = pid
-                current_count = 1
+                current_id = -1
+                
+        durations = []
+        n = len(emissions)
+        for i in range(n):
+            char = emissions[i]["char"]
+            onset = emissions[i]["onset_frame"]
+            if i < n - 1:
+                dur = emissions[i+1]["onset_frame"] - onset
+            else:
+                dur = len(pred_list) - onset
+                
+            durations.append({
+                "char": char,
+                "frames": dur,
+                "onset_frame": onset
+            })
         
         import re
         words = [w.strip() for w in re.split(r'[| ]', phonetics) if w.strip()]

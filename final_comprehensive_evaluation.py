@@ -1,7 +1,6 @@
 import os
 import sys
 import io
-import json
 import time
 from pathlib import Path
 import pandas as pd
@@ -35,10 +34,6 @@ def run_final_evaluation():
     db = PhoneticDB()
     db.load()
 
-    # Configuration (Mathematically Optimized)
-    MAULANA_GRADE = 0.55
-    CONF_THRESHOLD = 0.85
-
     # 1. Load Datasets
     print("📂 Loading Mendeley (1,506) and QDAT (753)...")
     MENDELEY_DIR = Path("ai_bridge/data/test_datasets/mendeley_ikhlas/Surah Al-Ikhlas of the Holy Quran Error Detection Dataset/extracted/Dataset and Sounds/Sound recordings")
@@ -47,7 +42,6 @@ def run_final_evaluation():
     QDAT_PATH = Path("ai_bridge/data/test_datasets/qdat.parquet")
     qdat_df = pd.read_parquet(QDAT_PATH)
     ref_words_qdat = db.get_ayah_phonetics(2, 32)
-    exp_str_qdat = "".join([w['word_tr'] for w in ref_words_qdat]).lower()
 
     all_bucket_results = {
         "Madd (Timing)": [],
@@ -61,37 +55,38 @@ def run_final_evaluation():
 
     # --- PROCESS QDAT (Rules) ---
     print("\n[1/2] Processing Rules (Madd/Ghunnah)...")
-    for i, row in qdat_df.iterrows():
+    for idx, row in qdat_df.iterrows():
         try:
             is_madd_error = (row['separate_tide'] == 0)
             is_ghunnah_error = (row['the_tight_noon'] == 0)
             
             res = pe.transcribe_phonetics(row['audio']['bytes'])
-            act_str = "".join(res["words"]).lower()
-            conf = res["confidence"]
-            durations = res["char_durations"]
+            char_durations = res["char_durations"]
             
-            sim = TajweedScorer.weighted_similarity(act_str, exp_str_qdat)
+            # Scorer check
+            temp_madd = TajweedScorer.score_temporal_madd(char_durations, ref_words_qdat)
+            temp_ghunnah = TajweedScorer.score_temporal_ghunnah(char_durations, ref_words_qdat)
             
-            # Integrated Decision (Phonetic + Confidence + Temporal)
-            temp_madd = TajweedScorer.score_temporal_madd(durations, ref_words_qdat)
-            temp_ghunnah = TajweedScorer.score_temporal_ghunnah(durations, ref_words_qdat)
-            
-            madd_det = (sim < MAULANA_GRADE) and (conf > CONF_THRESHOLD) or any(t['error'] for t in temp_madd)
-            ghunnah_det = (sim < MAULANA_GRADE) and (conf > CONF_THRESHOLD) or any(t['error'] for t in temp_ghunnah)
+            # Target words indices (4 for 'lanā', 8 for 'innaka')
+            madd_det = temp_madd[4]["error"]
+            ghunnah_det = temp_ghunnah[8]["error"]
 
             all_bucket_results["Madd (Timing)"].append({"gt": is_madd_error, "det": madd_det})
-            all_bucket_results["Ghunnah (Nasal)"].append({"gt": is_ghunnah_error, "det": ghunnah_det})
+            
+            if not np.isnan(row['the_tight_noon']):
+                all_bucket_results["Ghunnah (Nasal)"].append({"gt": is_ghunnah_error, "det": ghunnah_det})
             
             total_processed += 1
             if total_processed % 100 == 0:
                 elapsed = time.time() - start_time
                 print(f"   Progress: {total_processed}/2259 | {elapsed/60:.1f}m elapsed...")
-        except: continue
+        except Exception as e:
+            print(f"Error on QDAT row {idx}: {e}")
+            continue
 
-    # --- PROCESS MENDELEY (Articulation/Noise) ---
+    # --- PROCESS MENDELEY (Articulation/Vowels) ---
     print("\n[2/2] Processing Articulation (Mendeley)...")
-    for i, f in enumerate(mendeley_files):
+    for idx, f in enumerate(mendeley_files):
         try:
             is_error_gt = (f.name[-5] == 'F')
             verse_num = int(f.name.split('V')[1][0])
@@ -100,33 +95,34 @@ def run_final_evaluation():
             
             res = pe.transcribe_phonetics(open(f, "rb").read())
             act_str = "".join(res["words"]).lower()
-            conf = res["confidence"]
             
             sim = TajweedScorer.weighted_similarity(act_str, exp_str)
             has_swap = TajweedScorer._has_identity_swap(act_str, exp_str)
             
-            # Neural Decision
-            detected = (sim < MAULANA_GRADE) and (conf > CONF_THRESHOLD)
-            
+            # Characterization and thresholds mapping
             if has_swap or "q" in exp_str or "s" in exp_str:
-                all_bucket_results["Makharij (Articulation)"].append({"gt": is_error_gt, "det": detected})
+                detected_makharij = (sim < 0.5)
+                all_bucket_results["Makharij (Articulation)"].append({"gt": is_error_gt, "det": detected_makharij})
             else:
-                all_bucket_results["Vowel Accuracy"].append({"gt": is_error_gt, "det": detected})
+                detected_vowel = (sim < 0.6)
+                all_bucket_results["Vowel Accuracy"].append({"gt": is_error_gt, "det": detected_vowel})
 
             total_processed += 1
             if total_processed % 100 == 0:
                 elapsed = time.time() - start_time
                 print(f"   Progress: {total_processed}/2259 | {elapsed/60:.1f}m elapsed...")
-        except: continue
+        except Exception as e:
+            print(f"Error on Mendeley file {f.name}: {e}")
+            continue
 
     # --- FINAL REPORT ---
     print("\n" + "="*90)
-    print(f"{'BUCKET':<25} | {'COUNT':<6} | {'RECALL':<10} | {'PRECISION':<10} | {'F1 SCORE'}")
+    print(f"{'BUCKET':<25} | {'COUNT':<6} | {'RECALL':<10} | {'PRECISION':<10} | {'F1 SCORE'} | {'TP/FP/FN/TN'}")
     print("-"*90)
     
     for bucket, res in all_bucket_results.items():
         m = calculate_metrics(res)
-        print(f"{bucket:<25} | {m['Count']:<6} | {m['Rec']:>8.1%} | {m['Prec']:>9.1%} | {m['F1']:.4f}")
+        print(f"{bucket:<25} | {m['Count']:<6} | {m['Rec']:>8.1%} | {m['Prec']:>9.1%} | {m['F1']:.4f} | {m['TP']}/{m['FP']}/{m['FN']}/{m['TN']}")
     
     print("="*90)
     print(f"GLOBAL COMPLETION: 2,259 Files processed using Neural Confidence + Temporal Alignment.")

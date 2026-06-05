@@ -185,18 +185,23 @@ def _run_tajweed_pipeline_sync(
             ]
         }
 
-    # Step 2: Run Whisper ASR on pre-loaded clean audio array
-    logger.info("[/api/tajweed-check] Step 2: Running Whisper ASR...")
-    whisper_result = whisper.transcribe(
-        audio_array,
-        content_type
+    # Step 2: Run Wav2Vec2 to extract CTC logits
+    logger.info("[/api/tajweed-check] Step 2: Extracting Wav2Vec2 logits...")
+    logits, _ = phonetic_engine.get_ctc_logits(
+        audio_array
     )
-    transcribed_text = whisper_result["text"]
-    logger.info(f"[/api/tajweed-check] Step 2 done. Transcribed: '{transcribed_text}'")
+    logger.info(f"[/api/tajweed-check] Step 2 done. Logits shape: {list(logits.shape)}")
+
+    # Step 3: Decode Wav2Vec2 phonetics
+    logger.info("[/api/tajweed-check] Step 3: Decoding Wav2Vec2 phonetics & alignment...")
+    phonetic_result = phonetic_engine.decode_logits(logits)
+    actual_phonetics = phonetic_result["words"]
+    transcribed_text = phonetic_result["phonetics"]
+    logger.info(f"[/api/tajweed-check] Step 3 done. actual_phonetics: {actual_phonetics}")
 
     # Guard against empty transcription
-    if not transcribed_text:
-        logger.warning("[/api/tajweed-check] Empty transcription from Whisper.")
+    if not actual_phonetics:
+        logger.warning("[/api/tajweed-check] Empty transcription from Wav2Vec2.")
         return {
             "maulana_feedback": {
                 "status": "Correction Required (Niqis)",
@@ -231,19 +236,6 @@ def _run_tajweed_pipeline_sync(
                 for ref in reference_words
             ]
         }
-
-    # Step 3: Run Wav2Vec2 to extract CTC logits
-    logger.info("[/api/tajweed-check] Step 3: Extracting Wav2Vec2 logits...")
-    logits, _ = phonetic_engine.get_ctc_logits(
-        audio_array
-    )
-    logger.info(f"[/api/tajweed-check] Step 3 done. Logits shape: {list(logits.shape)}")
-
-    # Step 4: Decode Wav2Vec2 phonetics
-    logger.info("[/api/tajweed-check] Step 4: Decoding Wav2Vec2 phonetics & alignment...")
-    phonetic_result = phonetic_engine.decode_logits(logits)
-    actual_phonetics = phonetic_result["words"]
-    logger.info(f"[/api/tajweed-check] Step 4 done. actual_phonetics: {actual_phonetics}")
 
     # Step 4: Forced alignment
     aligned_words = AlignmentEngine.align_words(
@@ -341,12 +333,9 @@ async def tajweed_check(
             detail="Analysis in progress. Please wait ~30 seconds for the current recitation to finish, then try again."
         )
 
-    whisper = request.app.state.whisper
     phonetic_engine = request.app.state.phonetic
     phonetic_db = request.app.state.phonetic_db
 
-    if not whisper or not whisper.is_loaded:
-        raise HTTPException(503, "Whisper model not loaded")
     if not phonetic_engine or not phonetic_engine.is_loaded:
         raise HTTPException(503, "Phonetic model not loaded")
     if not phonetic_db or not phonetic_db.is_loaded:
@@ -368,7 +357,7 @@ async def tajweed_check(
             pipeline_result = await loop.run_in_executor(
                 None,
                 _run_tajweed_pipeline_sync,
-                whisper,
+                None,  # whisper is None (bypassed)
                 phonetic_engine,
                 phonetic_db,
                 request.app.state.temporal_engine,

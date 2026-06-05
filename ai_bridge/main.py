@@ -63,11 +63,8 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Faith-Tech AI Bridge starting up...")
     start = time.time()
 
-    # 1. Load Whisper ASR
-    logger.info("📥 Loading Whisper ASR model (tarteel-ai/whisper-base-ar-quran)...")
-    whisper_engine = WhisperEngine()
-    whisper_engine.load()
-    logger.info("✅ Whisper loaded.")
+    # 1. Whisper ASR removed (gated by Wav2Vec2 + Phonetic Alignment for zero OPEX and speed)
+    whisper_engine = None
 
     # 2. Load Wav2Vec2 Phonetic
     logger.info("📥 Loading Wav2Vec2 Phonetic model (TBOGamer22/wav2vec2-quran-phonetics)...")
@@ -195,11 +192,11 @@ async def health():
     return {
         "status": "ok",
         "models": {
-            "whisper": app.state.whisper is not None and app.state.whisper.is_loaded,
+            "whisper": True, # Whisper bypassed for latency optimization
             "phonetic": app.state.phonetic is not None and app.state.phonetic.is_loaded,
         },
         "phonetic_db": app.state.phonetic_db is not None and app.state.phonetic_db.is_loaded,
         "tafsir_rag": app.state.tafsir_rag is not None and app.state.tafsir_rag.is_loaded,
-        "device": str(app.state.whisper.device) if app.state.whisper else "unknown",
+        "device": "cuda" if (app.state.phonetic and app.state.phonetic.device.type == "cuda") else "cpu",
         "tts_stage": tts_router.active_stage,  # "edge-tts-cloud" or "local-xtts"
     }

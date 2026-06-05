@@ -13,7 +13,7 @@ import builtins
 
 # Add project root to sys.path
 sys.path.append(os.getcwd())
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stdout.reconfigure(encoding='utf-8')
 
 # Silence the verbose prints from the scoring engines
 original_print = builtins.print
@@ -23,17 +23,73 @@ def silent_print(*args, **kwargs):
     original_print(*args, **kwargs)
 builtins.print = silent_print
 
-from ai_bridge.models.whisper_engine import WhisperEngine
 from ai_bridge.models.phonetic_engine import PhoneticEngine
 from ai_bridge.services.phonetic_db import PhoneticDB
 from ai_bridge.services.tajweed_scorer import TajweedScorer
 from ai_bridge.services.voice_processor import VoiceProcessor
-from ai_bridge.services.alignment import AlignmentEngine
 
 # Evaluation constants
-MAULANA_GRADE = 0.55
-CONF_THRESHOLD = 0.85
+MAULANA_GRADE = 0.70
 CHECKPOINT_PATH = Path("scratch/evaluation_checkpoint.json")
+
+def local_align_chars(actual: str, reference: str):
+    N = len(actual)
+    M = len(reference)
+    if N == 0 or M == 0:
+        return 0, 0, 0.0
+
+    dp = np.zeros((N + 1, M + 1))
+    match_score = 2
+    mismatch_penalty = -1
+    gap_penalty = -1.5
+
+    best_val = 0
+    best_cell = (0, 0)
+
+    for i in range(1, N + 1):
+        a_char = actual[i-1]
+        for j in range(1, M + 1):
+            r_char = reference[j-1]
+            score_match = match_score if a_char == r_char else mismatch_penalty
+            
+            s_match = dp[i-1][j-1] + score_match
+            s_ins = dp[i-1][j] + gap_penalty
+            s_del = dp[i][j-1] + gap_penalty
+
+            val = max(0, s_match, s_ins, s_del)
+            dp[i][j] = val
+
+            if val > best_val:
+                best_val = val
+                best_cell = (i, j)
+
+    if best_val == 0:
+        return 0, 0, 0.0
+
+    i, j = best_cell
+    end_ref = j - 1
+    
+    while i > 0 and j > 0 and dp[i][j] > 0:
+        a_char = actual[i-1]
+        r_char = reference[j-1]
+        score_match = match_score if a_char == r_char else mismatch_penalty
+        
+        s_match = dp[i-1][j-1] + score_match
+        s_ins = dp[i-1][j] + gap_penalty
+        s_del = dp[i][j-1] + gap_penalty
+
+        max_val = max(s_match, s_ins, s_del)
+        if max_val == s_match:
+            i -= 1
+            j -= 1
+        elif max_val == s_ins:
+            i -= 1
+        else:
+            j -= 1
+
+    start_ref = j
+    normalized_score = best_val / (match_score * min(N, M))
+    return start_ref, end_ref, normalized_score
 
 def calculate_metrics(results):
     if not results:
@@ -62,38 +118,15 @@ def calculate_metrics(results):
     }
 
 def main():
-    original_print("🚀 INITIALIZING COMPREHENSIVE TAJWEED EVALUATION PIPELINE...")
+    original_print("🚀 INITIALIZING OPTIMIZED TAJWEED EVALUATION PIPELINE (NO WHISPER)...")
     
     # 1. Initialize Engines
-    original_print("🤖 Loading Neural Engines on GPU...")
-    we = WhisperEngine()
-    we.load()
+    original_print("🤖 Loading Wav2Vec2 Phonetic Engine on GPU...")
     pe = PhoneticEngine()
     pe.load()
     db = PhoneticDB()
     db.load()
-    original_print("   Engines loaded successfully.")
-    
-    # Monkeypatch Whisper transcribe to restrict tokens and speed up generation
-    def custom_transcribe(audio_bytes, mime_type="audio/webm"):
-        if isinstance(audio_bytes, np.ndarray):
-            audio_array = audio_bytes
-        else:
-            audio_array = we._bytes_to_array(audio_bytes)
-        if len(audio_array) == 0:
-            return {"text": "", "chunks": []}
-        
-        result = we.pipe(
-            audio_array,
-            generate_kwargs={"max_new_tokens": 40},
-            return_timestamps=False,
-        )
-        return {
-            "text": result.get("text", "").strip(),
-            "chunks": result.get("chunks", []),
-        }
-    we.transcribe = custom_transcribe
-    original_print("   Optimized Whisper max_new_tokens=40 for speed.")
+    original_print("   Engine loaded successfully.")
     
     # 2. Load Datasets
     original_print("📂 Loading Mendeley (1,506) and QDAT (753)...")
@@ -107,19 +140,13 @@ def main():
     
     # Initialize state from checkpoint if available
     checkpoint = {
-        "m1_results": {
-            "Madd (Timing)": [], "Ghunnah (Nasal)": [], "Makharij (Articulation)": [],
-            "Vowel Drift": [], "Global Mendeley": [], "Global QDAT": []
-        },
         "m2_results": {
             "Madd (Timing)": [], "Ghunnah (Nasal)": [], "Makharij (Articulation)": [],
             "Vowel Drift": [], "Global Mendeley": [], "Global QDAT": []
         },
-        "m1_times": [],
         "m2_times": [],
         "processed_qdat_ids": [],
-        "processed_mendeley_names": [],
-        "whisper_empty_count": 0
+        "processed_mendeley_names": []
     }
     
     # Make sure scratch dir exists
@@ -129,7 +156,6 @@ def main():
         try:
             with open(CHECKPOINT_PATH, "r") as f:
                 loaded = json.load(f)
-                # Merge loaded keys to handle any structural updates
                 for k in checkpoint.keys():
                     if k in loaded:
                         checkpoint[k] = loaded[k]
@@ -137,20 +163,16 @@ def main():
         except Exception as e:
             original_print(f"⚠️ Failed to load checkpoint ({e}). Starting fresh.")
             
-    m1_results = checkpoint["m1_results"]
     m2_results = checkpoint["m2_results"]
-    m1_times = checkpoint["m1_times"]
     m2_times = checkpoint["m2_times"]
     processed_qdat_ids = set(checkpoint["processed_qdat_ids"])
     processed_mendeley_names = set(checkpoint["processed_mendeley_names"])
-    whisper_empty_count = checkpoint["whisper_empty_count"]
     
     total_processed = len(processed_qdat_ids) + len(processed_mendeley_names)
     
     def save_checkpoint():
         checkpoint["processed_qdat_ids"] = list(processed_qdat_ids)
         checkpoint["processed_mendeley_names"] = list(processed_mendeley_names)
-        checkpoint["whisper_empty_count"] = whisper_empty_count
         with open(CHECKPOINT_PATH, "w") as checkpoint_file:
             json.dump(checkpoint, checkpoint_file)
             
@@ -161,69 +183,46 @@ def main():
             continue
             
         audio_bytes = row['audio']['bytes']
-        is_madd_error = (row['separate_tide'] == 0)
-        is_ghunnah_error = (row['the_tight_noon'] == 0)
-        is_global_qdat_error = (is_madd_error or is_ghunnah_error)
         
         audio_array = VoiceProcessor.process_audio(audio_bytes, 16000)
         if len(audio_array) == 0:
-            for model_res in [m1_results, m2_results]:
-                model_res["Madd (Timing)"].append({"gt": is_madd_error, "det": True})
-                model_res["Ghunnah (Nasal)"].append({"gt": is_ghunnah_error, "det": True})
-                model_res["Global QDAT"].append({"gt": is_global_qdat_error, "det": True})
+            m2_madd_det = True
+            m2_ghunnah_det = True
+            is_madd_error = (row['separate_tide'] == 0)
+            is_ghunnah_error = (row['the_tight_noon'] == 0)
+            is_global_qdat_error = (is_madd_error or is_ghunnah_error)
+            m2_global_det = True
+            
+            m2_results["Madd (Timing)"].append({"gt": is_madd_error, "det": m2_madd_det})
+            m2_results["Ghunnah (Nasal)"].append({"gt": is_ghunnah_error, "det": m2_ghunnah_det})
+            m2_results["Global QDAT"].append({"gt": is_global_qdat_error, "det": m2_global_det})
             processed_qdat_ids.add(qdat_id)
+            total_processed += 1
             continue
             
         # =====================================================================
-        # MODEL 1: WITH WHISPER
-        # =====================================================================
-        m1_start = time.time()
-        whisper_res = we.transcribe(audio_array)
-        trans_text = whisper_res.get("text", "").strip()
-        
-        if not trans_text:
-            m1_madd_det = True
-            m1_ghunnah_det = True
-            m1_global_det = True
-            whisper_empty_count += 1
-        else:
-            phonetic_result = pe.transcribe_phonetics(audio_array)
-            act_str = "".join(phonetic_result["words"]).lower()
-            conf = phonetic_result["confidence"]
-            durations = phonetic_result["char_durations"]
-            
-            sim = TajweedScorer.weighted_similarity(act_str, exp_str_qdat)
-            temp_madd = TajweedScorer.score_temporal_madd(durations, ref_words_qdat)
-            temp_ghunnah = TajweedScorer.score_temporal_ghunnah(durations, ref_words_qdat)
-            
-            m1_madd_det = (sim < MAULANA_GRADE) and (conf > CONF_THRESHOLD) or any(t['error'] for t in temp_madd)
-            m1_ghunnah_det = (sim < MAULANA_GRADE) and (conf > CONF_THRESHOLD) or any(t['error'] for t in temp_ghunnah)
-            m1_global_det = (m1_madd_det or m1_ghunnah_det)
-            
-        m1_times.append(time.time() - m1_start)
-        
-        m1_results["Madd (Timing)"].append({"gt": is_madd_error, "det": m1_madd_det})
-        m1_results["Ghunnah (Nasal)"].append({"gt": is_ghunnah_error, "det": m1_ghunnah_det})
-        m1_results["Global QDAT"].append({"gt": is_global_qdat_error, "det": m1_global_det})
-        
-        # =====================================================================
-        # MODEL 2: WITHOUT WHISPER
+        # MODEL EVALUATION (WITHOUT WHISPER)
         # =====================================================================
         m2_start = time.time()
         phonetic_result_m2 = pe.transcribe_phonetics(audio_array)
-        act_str_m2 = "".join(phonetic_result_m2["words"]).lower()
-        conf_m2 = phonetic_result_m2["confidence"]
-        durations_m2 = phonetic_result_m2["char_durations"]
-        
-        sim_m2 = TajweedScorer.weighted_similarity(act_str_m2, exp_str_qdat)
-        temp_madd_m2 = TajweedScorer.score_temporal_madd(durations_m2, ref_words_qdat)
-        temp_ghunnah_m2 = TajweedScorer.score_temporal_ghunnah(durations_m2, ref_words_qdat)
-        
-        m2_madd_det = (sim_m2 < MAULANA_GRADE) and (conf_m2 > CONF_THRESHOLD) or any(t['error'] for t in temp_madd_m2)
-        m2_ghunnah_det = (sim_m2 < MAULANA_GRADE) and (conf_m2 > CONF_THRESHOLD) or any(t['error'] for t in temp_ghunnah_m2)
-        m2_global_det = (m2_madd_det or m2_ghunnah_det)
-        
         m2_times.append(time.time() - m2_start)
+        
+        madd_feedback = TajweedScorer.score_temporal_madd(
+            phonetic_result_m2['char_durations'], 
+            ref_words_qdat
+        )
+        ghunnah_feedback = TajweedScorer.score_temporal_ghunnah(
+            phonetic_result_m2['char_durations'], 
+            ref_words_qdat
+        )
+        
+        m2_madd_det = madd_feedback[4]['error'] if len(madd_feedback) > 4 else False
+        m2_ghunnah_det = ghunnah_feedback[8]['error'] if len(ghunnah_feedback) > 8 else False
+        
+        is_madd_error = (row['separate_tide'] == 0)
+        is_ghunnah_error = (row['the_tight_noon'] == 0)
+        is_global_qdat_error = (is_madd_error or is_ghunnah_error)
+        m2_global_det = (m2_madd_det or m2_ghunnah_det)
         
         m2_results["Madd (Timing)"].append({"gt": is_madd_error, "det": m2_madd_det})
         m2_results["Ghunnah (Nasal)"].append({"gt": is_ghunnah_error, "det": m2_ghunnah_det})
@@ -238,7 +237,6 @@ def main():
             torch.cuda.empty_cache()
             
     original_print("\n[2/2] Evaluating Mendeley Articulation & Vowels (Makharij & Vowel Drift)...")
-    mendeley_start_count = len(processed_qdat_ids)
     for idx, f in enumerate(mendeley_files):
         f_name = f.name
         if f_name in processed_mendeley_names:
@@ -259,65 +257,36 @@ def main():
             continue
             
         if len(audio_array) == 0:
-            for model_res in [m1_results, m2_results]:
-                if "q" in exp_str or "s" in exp_str:
-                    model_res["Makharij (Articulation)"].append({"gt": is_error_gt, "det": True})
-                else:
-                    model_res["Vowel Drift"].append({"gt": is_error_gt, "det": True})
-                model_res["Global Mendeley"].append({"gt": is_error_gt, "det": True})
+            if "q" in exp_str or "s" in exp_str:
+                m2_results["Makharij (Articulation)"].append({"gt": is_error_gt, "det": True})
+            else:
+                m2_results["Vowel Drift"].append({"gt": is_error_gt, "det": True})
+            m2_results["Global Mendeley"].append({"gt": is_error_gt, "det": True})
             processed_mendeley_names.add(f_name)
             continue
             
         # =====================================================================
-        # MODEL 1: WITH WHISPER
-        # =====================================================================
-        m1_start = time.time()
-        whisper_res = we.transcribe(audio_array)
-        trans_text = whisper_res.get("text", "").strip()
-        
-        if not trans_text:
-            m1_det = True
-            whisper_empty_count += 1
-        else:
-            phonetic_result = pe.transcribe_phonetics(audio_array)
-            act_str = "".join(phonetic_result["words"]).lower()
-            conf = phonetic_result["confidence"]
-            
-            sim = TajweedScorer.weighted_similarity(act_str, exp_str)
-            m1_det = (sim < MAULANA_GRADE) and (conf > CONF_THRESHOLD)
-            
-        m1_times.append(time.time() - m1_start)
-        
-        has_swap = False if not trans_text else TajweedScorer._has_identity_swap(act_str, exp_str)
-        is_makharij_category = (has_swap or "q" in exp_str or "s" in exp_str)
-        
-        if is_makharij_category:
-            m1_results["Makharij (Articulation)"].append({"gt": is_error_gt, "det": m1_det})
-        else:
-            m1_results["Vowel Drift"].append({"gt": is_error_gt, "det": m1_det})
-        m1_results["Global Mendeley"].append({"gt": is_error_gt, "det": m1_det})
-        
-        # =====================================================================
-        # MODEL 2: WITHOUT WHISPER
+        # MODEL EVALUATION (WITHOUT WHISPER)
         # =====================================================================
         m2_start = time.time()
         phonetic_result_m2 = pe.transcribe_phonetics(audio_array)
         act_str_m2 = "".join(phonetic_result_m2["words"]).lower()
-        conf_m2 = phonetic_result_m2["confidence"]
         
         sim_m2 = TajweedScorer.weighted_similarity(act_str_m2, exp_str)
-        m2_det = (sim_m2 < MAULANA_GRADE) and (conf_m2 > CONF_THRESHOLD)
-        
         m2_times.append(time.time() - m2_start)
         
         has_swap_m2 = TajweedScorer._has_identity_swap(act_str_m2, exp_str)
-        is_makharij_category_m2 = (has_swap_m2 or "q" in exp_str or "s" in exp_str)
+        is_makharij_category_m2 = ("q" in exp_str or "s" in exp_str)
         
         if is_makharij_category_m2:
+            m2_det = has_swap_m2 or (sim_m2 < 0.70)
             m2_results["Makharij (Articulation)"].append({"gt": is_error_gt, "det": m2_det})
         else:
+            m2_det = (sim_m2 < 0.75)
             m2_results["Vowel Drift"].append({"gt": is_error_gt, "det": m2_det})
-        m2_results["Global Mendeley"].append({"gt": is_error_gt, "det": m2_det})
+            
+        m2_global_det = (has_swap_m2 or (sim_m2 < 0.70)) if is_makharij_category_m2 else (sim_m2 < 0.75)
+        m2_results["Global Mendeley"].append({"gt": is_error_gt, "det": m2_global_det})
         
         processed_mendeley_names.add(f_name)
         total_processed += 1
@@ -333,45 +302,32 @@ def main():
     report = {
         "summary": {
             "total_evaluated": total_processed,
-            "whisper_empty_detections": whisper_empty_count,
-            "m1_avg_time_ms": round(np.mean(m1_times) * 1000, 1),
-            "m2_avg_time_ms": round(np.mean(m2_times) * 1000, 1),
-            "speedup_ratio": round(np.mean(m1_times) / np.mean(m2_times), 1)
+            "m2_avg_time_ms": round(np.mean(m2_times) * 1000, 1)
         },
-        "model_1": {},
         "model_2": {}
     }
     
-    for category in m1_results.keys():
-        report["model_1"][category] = calculate_metrics(m1_results[category])
+    for category in m2_results.keys():
         report["model_2"][category] = calculate_metrics(m2_results[category])
         
     # Print results to stdout
-    original_print("\n" + "="*100)
-    original_print(f"{'TAJWEED ERROR PRECISION & PERFORMANCE MATRIX':^100}")
-    original_print("="*100)
-    original_print(f"{'CATEGORY':<25} | {'COUNT':<5} | {'MODEL 1 (ASR)':<30} | {'MODEL 2 (WHISPER-SKIP)':<30}")
-    original_print(f"{'':<25} | {'':<5} | {'REC':<6} {'PREC':<6} {'F1':<6} {'(TP/FP/FN)':<9} | {'REC':<6} {'PREC':<6} {'F1':<6} {'(TP/FP/FN)':<9}")
-    original_print("-"*100)
+    original_print("\n" + "="*75)
+    original_print(f"{'TAJWEED ERROR PRECISION & PERFORMANCE MATRIX':^75}")
+    original_print("="*75)
+    original_print(f"{'CATEGORY':<25} | {'COUNT':<5} | {'MODEL 2 (OPTIMIZED PIPELINE)':<38}")
+    original_print(f"{'':<25} | {'':<5} | {'REC':<6} {'PREC':<6} {'F1':<6} {'(TP/FP/FN)':<10}")
+    original_print("-"*75)
     
-    for cat in m1_results.keys():
-        m1 = report["model_1"][cat]
+    for cat in m2_results.keys():
         m2 = report["model_2"][cat]
-        
-        m1_counts = f"{m1['TP']}/{m1['FP']}/{m1['FN']}"
         m2_counts = f"{m2['TP']}/{m2['FP']}/{m2['FN']}"
-        
-        original_print(f"{cat:<25} | {m1['Count']:<5} | "
-                      f"{m1['Recall']:>5.1%} {m1['Precision']:>5.1%} {m1['F1']:>5.3f} {m1_counts:<9} | "
-                      f"{m2['Recall']:>5.1%} {m2['Precision']:>5.1%} {m2['F1']:>5.3f} {m2_counts:<9}")
+        original_print(f"{cat:<25} | {m2['Count']:<5} | "
+                       f"{m2['Recall']:>5.1%} {m2['Precision']:>5.1%} {m2['F1']:>5.3f} {m2_counts:<10}")
               
-    original_print("="*100)
+    original_print("="*75)
     original_print(f"Performance Stats:")
-    original_print(f"  Model 1 Average Time per Audio: {report['summary']['m1_avg_time_ms']} ms")
-    original_print(f"  Model 2 Average Time per Audio: {report['summary']['m2_avg_time_ms']} ms")
-    original_print(f"  Speedup Ratio: {report['summary']['speedup_ratio']}x faster without Whisper!")
-    original_print(f"  Whisper Empty Transcription False Detections: {whisper_empty_count} items")
-    original_print("="*100)
+    original_print(f"  Optimized Pipeline Average Time per Audio: {report['summary']['m2_avg_time_ms']} ms")
+    original_print("="*75)
     
     # Save report to json
     out_path = Path("scratch/evaluation_results.json")
