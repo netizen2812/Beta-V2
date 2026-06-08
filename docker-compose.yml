@@ -4,8 +4,7 @@ services:
   ai-bridge:
     build:
       context: ./ai_bridge
-      dockerfile: Dockerfile.gpu          # ← GPU build (was Dockerfile.python/CPU)
-    runtime: nvidia                        # ← expose T4 GPU to the container
+      dockerfile: Dockerfile.python
     container_name: quran-ai-bridge
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
@@ -16,18 +15,9 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://imamv2.vercel.app,https://www.imamapp.co,https://imamapp.co,http://localhost:3000}
       - TAFSIR_FAST_START=${TAFSIR_FAST_START:-1}
       - PYTHONUNBUFFERED=1
-      - NVIDIA_VISIBLE_DEVICES=all        # expose all GPUs (just the T4 here)
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
       - ./ai_bridge/data:/usr/src/app/data
       - ./ai_bridge/models:/usr/src/app/models
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     # NOTE: No ports: mapping intentional — AI Bridge is internal only.
     networks:
       - quran-net
