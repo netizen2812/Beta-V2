@@ -13,6 +13,13 @@ import type { NextConfig } from "next";
  * at your GCP VM. Use a static reserved IP or a domain — spot VMs change IP
  * on preemption. If unset, falls back to the hardcoded IP below.
  *
+ * WebSocket (wss://) note:
+ *   Vercel rewrites CANNOT proxy WebSocket connections — only HTTP.
+ *   Set NEXT_PUBLIC_WS_URL in Vercel to point at the same GCP VM but with the
+ *   wss:// scheme: e.g.  wss://34.122.221.254:5001
+ *   Node.js on the GCP VM proxies WS to FastAPI internally via wsProxy.js.
+ *   If unset, it is auto-derived from NEXT_PUBLIC_BACKEND_URL below.
+ *
  * NOTE: aiBridgeHost is intentionally removed — the AI Bridge (port 8000)
  * is inside the Docker network and not exposed externally. All AI calls must
  * go through the Express backend which proxies to the bridge internally.
@@ -98,6 +105,8 @@ const nextConfig: NextConfig = {
         source: "/api/analytics/:path*",
         destination: `${backendHost}/api/analytics/:path*`,
       },
+      // NOTE: /ws/* is NOT listed here — Vercel cannot proxy WebSocket upgrades.
+      // Browsers connect directly to wss://GCE_IP:5001/ws/* (NEXT_PUBLIC_WS_URL).
     ];
   },
 };

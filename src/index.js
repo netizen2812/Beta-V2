@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import quranLearningRoutes from "./routes/quranLearningRoutes.js";
 import { checkAiBridgeHealth } from "./services/tajweedService.js";
+import { attachWsProxy } from "./wsProxy.js";
 
 dotenv.config();
 
@@ -68,7 +69,14 @@ const start = async () => {
       }
     });
 
-    app.listen(PORT, () => console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`));
+    const server = app.listen(PORT, () =>
+      console.log(`🚀 Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`)
+    );
+
+    // Attach WS proxy so browser WS connections (wss://GCE_IP:5001/ws/*)
+    // are tunnelled to the Python FastAPI AI Bridge on the internal network.
+    // Vercel cannot proxy WebSockets — browsers must connect here directly.
+    attachWsProxy(server);
   } catch (e) {
     console.error("❌ Failed to start:", e);
   }

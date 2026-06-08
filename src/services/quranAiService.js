@@ -74,54 +74,34 @@ export async function generateQuranExplanation(ayah_id, arabic_text, translation
   }
 }
 
-export async function askImamStandalone(user_question, language_code, ayah_id, ayahContext, madhab = "shafi") {
-  // 1. Classify user question for emotional/spiritual topics to use the 80/20 RAG split
-  const textLower = user_question.toLowerCase();
-  let topic = null;
-  let theme = null;
+export async function askImamStandalone(user_question, language_code, ayah_id, ayahContext, madhab = "shafi", history = []) {
+  // Parallel RAG fetch — all 4 sources queried simultaneously
+  let tafsirContext = "";
+  let madhabContext = "";
+  let tajweedContext = "";
+  let hadithContext = "";
 
-  if (textLower.includes("exam") || textLower.includes("academic") || textLower.includes("study") || textLower.includes("school") || textLower.includes("test")) {
-    topic = "Academic Stress";
-    theme = "Exams";
-  } else if (textLower.includes("anxious") || textLower.includes("anxiety") || textLower.includes("worry") || textLower.includes("fear") || textLower.includes("worried")) {
-    topic = "Anxiety";
-    theme = "Worry";
-  } else if (textLower.includes("grief") || textLower.includes("lonely") || textLower.includes("loneliness") || textLower.includes("sad") || textLower.includes("death")) {
-    topic = "Grief";
-    theme = "Loneliness";
-  } else if (textLower.includes("family") || textLower.includes("parent") || textLower.includes("mother") || textLower.includes("father") || textLower.includes("sibling")) {
-    topic = "Family Issues";
-    theme = "Family";
-  } else if (textLower.includes("overwhelmed") || textLower.includes("heavy") || textLower.includes("burnout")) {
-    topic = "Overwhelmed";
-    theme = "Overwhelmed";
-  } else if (textLower.includes("envy") || textLower.includes("envious") || textLower.includes("hasad") || textLower.includes("jealous") || textLower.includes("jealousy")) {
-    topic = "Envy";
-    theme = "Hasad";
-  } else if (textLower.includes("patience") || textLower.includes("sabr") || textLower.includes("allah") || textLower.includes("dua") || textLower.includes("test") || textLower.includes("peace") || textLower.includes("repent") || textLower.includes("heart") || textLower.includes("comfort") || textLower.includes("faith") || textLower.includes("trust") || textLower.includes("hardship") || textLower.includes("ease") || textLower.includes("guidance") || textLower.includes("soul") || textLower.includes("spiritual")) {
-    topic = "General Comfort";
-    theme = "Spiritual";
-  }
+  const promises = [];
 
-  // Fall through to semantic RAG and OpenRouter for instant, high-quality, non-blocking text response
-
-  // If not emotional or bridge call failed, fall back to OpenRouter
-  let ragContext = "";
+  // 1. Tafsir Context
   if (ayah_id && ayah_id !== "1:1") {
-    try {
-      const ragResponse = await axios.get(`${AI_BRIDGE_URL}/api/tafsir/context`, {
+    promises.push(
+      axios.get(`${AI_BRIDGE_URL}/api/tafsir/context`, {
         params: { ayah_id },
         headers: {
           "X-API-Key": process.env.INTERNAL_API_KEY || "",
         },
         timeout: 5000,
-      });
-      ragContext = ragResponse.data.context;
-    } catch (e) {}
+      }).then(res => {
+        tafsirContext = res.data.context;
+        console.log(`✅ Retrieved exact Tafsir context for ${ayah_id}`);
+      }).catch(err => {
+        console.warn(`⚠️ Tafsir context fetch failed for ${ayah_id}:`, err.message);
+      })
+    );
   } else {
-    // General chat question: perform semantic search on the Tafsir vector database using the user's question (adapting the FaithTech dynamic search concept)
-    try {
-      const ragResponse = await axios.post(`${AI_BRIDGE_URL}/api/tafsir-query`, {
+    promises.push(
+      axios.post(`${AI_BRIDGE_URL}/api/tafsir-query`, {
         query: user_question,
         n_results: 3
       }, {
@@ -130,20 +110,107 @@ export async function askImamStandalone(user_question, language_code, ayah_id, a
           "Content-Type": "application/json",
         },
         timeout: 5000,
-      });
-      if (ragResponse.data?.data?.results) {
-        ragContext = ragResponse.data.data.results.map(r => `[Quran/Tafsir ${r.ayah_id}] ${r.text}`).join("\n\n");
-        console.log(`✅ Retrieved semantic search RAG context (${ragResponse.data.data.results.length} results)`);
+      }).then(res => {
+        if (res.data?.data?.results) {
+          tafsirContext = res.data.data.results.map(r => `[Quran/Tafsir ${r.ayah_id}] ${r.text}`).join("\n\n");
+          console.log(`✅ Retrieved semantic Tafsir RAG context (${res.data.data.results.length} results)`);
+        }
+      }).catch(err => {
+        console.warn("⚠️ Semantic Tafsir RAG search failed:", err.message);
+      })
+    );
+  }
+
+  // 2. Madhab Rules — always fetched so Fiqh rulings are available for any question
+  if (madhab && madhab !== "general") {
+    promises.push(
+      axios.post(`${AI_BRIDGE_URL}/api/smart-query`, {
+        query: user_question,
+        madhab: madhab,
+        n_results: 3
+      }, {
+        headers: {
+          "X-API-Key": process.env.INTERNAL_API_KEY || "",
+          "Content-Type": "application/json",
+        },
+        timeout: 5000,
+      }).then(res => {
+        if (res.data?.data?.results) {
+          madhabContext = res.data.data.results.map(r => `[Madhab Rules - Page ${r.page}] ${r.text}`).join("\n\n");
+          console.log(`✅ Retrieved semantic Madhab RAG context (${res.data.data.results.length} results)`);
+        }
+      }).catch(err => {
+        console.warn("⚠️ Semantic Madhab RAG search failed:", err.message);
+      })
+    );
+  }
+
+  // 3. Tajweed Rules (always queried based on user_question)
+  promises.push(
+    axios.post(`${AI_BRIDGE_URL}/api/tajweed-query`, {
+      query: user_question,
+      n_results: 3
+    }, {
+      headers: {
+        "X-API-Key": process.env.INTERNAL_API_KEY || "",
+        "Content-Type": "application/json",
+      },
+      timeout: 5000,
+    }).then(res => {
+      if (res.data?.data?.results) {
+        tajweedContext = res.data.data.results.map(r => `[Tajweed Rule: ${r.rule_name}] Category: ${r.category}, Letters: ${r.letters || 'N/A'}\nDescription: ${r.text}`).join("\n\n");
+        console.log(`✅ Retrieved semantic Tajweed RAG context (${res.data.data.results.length} results)`);
       }
-    } catch (e) {
-      console.warn("⚠️ Semantic RAG search failed, falling back without context:", e.message);
+    }).catch(err => {
+      console.warn("⚠️ Semantic Tajweed RAG search failed:", err.message);
+    })
+  );
+
+  // 4. Hadiths (always queried based on user_question)
+  promises.push(
+    axios.post(`${AI_BRIDGE_URL}/api/hadith-query`, {
+      query: user_question,
+      n_results: 3
+    }, {
+      headers: {
+        "X-API-Key": process.env.INTERNAL_API_KEY || "",
+        "Content-Type": "application/json",
+      },
+      timeout: 5000,
+    }).then(res => {
+      if (res.data?.data?.results) {
+        hadithContext = res.data.data.results.map(r => `[Hadith - Source: ${r.source}, Narrator: ${r.narrator}] Topic: ${r.topic}\nContent: ${r.text}`).join("\n\n");
+        console.log(`✅ Retrieved semantic Hadith RAG context (${res.data.data.results.length} results)`);
+      }
+    }).catch(err => {
+      console.warn("⚠️ Semantic Hadith RAG search failed:", err.message);
+    })
+  );
+
+  // Wait for all requests to finish or fail
+  await Promise.all(promises);
+
+  let ragContext = [tafsirContext, madhabContext, tajweedContext, hadithContext].filter(Boolean).join("\n\n---\n\n");
+
+  const prompt = buildAskPrompt(language_code, user_question, ayahContext, ragContext);
+  
+  const openRouterMessages = [
+    { role: "system", content: "You are a warm, personal Quran teacher (Maulana). Your knowledge is grounded in traditional scholarly tafsir." }
+  ];
+
+  if (Array.isArray(history)) {
+    for (const msg of history) {
+      if (msg.role && msg.content) {
+        openRouterMessages.push({
+          role: msg.role === "maulana" || msg.role === "assistant" ? "assistant" : "user",
+          content: msg.content
+        });
+      }
     }
   }
 
-  const prompt = buildAskPrompt(language_code, user_question, ayahContext, ragContext);
-  const answer = await openRouterRequest([
-    { role: "system", content: "You are a warm, personal Quran teacher (Maulana). Your knowledge is grounded in traditional scholarly tafsir." },
-    { role: "user", content: prompt },
-  ]);
+  openRouterMessages.push({ role: "user", content: prompt });
+
+  const answer = await openRouterRequest(openRouterMessages);
   return { answer, raw_prompt: prompt };
 }

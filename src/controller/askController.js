@@ -5,12 +5,12 @@ import { askImamStandalone } from "../services/quranAiService.js";
 import axios from "axios";
 
 export const askImam = async (req, res) => {
-  const { user_question, ayah_id, language_code = "en" } = req.body;
+  const { user_question, ayah_id, language_code = "en", history = [] } = req.body;
   const clerkId = req.auth?.userId || "anonymous";
 
   try {
     let ayahContext = null;
-    if (ayah_id) {
+    if (ayah_id && ayah_id !== "1:1") {
       if (mongoose.connection.readyState === 1) {
         try {
           const ayah = await getAyah(ayah_id, language_code);
@@ -44,7 +44,7 @@ export const askImam = async (req, res) => {
     }
 
     const madhab = req.body.madhab || "shafi";
-    const { answer, raw_prompt } = await askImamStandalone(user_question, language_code, ayah_id, ayahContext, madhab);
+    const { answer, raw_prompt } = await askImamStandalone(user_question, language_code, ayah_id, ayahContext, madhab, history);
 
     if (mongoose.connection.readyState === 1) {
       QuranAiLog.create({ endpoint: "ask", ayah_id, language_code, prompt_sent: raw_prompt, response_received: answer, was_cached: false, user_clerk_id: clerkId })
@@ -54,17 +54,60 @@ export const askImam = async (req, res) => {
     res.json({ status: "success", data: { answer } });
   } catch (error) {
     console.error("❌ askImam error:", error.message);
-    // Warm offline Maulana fallback — gives a genuine answer to any question type
     const text = (user_question || "").toLowerCase();
-    let fallbackText;
+    const madhab = (req.body.madhab || "shafi").toLowerCase();
+    let fallbackText = "";
+
+    const isSalahOrFatiha = text.includes("fatiha") || text.includes("salah") || text.includes("prayer") || text.includes("recit");
+
     if (text.includes("qalqalah")) {
-      fallbackText = "Qalqalah refers to the echoing or bouncing sound produced when one of the five Qalqalah letters (ق، ط، ب، ج، د) carries a sukoon or is stopped upon. The level of echo is stronger at the end of a verse (Kubra) and subtler in the middle of a word (Sughra). Practice these letters slowly and let the sound naturally resonate.";
+      fallbackText = "Qalqalah refers to the echoing or bouncing sound produced when one of the five Qalqalah letters (ق، ط، ب، ج، د) carries a sukoon or is stopped upon. The level of echo is stronger at the end of a verse (Kubra) and subtler in the middle of a word (Sughra). ";
+      if (madhab === "hanafi") {
+        fallbackText += "In the Hanafi school, observing Tajweed rules like Qalqalah beautifies the recitation of the Quran, though leaving them out does not invalidate your salah as long as the letters are distinguishable.";
+      } else if (madhab === "shafi") {
+        fallbackText += "In the Shafi'i school, proper pronunciation of letters is highly emphasized. While Qalqalah is a secondary characteristic (Sifah), practicing it ensures the letters are clearly distinguished, maintaining the integrity of your recitation.";
+      } else {
+        fallbackText += "Practice these letters slowly and let the sound naturally resonate. Focus on separating them clearly from non-echoing letters.";
+      }
     } else if (text.includes("madd")) {
-      fallbackText = "Madd governs the elongation of vowel sounds in Quranic recitation. The natural Madd (Tabee'ee) extends for 2 counts, while obligatory Madd types like Madd Lazim extend for 6 counts. Proper Madd gives the recitation its beautiful flowing rhythm — give each vowel its full, unhurried length.";
+      fallbackText = "Madd governs the elongation of vowel sounds in Quranic recitation. The natural Madd (Tabee'ee) extends for 2 counts, while obligatory Madd types like Madd Lazim extend for 6 counts. ";
+      if (madhab === "hanafi") {
+        fallbackText += "Under Hanafi jurisprudence, missing a Madd elongation does not invalidate prayer, but following proper Madd represents the optimal, traditional way (sunnah) of recitation.";
+      } else if (madhab === "shafi") {
+        fallbackText += "Under Shafi'i rules, care must be taken in Fatiha: a mistake that shortens an obligatory Madd so much that a double-letter (shaddah) is missed could affect the validity of your Fatiha. Give each vowel its full count.";
+      } else {
+        fallbackText += "Proper Madd gives the recitation its beautiful flowing rhythm — give each vowel its full, unhurried length.";
+      }
     } else if (text.includes("ghunnah")) {
-      fallbackText = "Ghunnah is the nasal resonance produced from the nose, applied to Noon (ن) and Meem (م) when they carry a shaddah, and held for 2 counts. It is also applied in cases of Idghaam, Ikhfaa, and Iqlaab. Focus on resonating the sound through your nose — it gives the recitation a warm, melodic quality.";
+      fallbackText = "Ghunnah is the nasal resonance produced from the nose, applied to Noon (ن) and Meem (م) when they carry a shaddah, and held for 2 counts. It is also applied in cases of Idghaam, Ikhfaa, and Iqlaab. ";
+      if (madhab === "hanafi") {
+        fallbackText += "Focus on resonating the sound through your nose. In the Hanafi school, it is highly recommended to observe Ghunnah, though missing it does not invalidate salah.";
+      } else if (madhab === "shafi") {
+        fallbackText += "Focus on resonating the sound through your nose. In the Shafi'i school, it is considered sunnah and highly recommended to observe Ghunnah to avoid incorrect phonetics.";
+      } else {
+        fallbackText += "Focus on resonating the sound through your nose — it gives the recitation a warm, melodic quality.";
+      }
+    } else if (isSalahOrFatiha) {
+      if (madhab === "hanafi") {
+        fallbackText = "According to the Hanafi school (Imam Abu Hanifa), reciting Surah Al-Fatiha is obligatory (Wajib) for the Imam and the individual. However, reciting behind an Imam in either loud or silent prayer is prohibited (Makruh Tahrimi); listening silently is required. Major phonetic errors that completely alter the meaning of a word can affect the validity of salah, so pronunciation should be practiced carefully.";
+      } else if (madhab === "shafi") {
+        fallbackText = "According to the Shafi'i school (Imam Al-Shafi'i), reciting Surah Al-Fatiha is an absolute pillar (Rukn) of salah, mandatory for the Imam, the individual, and the follower in every unit of prayer, whether silent or loud. A clear phonetic mistake (Lahn Jali) in Al-Fatiha that changes its meaning invalidates the recitation of the verse, requiring it to be repeated.";
+      } else if (madhab === "maliki") {
+        fallbackText = "According to the Maliki school (Imam Malik), reciting Surah Al-Fatiha is obligatory for the Imam and individual. For a follower reciting behind an Imam, it is recommended (Mandub) in quiet units of prayer, but disliked (Makruh) in loud units, where one must listen to the Imam. Clear recitation mistakes that change meanings should be corrected.";
+      } else if (madhab === "hanbali") {
+        fallbackText = "According to the Hanbali school (Imam Ahmad ibn Hanbal), reciting Surah Al-Fatiha is a pillar (Rukn) for the Imam and individual, and is required for the follower in quiet units of prayer. In loud units, listening to the Imam is sufficient. Pronunciation errors in Al-Fatiha that change its meaning must be corrected.";
+      } else {
+        fallbackText = "Recitation of Surah Al-Fatiha is a core element of salah. In loud prayers, listening attentively to the Imam is required by many scholars, while reciting individually is emphasized by others. Proper pronunciation of the letters and vowels ensures the validity and beauty of your prayer.";
+      }
     } else {
-      fallbackText = `The Quran is guidance and mercy for all who seek it. Allah ﷻ says in Surah Al-Baqarah (2:286): 'Allah does not burden a soul beyond that it can bear.' Whatever your question or concern, know that the Quran speaks directly to the human heart. Take time to sit with the words, reflect on their meaning, and allow them to guide you. Every moment spent with the Quran is a moment of closeness to Allah.`;
+      fallbackText = "The Quran is guidance and mercy for all who seek it. Allah ﷻ says in Surah Al-Baqarah (2:286): 'Allah does not burden a soul beyond that it can bear.' ";
+      if (madhab === "hanafi") {
+        fallbackText += "Imam Abu Hanifa taught that Allah's law is filled with ease (taysir) for the believer. Whatever your question, seek ease and strive to practice your recitation with sincerity.";
+      } else if (madhab === "shafi") {
+        fallbackText += "Imam Al-Shafi'i emphasized that seeking knowledge is the highest form of worship after the obligatory acts. Sincerity and continuous correction of one's actions are central to the path.";
+      } else {
+        fallbackText += "Whatever your question or concern, know that the Quran speaks directly to the human heart. Take time to sit with the words, reflect on their meaning, and allow them to guide you.";
+      }
     }
     res.json({ status: "success", data: { answer: fallbackText }, fallback: true });
   }

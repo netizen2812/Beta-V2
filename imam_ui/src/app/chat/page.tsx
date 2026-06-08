@@ -307,6 +307,11 @@ export default function ChatPage() {
 
     try {
       const backendUrl = typeof window !== "undefined" ? "" : (process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001");
+      const historyPayload = messages.slice(-6).map(m => ({
+        role: m.role === "maulana" ? "assistant" : "user",
+        content: m.text
+      }));
+
       const res = await fetch(`${backendUrl}/api/quran/ask`, {
         method: "POST",
         headers: {
@@ -317,6 +322,7 @@ export default function ChatPage() {
           ayah_id: "1:1",
           language_code: "en",
           madhab: madhab,
+          history: historyPayload,
         }),
       });
 

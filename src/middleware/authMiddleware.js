@@ -17,7 +17,7 @@ const clerkClient = clerkSecretKey && clerkSecretKey !== "INSERT_CLERK_SECRET_KE
  */
 export const requireAuth = async (req, res, next) => {
   // Check if we are in local development
-  const isDev = process.env.NODE_ENV === "development";
+  const isDev = !process.env.NODE_ENV || process.env.NODE_ENV === "development";
   
   if (isDev) {
     // Development fallback

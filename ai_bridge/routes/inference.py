@@ -307,6 +307,7 @@ def _run_tajweed_pipeline_sync(
         "transcribed_text": transcribed_text,
         "phonetic_transcript": phonetic_result["phonetics"],
         "word_results": report["word_results"],
+        "not_quran": report.get("status") == "not_quran",
     }
 
 
@@ -711,6 +712,56 @@ async def smart_query(body: SmartQueryRequest):
         "status": "success",
         "data": {
             "madhab": body.madhab,
+            "query": body.query,
+            "results": results
+        }
+    }
+
+class TajweedQueryRequest(BaseModel):
+    query: str
+    n_results: int = 3
+
+@router.post("/tajweed-query")
+async def tajweed_query(body: TajweedQueryRequest):
+    """
+    Query the Tajweed rules vector database.
+    """
+    from services.smart_rag import smart_rag
+    if not smart_rag.is_loaded:
+        raise HTTPException(503, "SmartRAG service not initialized")
+        
+    results = smart_rag.query_tajweed(
+        query_text=body.query,
+        n_results=body.n_results
+    )
+    return {
+        "status": "success",
+        "data": {
+            "query": body.query,
+            "results": results
+        }
+    }
+
+class HadithQueryRequest(BaseModel):
+    query: str
+    n_results: int = 3
+
+@router.post("/hadith-query")
+async def hadith_query(body: HadithQueryRequest):
+    """
+    Query the Hadiths vector database.
+    """
+    from services.smart_rag import smart_rag
+    if not smart_rag.is_loaded:
+        raise HTTPException(503, "SmartRAG service not initialized")
+        
+    results = smart_rag.query_hadiths(
+        query_text=body.query,
+        n_results=body.n_results
+    )
+    return {
+        "status": "success",
+        "data": {
             "query": body.query,
             "results": results
         }

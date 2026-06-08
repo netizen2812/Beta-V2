@@ -4,7 +4,8 @@ services:
   ai-bridge:
     build:
       context: ./ai_bridge
-      dockerfile: Dockerfile.python
+      dockerfile: Dockerfile.gpu          # ← GPU build (was Dockerfile.python/CPU)
+    runtime: nvidia                        # ← expose T4 GPU to the container
     container_name: quran-ai-bridge
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
@@ -12,16 +13,22 @@ services:
       - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - INTERNAL_API_KEY=${INTERNAL_API_KEY}
-      # FIX: Pass ALLOWED_ORIGINS including production Vercel domain (Symptom N3)
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://imamv2.vercel.app,https://www.imamapp.co,https://imamapp.co,http://localhost:3000}
       - TAFSIR_FAST_START=${TAFSIR_FAST_START:-1}
       - PYTHONUNBUFFERED=1
+      - NVIDIA_VISIBLE_DEVICES=all        # expose all GPUs (just the T4 here)
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
-      # Mount data dir directly to reflect git updates and persist caches locally
       - ./ai_bridge/data:/usr/src/app/data
       - ./ai_bridge/models:/usr/src/app/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     # NOTE: No ports: mapping intentional — AI Bridge is internal only.
-    # All external access goes through node-backend proxy routes.
     networks:
       - quran-net
     restart: always
@@ -30,7 +37,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 300s  # allow up to 5 mins for CPU embedding generation/cold start
+      start_period: 300s
 
   node-backend:
     build:

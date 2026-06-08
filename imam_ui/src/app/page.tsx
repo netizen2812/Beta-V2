@@ -10,6 +10,7 @@ import {
 import MushafulPage from '@/components/ui/MushafulPage';
 import RAGDrawer from '@/components/ui/RAGDrawer';
 import AyahSelector from '@/components/ui/AyahSelector';
+import BottomNav from '@/components/ui/BottomNav';
 import { useRouter } from 'next/navigation';
 
 // ─── JOURNEY DATA ──────────────────────────────────────────────────────────────
@@ -1615,9 +1616,6 @@ export default function FullscreenAiPage() {
                           ayahRef={selectedAyah}
                           words={words}
                           isRecording={isRecording}
-                          onAnalyze={handleOpenTafsir}
-                          onWordListen={handleWordListen}
-                          onPlayAyahPlaylist={playAyahPlaylist}
                         />
                         
                         {recitationPhase === 'done' && (
@@ -1965,6 +1963,19 @@ export default function FullscreenAiPage() {
                         className="flex-1 bg-transparent px-3 py-2 text-xs outline-none text-slate-700 font-semibold w-0 min-w-0"
                       />
 
+                      {/* Voice Response toggle — gold = on, grey = off */}
+                      <button
+                        onClick={() => setPlayVoiceResponse(v => !v)}
+                        title={playVoiceResponse ? 'Voice response ON — click to mute' : 'Voice response OFF — click to enable'}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border cursor-pointer transition-all ${
+                          playVoiceResponse
+                            ? 'bg-amber-50 border-amber-300 text-amber-500 shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-300'
+                        }`}
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </button>
+
                       <button
                         onClick={handleChatVoiceTrigger}
                         className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border cursor-pointer transition-all ${chatIsRecording ? 'bg-red-500 border-red-500 text-white animate-pulse' : 'bg-white border-slate-200 text-slate-400 hover:text-[#0D4433]'}`}
@@ -2000,18 +2011,18 @@ export default function FullscreenAiPage() {
                       </div>
                     </div>
 
-                    {/* Speech response switch & Presets list */}
+                    {/* Voice response state shown as a status pill */}
                     <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl select-none">
-                      <label htmlFor="voiceResponse" className="text-[10px] font-black uppercase tracking-wider text-slate-400 cursor-pointer">
-                        Voice Response 🔊
-                      </label>
-                      <input
-                        type="checkbox"
-                        id="voiceResponse"
-                        checked={playVoiceResponse}
-                        onChange={e => setPlayVoiceResponse(e.target.checked)}
-                        className="w-4 h-4 rounded text-emerald-600 border-slate-200 focus:ring-emerald-500 cursor-pointer"
-                      />
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Voice Response</span>
+                      <span
+                        className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${
+                          playVoiceResponse
+                            ? 'bg-amber-50 text-amber-600 border border-amber-200'
+                            : 'bg-slate-100 text-slate-400 border border-slate-200'
+                        }`}
+                      >
+                        {playVoiceResponse ? '🔊 On' : '🔇 Off'}
+                      </span>
                     </div>
 
                     {/* Quick Topics */}
@@ -2278,6 +2289,8 @@ export default function FullscreenAiPage() {
         tafsirText={tafsirText}
         isStreaming={tafsirLoading}
       />
+
+      <BottomNav />
 
       {/* Global CSS for moving background pattern and responsive card dimensions */}
       <style>{`

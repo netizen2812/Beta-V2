@@ -255,16 +255,6 @@ class TafsirRAG:
             text: Search query (user question or ayah text)
             ayah_id: Optional filter by specific ayah (e.g., "2:255")
             n_results: Number of results to return
-
-        Returns:
-            [
-                {
-                    "text": "In the name of Allah...",
-                    "ayah_id": "1:1",
-                    "edition": "en.sahih",
-                    "distance": 0.12
-                }
-            ]
         """
         if not self.is_loaded or self._collection is None:
             return []
@@ -287,10 +277,60 @@ class TafsirRAG:
                     })
                 return output[:n_results]
 
+        # 1. Query Expansion (Synonyms)
+        synonyms = {
+            "elongation": ["madd", "elongation", "stretch", "lengthening"],
+            "madd": ["madd", "elongation", "stretch", "lengthening"],
+            "echo": ["qalqalah", "echo", "bounce", "bouncing", "vibration"],
+            "echoing": ["qalqalah", "echoing", "bounce", "bouncing", "vibration"],
+            "bounce": ["qalqalah", "echoing", "bounce", "bouncing", "vibration"],
+            "bouncing": ["qalqalah", "echoing", "bounce", "bouncing", "vibration"],
+            "qalqalah": ["qalqalah", "echoing", "bounce", "bouncing", "vibration"],
+            "nasal": ["ghunnah", "nasal", "nasalization", "nose"],
+            "nasalization": ["ghunnah", "nasal", "nasalization", "nose"],
+            "nose": ["ghunnah", "nasal", "nasalization", "nose"],
+            "ghunnah": ["ghunnah", "nasal", "nasalization", "nose"],
+            "merging": ["idgham", "merging", "blend", "blending", "combining"],
+            "blend": ["idgham", "merging", "blend", "blending", "combining"],
+            "combining": ["idgham", "merging", "blend", "blending", "combining"],
+            "idgham": ["idgham", "merging", "blend", "blending", "combining"],
+            "hiding": ["ikhfa", "hiding", "concealing", "conceal"],
+            "concealing": ["ikhfa", "hiding", "concealing", "conceal"],
+            "ikhfa": ["ikhfa", "hiding", "concealing", "conceal"],
+            "changing": ["iqlab", "changing", "converting", "conversion", "flipping"],
+            "converting": ["iqlab", "changing", "converting", "conversion", "flipping"],
+            "iqlab": ["iqlab", "changing", "converting", "conversion", "flipping"],
+            "articulation": ["makhraj", "articulation", "pronunciation", "mouth", "throat", "tongue", "lips"],
+            "pronunciation": ["makhraj", "articulation", "pronunciation", "mouth", "throat", "tongue", "lips"],
+            "makhraj": ["makhraj", "articulation", "pronunciation", "mouth", "throat", "tongue", "lips"],
+            "wudu": ["wudu", "ablution", "purification", "washing"],
+            "ablution": ["wudu", "ablution", "purification", "washing"],
+            "salah": ["salah", "prayer", "namaz", "praying"],
+            "prayer": ["salah", "prayer", "namaz", "praying"],
+            "namaz": ["salah", "prayer", "namaz", "praying"],
+            "fasting": ["sawm", "fasting", "fast", "ramadan"],
+            "sawm": ["sawm", "fasting", "fast", "ramadan"],
+            "fast": ["sawm", "fasting", "fast", "ramadan"],
+        }
+        
+        query_text = text
+        if text:
+            words = text.lower().split()
+            expanded_terms = []
+            for w in words:
+                w_clean = w.strip("?,.:;!\"'()")
+                if w_clean in synonyms:
+                    expanded_terms.extend(synonyms[w_clean])
+            if expanded_terms:
+                seen = set()
+                unique_expanded = [x for x in expanded_terms if not (x in seen or seen.add(x))]
+                query_text = f"{text} ({' '.join(unique_expanded)})"
+
         try:
+            # Fetch n_results * 2 candidates to allow room for keyword-overlap re-ranking
             results = self._collection.query(
-                query_texts=[text],
-                n_results=n_results,
+                query_texts=[query_text],
+                n_results=n_results * 2,
             )
         except Exception as e:
             logger.error(f"ChromaDB query error: {e}")
@@ -298,18 +338,31 @@ class TafsirRAG:
 
         output = []
         if results and results["documents"]:
+            # Extract query keywords for lexical re-ranking overlap
+            query_words = set(w.lower().strip("?,.:;!\"'()") for w in text.split() if len(w) > 2) if text else set()
+            
             for i, doc in enumerate(results["documents"][0]):
                 meta = results["metadatas"][0][i] if results["metadatas"] else {}
                 dist = results["distances"][0][i] if results["distances"] else 0
+                
+                # Lexical re-ranking boost
+                doc_words = set(w.lower().strip("?,.:;!\"'()") for w in doc.split())
+                overlap = len(query_words.intersection(doc_words))
+                boosted_dist = dist - (overlap * 0.05)
+                
                 output.append({
                     "text": doc,
                     "ayah_id": meta.get("ayah_id", ""),
                     "edition": meta.get("edition", ""),
                     "edition_name": meta.get("edition_name", ""),
                     "distance": round(dist, 4),
+                    "boosted_distance": round(boosted_dist, 4)
                 })
+                
+            # Sort by boosted distance (smaller is better)
+            output = sorted(output, key=lambda x: x["boosted_distance"])
 
-        return output
+        return output[:n_results]
 
     def get_ayah_context(self, ayah_id: str) -> str:
         """

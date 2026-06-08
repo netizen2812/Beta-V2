@@ -1,0 +1,119 @@
+[
+  {
+    "id": "tajweed_qalqalah",
+    "rule_name": "Qalqalah",
+    "category": "Sifaat",
+    "description": "Qalqalah (echoing or bouncing) is the vibration or echoing sound produced at the articulation point of a letter when it carries a sukoon (resting state) or when stopped upon at the end of a verse. It prevents the letter from being swallowed or muffled.",
+    "letters": ["ق", "ط", "ب", "ج", "د"],
+    "mnemonic": "Qutb Jad (قطب جد)",
+    "types": [
+      {
+        "name": "Qalqalah Sughra (Minor)",
+        "condition": "When the Qalqalah letter is in the middle of a word or sentence.",
+        "example": "يَقْطَعُونَ (yaq-ta'oon)"
+      },
+      {
+        "name": "Qalqalah Kubra (Major)",
+        "condition": "When the Qalqalah letter is at the end of a verse or sentence, and does not have a shaddah.",
+        "example": "الفَلَقِ (al-falaq)"
+      },
+      {
+        "name": "Qalqalah Akbar (Strongest)",
+        "condition": "When the Qalqalah letter is at the end of a verse and carries a shaddah (tashdeed).",
+        "example": "وتَبَّ (wa tabb)"
+      }
+    ],
+    "guidance": "Let the sound naturally bounce without adding an extra vowel sound (like a fat-hah or kasrah). Practice letting the echo resonate clearly."
+  },
+  {
+    "id": "tajweed_ghunnah",
+    "rule_name": "Ghunnah",
+    "category": "Sifaat",
+    "description": "Ghunnah is a nasal sound or resonance produced from the nose (khayshoom). It is an obligatory characteristic applied to the letters Noon (ن) and Meem (م) when they carry a shaddah (tashdeed), and is held for 2 counts (harakaat). It is also present in rules of Idghaam, Ikhfaa, and Iqlaab.",
+    "letters": ["ن", "م"],
+    "counts": 2,
+    "guidance": "Hold the sound in the nasal cavity for two counts. The sound should flow smoothly from the nose, not the mouth."
+  },
+  {
+    "id": "tajweed_madd_natural",
+    "rule_name": "Madd Tabee'ee (Natural Elongation)",
+    "category": "Madd",
+    "description": "Madd Tabee'ee (natural elongation) is the normal lengthening of vowel sounds without any secondary cause (like a hamzah or sukoon following it). It is held for exactly 2 counts (harakaat).",
+    "letters": ["ا" , "و", "ي"],
+    "counts": 2,
+    "example": "قَالَ (qaala), يَقُولُ (yaqoolu), قِيلَ (qeela)"
+  },
+  {
+    "id": "tajweed_madd_lazim",
+    "rule_name": "Madd Lazim (Compulsory Elongation)",
+    "category": "Madd",
+    "description": "Madd Lazim (compulsory elongation) occurs when a Madd letter is followed by a permanent, original sukoon or a shaddah (which contains a sukoon) in the same word. It must be elongated for exactly 6 counts (harakaat).",
+    "letters": ["ا" , "و", "ي"],
+    "counts": 6,
+    "example": "الضَّالِّينَ (ad-daalleen)"
+  },
+  {
+    "id": "tajweed_idgham",
+    "rule_name": "Idgham (Merging)",
+    "category": "Noon Sakinah",
+    "description": "Idgham (merging or blending) occurs when a Noon Sakinah (نْ) or Tanween (ً ٍ ٌ) is followed by one of the six letters of Yarmaloon (ي، ر، م، ل، و، ن). The Noon sound is merged into the following letter.",
+    "letters": ["ي", "ر", "م", "ل", "و", "ن"],
+    "mnemonic": "Yarmaloon (يرملون)",
+    "types": [
+      {
+        "name": "Idgham bi Ghunnah (with nasality)",
+        "letters": ["ي", "ن", "م", "و"],
+        "description": "The Noon is merged with a 2-count nasal resonance.",
+        "example": "مَن يَقُولُ (may-yaqool)"
+      },
+      {
+        "name": "Idgham bila Ghunnah (without nasality)",
+        "letters": ["ل", "ر"],
+        "description": "The Noon is merged completely with no nasal resonance.",
+        "example": "مِّن رَّبِّهِمْ (mir-rabbihim)"
+      }
+    ]
+  },
+  {
+    "id": "tajweed_ikhfa",
+    "rule_name": "Ikhfa (Concealing)",
+    "category": "Noon Sakinah",
+    "description": "Ikhfa (concealing or hiding) occurs when a Noon Sakinah (نْ) or Tanween is followed by any of the 15 remaining letters of the alphabet (not throat letters, not Yarmaloon, and not Ba). The Noon sound is concealed, bordering between Izhar and Idgham, with a 2-count Ghunnah.",
+    "letters": ["ت", "ث", "ج", "د", "ذ", "ز", "س", "ش", "ص", "ض", "ط", "ظ", "ف", "ق", "ك"],
+    "counts": 2,
+    "example": "أَنفُسَكُمْ (an-fusakum), مِن قَبْلُ (min-qabl)"
+  },
+  {
+    "id": "tajweed_izhar",
+    "rule_name": "Izhar (Clarity)",
+    "category": "Noon Sakinah",
+    "description": "Izhar (clarity or manifestation) occurs when a Noon Sakinah (نْ) or Tanween is followed by one of the six throat (Halqi) letters. The Noon sound must be pronounced clearly and quickly from its articulation point without any extra nasality or elongation.",
+    "letters": ["ء", "هـ", "ع", "ح", "غ", "خ"],
+    "example": "مِنْ حَيْثُ (min haythu), أَنْعَمْتَ (an'amta)"
+  },
+  {
+    "id": "tajweed_iqlab",
+    "rule_name": "Iqlab (Conversion)",
+    "category": "Noon Sakinah",
+    "description": "Iqlab (conversion or changing) occurs when a Noon Sakinah (نْ) or Tanween is followed by the letter Ba (ب). The Noon sound is converted into a Meem (م) sound, which is then held with a 2-count Ghunnah.",
+    "letters": ["ب"],
+    "counts": 2,
+    "example": "مِن بَعْدِ (mim-ba'di)"
+  },
+  {
+    "id": "tajweed_makhraj_throat",
+    "rule_name": "Makhraj Al-Halq (Throat Articulation)",
+    "category": "Makharij",
+    "description": "Al-Halq (the throat) is one of the five major articulation points. It has three specific sections, each producing two letters: Deep throat (ء, هـ), Mid-throat (ع, ح), and Closest throat (غ, خ).",
+    "letters": ["ء", "هـ", "ع", "ح", "غ", "خ"],
+    "guidance": "Letters from the throat require proper breath and vocal fold adjustment. For example, ع (Ayn) comes from the middle throat and requires constriction, while ء (Hamzah) comes from the vocal cords."
+  },
+  {
+    "id": "tajweed_makhraj_tongue",
+    "rule_name": "Makhraj Al-Lisan (Tongue Articulation)",
+    "category": "Makharij",
+    "description": "Al-Lisan (the tongue) produces 18 Arabic letters across 10 specific articulation points, including the deepest tongue (ق, ك), middle tongue (ج, ش, ي), side tongue (ض, ل), tip of tongue (ن, ر, ت, د, ط, ص, ز, س, ث, ذ, ظ).",
+    "letters": ["ق", "ك", "ج", "ش", "ي", "ض", "ل", "ن", "ر", "ت", "د", "ط", "ص", "ز", "س", "ث", "ذ", "ظ"],
+    "guidance": "Ensure the tongue is placed in the correct location (e.g. against the palate, gums, or teeth) to avoid mixing up letters like Saad and Seen, or Ta and Saad."
+  }
+]

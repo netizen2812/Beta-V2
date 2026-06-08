@@ -17,6 +17,8 @@ class SmartRAG:
         self._client = None
         self._madhab_collection = None
         self._tafsir_collection = None
+        self._tajweed_collection = None
+        self._hadiths_collection = None
         self.is_loaded = False
         self.wisdom_templates = {}
         self._emb_fn = None
@@ -84,6 +86,26 @@ class SmartRAG:
             except Exception as e:
                 logger.warning(f"⚠️ Could not load collection 'quran_tafsir': {e}")
 
+            # Load tajweed rules collection
+            try:
+                self._tajweed_collection = self._client.get_collection(
+                    name="tajweed_rules",
+                    embedding_function=emb_fn
+                )
+                logger.info(f"✅ Loaded 'tajweed_rules' collection: {self._tajweed_collection.count()} entries.")
+            except Exception as e:
+                logger.warning(f"⚠️ Could not load collection 'tajweed_rules': {e}")
+
+            # Load hadiths collection
+            try:
+                self._hadiths_collection = self._client.get_collection(
+                    name="hadiths",
+                    embedding_function=emb_fn
+                )
+                logger.info(f"✅ Loaded 'hadiths' collection: {self._hadiths_collection.count()} entries.")
+            except Exception as e:
+                logger.warning(f"⚠️ Could not load collection 'hadiths': {e}")
+
             # Load wisdom templates
             if WISDOM_PATH.exists():
                 with open(WISDOM_PATH, "r", encoding="utf-8") as f:
@@ -99,18 +121,59 @@ class SmartRAG:
             logger.error(f"❌ SmartRAG initialization failed: {e}")
             self.is_loaded = False
 
-    def query_madhab(self, madhab: str, query_text: str, n_results: int = 3) -> list[dict]:
-        """
-        Query the madhab vector DB. Filters rules by the requested madhab.
+    def _expand_query_synonyms(self, query_text: str) -> str:
+        """Helper to semantically expand queries with standard tajweed synonyms."""
+        synonyms = {
+            "elongation": ["madd", "elongation", "stretch", "lengthening"],
+            "madd": ["madd", "elongation", "stretch", "lengthening"],
+            "echo": ["qalqalah", "echo", "bounce", "bouncing", "vibration"],
+            "echoing": ["qalqalah", "echoing", "bounce", "bouncing", "vibration"],
+            "bounce": ["qalqalah", "echoing", "bounce", "bouncing", "vibration"],
+            "bouncing": ["qalqalah", "echoing", "bounce", "bouncing", "vibration"],
+            "qalqalah": ["qalqalah", "echoing", "bounce", "bouncing", "vibration"],
+            "nasal": ["ghunnah", "nasal", "nasalization", "nose"],
+            "nasalization": ["ghunnah", "nasal", "nasalization", "nose"],
+            "nose": ["ghunnah", "nasal", "nasalization", "nose"],
+            "ghunnah": ["ghunnah", "nasal", "nasalization", "nose"],
+            "merging": ["idgham", "merging", "blend", "blending", "combining"],
+            "blend": ["idgham", "merging", "blend", "blending", "combining"],
+            "combining": ["idgham", "merging", "blend", "blending", "combining"],
+            "idgham": ["idgham", "merging", "blend", "blending", "combining"],
+            "hiding": ["ikhfa", "hiding", "concealing", "conceal"],
+            "concealing": ["ikhfa", "hiding", "concealing", "conceal"],
+            "ikhfa": ["ikhfa", "hiding", "concealing", "conceal"],
+            "changing": ["iqlab", "changing", "converting", "conversion", "flipping"],
+            "converting": ["iqlab", "changing", "converting", "conversion", "flipping"],
+            "iqlab": ["iqlab", "changing", "converting", "conversion", "flipping"],
+            "articulation": ["makhraj", "articulation", "pronunciation", "mouth", "throat", "tongue", "lips"],
+            "pronunciation": ["makhraj", "articulation", "pronunciation", "mouth", "throat", "tongue", "lips"],
+            "makhraj": ["makhraj", "articulation", "pronunciation", "mouth", "throat", "tongue", "lips"],
+            "wudu": ["wudu", "ablution", "purification", "washing"],
+            "ablution": ["wudu", "ablution", "purification", "washing"],
+            "salah": ["salah", "prayer", "namaz", "praying"],
+            "prayer": ["salah", "prayer", "namaz", "praying"],
+            "namaz": ["salah", "prayer", "namaz", "praying"],
+            "fasting": ["sawm", "fasting", "fast", "ramadan"],
+            "sawm": ["sawm", "fasting", "fast", "ramadan"],
+            "fast": ["sawm", "fasting", "fast", "ramadan"],
+        }
         
-        Args:
-            madhab: One of 'hanafi', 'shafi', 'maliki', 'hanbali'
-            query_text: The search text (e.g., "recitation of fatiha", "pronunciation mistake")
-            n_results: Number of results to return
-            
-        Returns:
-            List of matching passages with metadata
-        """
+        expanded_query = query_text
+        if query_text:
+            words = query_text.lower().split()
+            expanded_terms = []
+            for w in words:
+                w_clean = w.strip("?,.:;!\"'()")
+                if w_clean in synonyms:
+                    expanded_terms.extend(synonyms[w_clean])
+            if expanded_terms:
+                seen = set()
+                unique_expanded = [x for x in expanded_terms if not (x in seen or seen.add(x))]
+                expanded_query = f"{query_text} ({' '.join(unique_expanded)})"
+        return expanded_query
+
+    def query_madhab(self, madhab: str, query_text: str, n_results: int = 3) -> list[dict]:
+        """Query the madhab vector DB, applying synonym expansion and re-ranking."""
         if not self.is_loaded or self._madhab_collection is None:
             logger.warning("SmartRAG not loaded or madhab collection missing.")
             return []
@@ -123,80 +186,189 @@ class SmartRAG:
         where_filter = None
         
         if madhab in valid_schools:
-            # We index with boolean flags for each school (e.g. shafi=True)
             where_filter = {madhab: True}
 
+        # Expand query synonyms using shared helper
+        expanded_query = self._expand_query_synonyms(query_text)
+
         query_embedding = None
-        if self._emb_fn:
-            if query_text not in self._query_emb_cache:
-                emb = self._emb_fn([query_text])[0]
+        if self._emb_fn and expanded_query:
+            if expanded_query not in self._query_emb_cache:
+                emb = self._emb_fn([expanded_query])[0]
                 if hasattr(emb, "tolist"):
                     emb = emb.tolist()
-                self._query_emb_cache[query_text] = emb
-            query_embedding = self._query_emb_cache[query_text]
+                self._query_emb_cache[expanded_query] = emb
+            query_embedding = self._query_emb_cache[expanded_query]
 
         try:
             if query_embedding is not None:
                 results = self._madhab_collection.query(
                     query_embeddings=[query_embedding],
-                    n_results=n_results,
+                    n_results=n_results * 2,
                     where=where_filter
                 )
             else:
                 results = self._madhab_collection.query(
-                    query_texts=[query_text],
-                    n_results=n_results,
+                    query_texts=[expanded_query],
+                    n_results=n_results * 2,
                     where=where_filter
                 )
         except Exception as e:
             logger.error(f"ChromaDB query error in madhab_rules: {e}")
-            # Retry without metadata filter if it failed or had no results
             try:
                 if query_embedding is not None:
                     results = self._madhab_collection.query(
                         query_embeddings=[query_embedding],
-                        n_results=n_results
+                        n_results=n_results * 2
                     )
                 else:
                     results = self._madhab_collection.query(
-                        query_texts=[query_text],
-                        n_results=n_results
+                        query_texts=[expanded_query],
+                        n_results=n_results * 2
                     )
             except Exception:
                 return []
 
         output = []
         if results and results["documents"] and len(results["documents"]) > 0:
+            query_words = set(w.lower().strip("?,.:;!\"'()") for w in query_text.split() if len(w) > 2) if query_text else set()
+            
             for i, doc in enumerate(results["documents"][0]):
                 meta = results["metadatas"][0][i] if results["metadatas"] else {}
                 dist = results["distances"][0][i] if results["distances"] else 0
+                
+                # Lexical re-ranking boost
+                doc_words = set(w.lower().strip("?,.:;!\"'()") for w in doc.split())
+                overlap = len(query_words.intersection(doc_words))
+                boosted_dist = dist - (overlap * 0.05)
+                
                 output.append({
                     "text": doc,
                     "page": meta.get("page", 0),
                     "primary_madhab": meta.get("primary_madhab", ""),
                     "is_fatiha": meta.get("is_fatiha", False),
-                    "distance": round(dist, 4)
+                    "distance": round(dist, 4),
+                    "boosted_distance": round(boosted_dist, 4)
                 })
+                
+            # Sort output by boosted_distance
+            output = sorted(output, key=lambda x: x["boosted_distance"])
         
-        return output
+        return output[:n_results]
+
+    def query_tajweed(self, query_text: str, n_results: int = 3) -> list[dict]:
+        """Query the tajweed rules collection."""
+        if not self.is_loaded or self._tajweed_collection is None:
+            return []
+
+        n_results = min(max(1, n_results), 10)
+        expanded_query = self._expand_query_synonyms(query_text)
+
+        query_embedding = None
+        if self._emb_fn and expanded_query:
+            if expanded_query not in self._query_emb_cache:
+                emb = self._emb_fn([expanded_query])[0]
+                if hasattr(emb, "tolist"):
+                    emb = emb.tolist()
+                self._query_emb_cache[expanded_query] = emb
+            query_embedding = self._query_emb_cache[expanded_query]
+
+        try:
+            if query_embedding is not None:
+                results = self._tajweed_collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=n_results * 2
+                )
+            else:
+                results = self._tajweed_collection.query(
+                    query_texts=[expanded_query],
+                    n_results=n_results * 2
+                )
+        except Exception:
+            return []
+
+        output = []
+        if results and results["documents"] and len(results["documents"]) > 0:
+            query_words = set(w.lower().strip("?,.:;!\"'()") for w in query_text.split() if len(w) > 2) if query_text else set()
+            for i, doc in enumerate(results["documents"][0]):
+                meta = results["metadatas"][0][i] if results["metadatas"] else {}
+                dist = results["distances"][0][i] if results["distances"] else 0
+                
+                doc_words = set(w.lower().strip("?,.:;!\"'()") for w in doc.split())
+                overlap = len(query_words.intersection(doc_words))
+                boosted_dist = dist - (overlap * 0.05)
+                
+                output.append({
+                    "text": doc,
+                    "rule_name": meta.get("rule_name", ""),
+                    "category": meta.get("category", ""),
+                    "letters": meta.get("letters", ""),
+                    "distance": round(dist, 4),
+                    "boosted_distance": round(boosted_dist, 4)
+                })
+            output = sorted(output, key=lambda x: x["boosted_distance"])
+        return output[:n_results]
+
+    def query_hadiths(self, query_text: str, n_results: int = 3) -> list[dict]:
+        """Query the hadiths collection."""
+        if not self.is_loaded or self._hadiths_collection is None:
+            return []
+
+        n_results = min(max(1, n_results), 10)
+        expanded_query = self._expand_query_synonyms(query_text)
+
+        query_embedding = None
+        if self._emb_fn and expanded_query:
+            if expanded_query not in self._query_emb_cache:
+                emb = self._emb_fn([expanded_query])[0]
+                if hasattr(emb, "tolist"):
+                    emb = emb.tolist()
+                self._query_emb_cache[expanded_query] = emb
+            query_embedding = self._query_emb_cache[expanded_query]
+
+        try:
+            if query_embedding is not None:
+                results = self._hadiths_collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=n_results * 2
+                )
+            else:
+                results = self._hadiths_collection.query(
+                    query_texts=[expanded_query],
+                    n_results=n_results * 2
+                )
+        except Exception:
+            return []
+
+        output = []
+        if results and results["documents"] and len(results["documents"]) > 0:
+            query_words = set(w.lower().strip("?,.:;!\"'()") for w in query_text.split() if len(w) > 2) if query_text else set()
+            for i, doc in enumerate(results["documents"][0]):
+                meta = results["metadatas"][0][i] if results["metadatas"] else {}
+                dist = results["distances"][0][i] if results["distances"] else 0
+                
+                doc_words = set(w.lower().strip("?,.:;!\"'()") for w in doc.split())
+                overlap = len(query_words.intersection(doc_words))
+                boosted_dist = dist - (overlap * 0.05)
+                
+                output.append({
+                    "text": doc,
+                    "narrator": meta.get("narrator", ""),
+                    "source": meta.get("source", ""),
+                    "topic": meta.get("topic", ""),
+                    "distance": round(dist, 4),
+                    "boosted_distance": round(boosted_dist, 4)
+                })
+            output = sorted(output, key=lambda x: x["boosted_distance"])
+        return output[:n_results]
 
     def get_premade_asset(self, category_key: str, index: int = None, lang: str = "en") -> str:
-        """
-        Retrieves a pre-made template text from wisdom_templates.json.
-        
-        Args:
-            category_key: E.g., 'reception.greetings.time_based.morning' or 'pedagogy.correction.makharij.throat_halqi'
-            index: Optional index to pick a specific template, otherwise random
-            lang: Target language. Currently wisdom_templates has 'en' keys, so if a non-en language is 
-                  requested, we retrieve the English text and return it so the caller can translate/adapt it.
-        """
-        # Formulate key
-        prefix = "en"  # Wisdom templates are en.
+        """Retrieves a pre-made template text from wisdom_templates.json."""
+        prefix = "en"
         full_key = f"{prefix}.{category_key}"
         
         templates = self.wisdom_templates.get(full_key)
         if not templates:
-            # Try exact key directly
             templates = self.wisdom_templates.get(category_key)
 
         if not templates:
@@ -234,47 +406,58 @@ class SmartRAG:
             except Exception:
                 pass
 
+        # Use shared helper for query expansion
+        expanded_query = self._expand_query_synonyms(query_text)
+
         query_embedding = None
-        if self._emb_fn and query_text:
-            if query_text not in self._query_emb_cache:
-                emb = self._emb_fn([query_text])[0]
+        if self._emb_fn and expanded_query:
+            if expanded_query not in self._query_emb_cache:
+                emb = self._emb_fn([expanded_query])[0]
                 if hasattr(emb, "tolist"):
                     emb = emb.tolist()
-                self._query_emb_cache[query_text] = emb
-            query_embedding = self._query_emb_cache[query_text]
+                self._query_emb_cache[expanded_query] = emb
+            query_embedding = self._query_emb_cache[expanded_query]
 
         try:
             if query_embedding is not None:
                 results = self._tafsir_collection.query(
                     query_embeddings=[query_embedding],
-                    n_results=n_results
+                    n_results=n_results * 2
                 )
             else:
                 results = self._tafsir_collection.query(
-                    query_texts=[query_text],
-                    n_results=n_results
+                    query_texts=[expanded_query],
+                    n_results=n_results * 2
                 )
         except Exception:
             return []
 
         output = []
         if results and results["documents"]:
+            query_words = set(w.lower().strip("?,.:;!\"'()") for w in query_text.split() if len(w) > 2) if query_text else set()
             for i, doc in enumerate(results["documents"][0]):
                 meta = results["metadatas"][0][i] if results["metadatas"] else {}
                 dist = results["distances"][0][i] if results["distances"] else 0
+                
+                # Lexical re-ranking boost
+                doc_words = set(w.lower().strip("?,.:;!\"'()") for w in doc.split())
+                overlap = len(query_words.intersection(doc_words))
+                boosted_dist = dist - (overlap * 0.05)
+                
                 output.append({
                     "text": doc,
                     "ayah_id": meta.get("ayah_id", ""),
                     "edition": meta.get("edition", ""),
                     "edition_name": meta.get("edition_name", ""),
-                    "distance": round(dist, 4)
+                    "distance": round(dist, 4),
+                    "boosted_distance": round(boosted_dist, 4)
                 })
-        return output
+            output = sorted(output, key=lambda x: x["boosted_distance"])
+        return output[:n_results]
 
     def get_localized_template(self, lang: str, category_key: str, idx: int) -> str:
         """Retrieves a translated template text from wisdom_templates_localized.json."""
         if not hasattr(self, 'localized_templates') or not self.localized_templates:
-            # Try to load
             localized_path = DATA_DIR / "wisdom_templates_localized.json"
             if localized_path.exists():
                 try:
@@ -292,7 +475,6 @@ class SmartRAG:
             if templates and 0 <= idx < len(templates):
                 return templates[idx]
                 
-        # Fallback to English template from wisdom_templates
         templates = self.wisdom_templates.get(f"en.{category_key}")
         if not templates:
             templates = self.wisdom_templates.get(category_key)
@@ -302,4 +484,3 @@ class SmartRAG:
 
 # Singleton instance
 smart_rag = SmartRAG()
-

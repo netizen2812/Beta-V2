@@ -7,6 +7,12 @@ logger = logging.getLogger(__name__)
 # --- Precision Constants (Maulana Grade) ---
 CORRECT_THRESHOLD = 0.95
 
+# --- Gibberish / Non-Quran Gate Constants ---
+# At least 40% of reference words must be matched with sim > 0.30
+GIBBERISH_COVERAGE_THRESHOLD = 0.40
+# Average similarity across ALL reference words must exceed this floor
+GIBBERISH_SIM_FLOOR = 0.18
+
 # Identity Letters (Lahn Khafi prone pairs)
 # Both Arabic and common Transliteration characters included
 IDENTITY_PAIRS = [
@@ -594,11 +600,103 @@ class TajweedScorer:
         return alignment
 
     @staticmethod
+    def validate_recitation_coverage(
+        actual_phonetics: list[str],
+        reference_words: list[dict]
+    ) -> dict:
+        """
+        Gibberish / non-Quran gate.
+
+        Returns {"is_quran": True} if the audio is plausibly a Quran recitation.
+        Returns {"is_quran": False, "reason": "..."}  if it is gibberish, silence,
+        or English/non-Arabic speech that should NOT be graded.
+
+        Criteria (both must hold to pass):
+          1. Coverage: ≥ GIBBERISH_COVERAGE_THRESHOLD of reference words must have
+             a word alignment hit with similarity > 0.30.
+          2. Average similarity across ALL reference words must exceed GIBBERISH_SIM_FLOOR.
+
+        These thresholds are intentionally lenient so that a slow, broken, or
+        heavily-accented recitation still passes — only true gibberish fails.
+        """
+        if not actual_phonetics or not reference_words:
+            return {"is_quran": False, "reason": "No audio or no reference"}
+
+        alignment = TajweedScorer._align_words_local(actual_phonetics, reference_words)
+        if not alignment:
+            return {"is_quran": False, "reason": "Alignment produced no results"}
+
+        ref_count = len(reference_words)
+        ref_to_act = {}
+        for act_idx, ref_idx in alignment:
+            if ref_idx != -1:
+                ref_to_act[ref_idx] = act_idx
+
+        matched = 0
+        total_sim = 0.0
+
+        for i, ref in enumerate(reference_words):
+            act_idx = ref_to_act.get(i, -1)
+            if act_idx != -1:
+                sim = TajweedScorer.weighted_similarity(
+                    actual_phonetics[act_idx], ref["word_tr"]
+                )
+                total_sim += sim
+                if sim > 0.30:
+                    matched += 1
+            # unmatched words contribute 0 similarity — already counted
+
+        coverage = matched / ref_count if ref_count > 0 else 0.0
+        avg_sim = total_sim / ref_count if ref_count > 0 else 0.0
+
+        logger.info(
+            f"[gibberish-gate] coverage={coverage:.2f} avg_sim={avg_sim:.3f} "
+            f"(thresholds: cov>={GIBBERISH_COVERAGE_THRESHOLD}, sim>={GIBBERISH_SIM_FLOOR})"
+        )
+
+        if coverage < GIBBERISH_COVERAGE_THRESHOLD:
+            return {
+                "is_quran": False,
+                "reason": (
+                    f"Only {matched}/{ref_count} words matched the ayah reference "
+                    f"(need at least {int(GIBBERISH_COVERAGE_THRESHOLD * ref_count)}). "
+                    "Please recite the highlighted ayah clearly."
+                )
+            }
+        if avg_sim < GIBBERISH_SIM_FLOOR:
+            return {
+                "is_quran": False,
+                "reason": (
+                    "Recitation did not sufficiently match the expected Quranic phonetics. "
+                    "Please recite the highlighted ayah clearly into the microphone."
+                )
+            }
+
+        return {"is_quran": True}
+
+    @staticmethod
     def score_recitation(
         actual_phonetics: list[str],
         reference_words: list[dict],
         temporal_feedback: list[dict] = None
     ) -> dict:
+        # ── Gibberish Gate ────────────────────────────────────────────────────
+        gate = TajweedScorer.validate_recitation_coverage(actual_phonetics, reference_words)
+        if not gate["is_quran"]:
+            logger.warning(f"[gibberish-gate] BLOCKED: {gate['reason']}")
+            return {
+                "status": "not_quran",
+                "maulana_feedback": {
+                    "status": "Not Detected",
+                    "score": 0,
+                    "guidance": gate["reason"],
+                    "summary": {"correct": 0, "minor_error": 0, "major_error": 0}
+                },
+                "word_results": [],
+                "tajweed_score": 0,
+            }
+        # ─────────────────────────────────────────────────────────────────────
+
         word_results = []
         total_score = 0.0
         error_summary = {"correct": 0, "minor_error": 0, "major_error": 0}

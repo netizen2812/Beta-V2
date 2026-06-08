@@ -1,4 +1,4 @@
-import { getAyah } from "../services/quranService.js";
+import { getAyah, getSurah } from "../services/quranService.js";
 
 export const getAyahHandler = async (req, res) => {
   try {
@@ -83,11 +83,46 @@ export const getAyahHandler = async (req, res) => {
           en: "In the name of Allah, the Entirely Merciful, the Especially Merciful.",
           ar: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
           ur: "اللہ کے نام سے جو بڑا مہربان نہایت رحم والا ہے۔",
-          hi: "अल्लाह کے نام سے جو بڑا مہربان نہایت رحم والا ہے۔", // Generic fallback same as Urdu for simplicity
-          bn: "পরম করুণাময় অসীম দয়ালু আল্লাহর নামে।",
-          ml: "പരമകാരുണികനും കരുണാനിധിയುമായ അല്ലാഹുവിന്റെ നാമത്തില്‍."
+          hi: "अल्लाह کے نام سے جو بڑا مہربان نہایت رحم والا ہے۔",
+          bn: "পরম করুণাময় অসীম দয়ালু আল্লাহর নামে।",
+          ml: "പരമകാരുണികനും കരുണാനിധിയുമായ അല്ലാഹുവിന്റെ നാമത്തില്‍."
         }
       }
     });
+  }
+};
+
+// ─── Surah Fetch Handler ───────────────────────────────────────────────────────
+const AL_FATIHAH_FALLBACK = [
+  { ayah_id: "1:1", surah_number: 1, ayah_number: 1, arabic_text: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ", translation_text: "In the name of Allah, the Entirely Merciful, the Especially Merciful." },
+  { ayah_id: "1:2", surah_number: 1, ayah_number: 2, arabic_text: "ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ", translation_text: "[All] praise is [due] to Allah, Lord of the worlds -" },
+  { ayah_id: "1:3", surah_number: 1, ayah_number: 3, arabic_text: "ٱلرَّحْمَٰنِ ٱلرَّحِيمِ", translation_text: "The Entirely Merciful, the Especially Merciful," },
+  { ayah_id: "1:4", surah_number: 1, ayah_number: 4, arabic_text: "مَٰلِكِ يَوْمِ ٱلدِّينِ", translation_text: "Sovereign of the Day of Recompense." },
+  { ayah_id: "1:5", surah_number: 1, ayah_number: 5, arabic_text: "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ", translation_text: "It is You we worship and You we ask for help." },
+  { ayah_id: "1:6", surah_number: 1, ayah_number: 6, arabic_text: "ٱهْدِنَا ٱلصِّرَٰطَ ٱلْمُسْتَقِيمَ", translation_text: "Guide us to the straight path -" },
+  { ayah_id: "1:7", surah_number: 1, ayah_number: 7, arabic_text: "صِرَٰطَ ٱلَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ ٱلْمَغْضُوبِ عَلَيْهِمْ وَلَا ٱلضَّآلِّينَ", translation_text: "The path of those upon whom You have bestowed favor, not of those who have evoked [Your] anger or of those who are astray." },
+];
+
+export const getSurahHandler = async (req, res) => {
+  try {
+    const surahId = parseInt(req.params.surahId);
+    if (isNaN(surahId) || surahId < 1 || surahId > 114) {
+      return res.status(400).json({ status: "error", message: "Invalid surah number (1-114)" });
+    }
+    const ayahs = await getSurah(surahId, req.query.language_code || "en");
+    if (!ayahs || ayahs.length === 0) {
+      // If DB is offline, return a static fallback for surah 1
+      if (surahId === 1) {
+        return res.json({ status: "success", data: AL_FATIHAH_FALLBACK });
+      }
+      return res.status(404).json({ status: "error", message: `No data for surah ${surahId}` });
+    }
+    res.json({ status: "success", data: ayahs });
+  } catch (error) {
+    console.error("getSurahHandler error:", error.message);
+    if (parseInt(req.params.surahId) === 1) {
+      return res.json({ status: "success", data: AL_FATIHAH_FALLBACK });
+    }
+    res.status(500).json({ status: "error", message: "Database error" });
   }
 };

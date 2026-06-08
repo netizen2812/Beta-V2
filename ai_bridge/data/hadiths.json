@@ -1,0 +1,82 @@
+[
+  {
+    "id": "hadith_best_quran",
+    "topic": "Quran",
+    "narrator": "Uthman bin Affan",
+    "source": "Sahih al-Bukhari",
+    "text": "The Prophet (peace be upon him) said: 'The best among you are those who learn the Qur'an and teach it.'",
+    "tags": ["quran", "learning", "teaching", "excellence"]
+  },
+  {
+    "id": "hadith_ruined_house",
+    "topic": "Quran",
+    "narrator": "Ibn Abbas",
+    "source": "Jami` at-Tirmidhi",
+    "text": "The Messenger of Allah (peace be upon him) said: 'Verily, he who has nothing of the Qur'an in his heart is like a ruined house.'",
+    "tags": ["quran", "memorization", "heart", "guidance"]
+  },
+  {
+    "id": "hadith_double_reward",
+    "topic": "Quran Recitation",
+    "narrator": "Aisha",
+    "source": "Sahih al-Bukhari & Muslim",
+    "text": "The Messenger of Allah (peace be upon him) said: 'The one who is proficient in the recitation of the Qur'an will be with the honorable and obedient scribes (angels) and he who recites the Qur'an and finds it difficult to recite, doing his best to recite it in the best way possible, will have a double reward.'",
+    "tags": ["quran", "recitation", "effort", "tajweed", "difficulty", "reward"]
+  },
+  {
+    "id": "hadith_beautify_voice",
+    "topic": "Quran Recitation",
+    "narrator": "Al-Bara' bin 'Azib",
+    "source": "Sunan Abi Dawud",
+    "text": "The Messenger of Allah (peace be upon him) said: 'Beautify the Qur'an with your voices.'",
+    "tags": ["quran", "voice", "beautification", "recitation"]
+  },
+  {
+    "id": "hadith_salah_pillar",
+    "topic": "Salah",
+    "narrator": "Mu'adh ibn Jabal",
+    "source": "Jami` at-Tirmidhi",
+    "text": "The Prophet (peace be upon him) said: 'The head of the matter is Islam, its pillar is the salah (prayer), and its peak is jihad.'",
+    "tags": ["salah", "prayer", "pillar", "importance"]
+  },
+  {
+    "id": "hadith_intentions",
+    "topic": "Intentions",
+    "narrator": "Umar bin Al-Khattab",
+    "source": "Sahih al-Bukhari",
+    "text": "I heard the Messenger of Allah (peace be upon him) saying: 'Actions are judged by intentions, and every person will have only that which he intended.'",
+    "tags": ["intention", "niyyah", "sincerity", "actions"]
+  },
+  {
+    "id": "hadith_seeking_knowledge",
+    "topic": "Knowledge",
+    "narrator": "Anas bin Malik",
+    "source": "Sunan Ibn Majah",
+    "text": "The Messenger of Allah (peace be upon him) said: 'Seeking knowledge is an obligation upon every Muslim.'",
+    "tags": ["knowledge", "seeking", "obligation", "education"]
+  },
+  {
+    "id": "hadith_cleanliness",
+    "topic": "Purity",
+    "narrator": "Abu Malik Al-Ash'ari",
+    "source": "Sahih Muslim",
+    "text": "The Messenger of Allah (peace be upon him) said: 'Purity (cleanliness) is half of faith.'",
+    "tags": ["cleanliness", "purity", "wudu", "faith"]
+  },
+  {
+    "id": "hadith_good_character",
+    "topic": "Character",
+    "narrator": "Abu Hurairah",
+    "source": "Muwatta Malik",
+    "text": "The Messenger of Allah (peace be upon him) said: 'I have only been sent to perfect good character.'",
+    "tags": ["character", "akhlaq", "morality", "manners"]
+  },
+  {
+    "id": "hadith_allah_looks_at_hearts",
+    "topic": "Hearts",
+    "narrator": "Abu Hurairah",
+    "source": "Sahih Muslim",
+    "text": "The Messenger of Allah (peace be upon him) said: 'Verily, Allah does not look at your appearance or your wealth, but He looks at your hearts and your actions.'",
+    "tags": ["heart", "appearance", "wealth", "sincerity", "deeds"]
+  }
+]
