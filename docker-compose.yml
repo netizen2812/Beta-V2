@@ -33,7 +33,7 @@ services:
               count: 1
               capabilities: [gpu]
     healthcheck:
-      test: ["CMD", "curl", "-f", "-H", "X-API-Key:${INTERNAL_API_KEY}", "http://localhost:8000/api/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; req = urllib.request.Request('http://localhost:8000/api/health', headers={'X-API-Key': '${INTERNAL_API_KEY}'}); urllib.request.urlopen(req)"]
       interval: 30s
       timeout: 10s
       retries: 5
