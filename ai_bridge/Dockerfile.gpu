@@ -2,6 +2,8 @@ FROM pytorch/pytorch:2.1.2-cuda11.8-cudnn8-runtime
 
 WORKDIR /usr/src/app
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Install system dependencies needed for audio processing and compilation
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
