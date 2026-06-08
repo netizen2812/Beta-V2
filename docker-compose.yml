@@ -4,7 +4,8 @@ services:
   ai-bridge:
     build:
       context: ./ai_bridge
-      dockerfile: Dockerfile.python
+      dockerfile: Dockerfile.gpu
+    runtime: nvidia
     container_name: quran-ai-bridge
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
@@ -15,6 +16,8 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://imamv2.vercel.app,https://www.imamapp.co,https://imamapp.co,http://localhost:3000}
       - TAFSIR_FAST_START=${TAFSIR_FAST_START:-1}
       - PYTHONUNBUFFERED=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
       - ./ai_bridge/data:/usr/src/app/data
       - ./ai_bridge/models:/usr/src/app/models
@@ -22,6 +25,13 @@ services:
     networks:
       - quran-net
     restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     healthcheck:
       test: ["CMD", "curl", "-f", "-H", "X-API-Key:${INTERNAL_API_KEY}", "http://localhost:8000/api/health"]
       interval: 30s
